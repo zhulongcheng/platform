@@ -5,7 +5,7 @@ import (
 	"net/http"
 
 	"github.com/influxdata/platform"
-	"github.com/influxdata/platform/kit/errors"
+	"github.com/influxdata/platform/errors"
 )
 
 type contextKey string
