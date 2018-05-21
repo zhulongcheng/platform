@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/influxdata/platform"
-	"github.com/influxdata/platform/kit/errors"
+	"github.com/influxdata/platform/errors"
 	"github.com/julienschmidt/httprouter"
 )
 

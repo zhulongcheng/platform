@@ -9,7 +9,7 @@ import (
 
 	ifql "github.com/influxdata/ifql/query"
 	"github.com/influxdata/platform"
-	kerrors "github.com/influxdata/platform/kit/errors"
+	kerrors "github.com/influxdata/platform/errors"
 	"github.com/influxdata/platform/query"
 	"github.com/influxdata/platform/query/csv"
 	"github.com/julienschmidt/httprouter"
