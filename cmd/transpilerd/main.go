@@ -1,8 +1,6 @@
 package main
 
 import (
-	"fmt"
-	"log"
 	nethttp "net/http"
 	"os"
 	"strings"
@@ -11,12 +9,20 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"go.uber.org/zap"
+	influxlogger "github.com/influxdata/influxdb/logger"
 )
 
 var transpileCmd = &cobra.Command{
 	Use:   "transpilerd",
 	Short: "Transpiler Query Server",
-	Run:   transpileF,
+	Run:   func(cmd *cobra.Command, args []string) {
+		logger := influxlogger.New(os.Stdout)
+		if err := transpileF(cmd, logger, args); err != nil {
+			logger.Error("encountered fatal error", zap.String("error", err.Error()))
+			os.Exit(1)
+		}
+	},
 }
 
 // Flags contains all the CLI flag values for transpilerd.
@@ -42,16 +48,19 @@ func init() {
 	viper.BindPFlag("IFQLD_HOSTS", transpileCmd.PersistentFlags().Lookup("ifqld-hosts"))
 }
 
-func transpileF(cmd *cobra.Command, args []string) {
+func transpileF(cmd *cobra.Command, logger *zap.Logger, args []string) error {
 	hosts, err := discoverHosts()
 	if err != nil {
-		log.Fatal(err)
+		return err
 	} else if len(hosts) == 0 {
-		log.Fatal("no ifqld hosts found")
+		return errors.New("no ifqld hosts found")
 	}
+
+	// TODO(nathanielc): Allow QueryService to use multiple hosts.
+
+	logger.Info("using ifqld service", zap.Strings("hosts", hosts))
 	transpileHandler := http.NewTranspilerQueryHandler()
 	transpileHandler.QueryService = &http.QueryService{
-		//TODO(nathanielc): Allow QueryService to use multiple hosts.
 		Addr: hosts[0],
 	}
 
@@ -60,13 +69,12 @@ func transpileF(cmd *cobra.Command, args []string) {
 	handler := http.NewHandler("transpile")
 	handler.Handler = transpileHandler
 
-	log.Printf("Starting transpilerd on %s\n", flags.bindAddr)
-	log.Fatal(nethttp.ListenAndServe(flags.bindAddr, handler))
+	logger.Info("starting transpilerd", zap.String("bindAddr", flags.bindAddr))
+	return nethttp.ListenAndServe(flags.bindAddr, handler)
 }
 
 func main() {
 	if err := transpileCmd.Execute(); err != nil {
-		fmt.Println(err)
 		os.Exit(1)
 	}
 }
