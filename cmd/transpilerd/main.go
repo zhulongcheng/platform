@@ -1,22 +1,24 @@
 package main
 
 import (
-	nethttp "net/http"
+	"net"
 	"os"
 	"strings"
 
+	"syscall"
+
+	influxlogger "github.com/influxdata/influxdb/logger"
 	"github.com/influxdata/platform/http"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
-	influxlogger "github.com/influxdata/influxdb/logger"
 )
 
 var transpileCmd = &cobra.Command{
 	Use:   "transpilerd",
 	Short: "Transpiler Query Server",
-	Run:   func(cmd *cobra.Command, args []string) {
+	Run: func(cmd *cobra.Command, args []string) {
 		logger := influxlogger.New(os.Stdout)
 		if err := transpileF(cmd, logger, args); err != nil {
 			logger.Error("encountered fatal error", zap.String("error", err.Error()))
@@ -70,7 +72,14 @@ func transpileF(cmd *cobra.Command, logger *zap.Logger, args []string) error {
 	handler.Handler = transpileHandler
 
 	logger.Info("starting transpilerd", zap.String("bindAddr", flags.bindAddr))
-	return nethttp.ListenAndServe(flags.bindAddr, handler)
+	l, err := net.Listen("tcp", flags.bindAddr)
+	if err != nil {
+		return err
+	}
+
+	server := http.NewServer(handler)
+	server.ListenForSignals(os.Interrupt, syscall.SIGTERM)
+	return server.Serve(l)
 }
 
 func main() {
