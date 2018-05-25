@@ -6,25 +6,14 @@ import (
 	"net/http"
 )
 
-// TODO: move to http directory
-
-// EncodeHTTP encodes err with the appropriate status code and format,
-// sets the X-Influx-Error and X-Influx-Reference headers on the response,
+// HandleHTTP sets the X-Influx-Error and X-Influx-Reference headers on the response,
 // and sets the response status to the corresponding status code.
-func EncodeHTTP(ctx context.Context, err error, w http.ResponseWriter) {
-	if err == nil {
+func HandleHTTP(ctx context.Context, e TypedError, w http.ResponseWriter) {
+	if e == nil {
 		return
 	}
-	e, ok := err.(*Error)
-	if !ok {
-		e = &Error{
-			Reference: InternalError,
-			Err:       err.Error(),
-		}
-	}
-	e.SetCode()
 
 	w.Header().Set("X-Influx-Error", e.Error())
-	w.Header().Set("X-Influx-Reference", fmt.Sprintf("%d", e.Reference))
-	w.WriteHeader(e.Code)
+	w.Header().Set("X-Influx-Reference", fmt.Sprintf("%d", e.Reference()))
+	w.WriteHeader(typCode[e.Reference()])
 }
