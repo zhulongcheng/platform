@@ -74,3 +74,8 @@ required = [
 [[constraint]]
   branch = "master"
   name = "github.com/gonum/stat"
+
+[[constraint]]
+  branch = "master"
+  name = "github.com/segmentio/kafka-go"
+  source = "github.com/influxdata/kafka-go"

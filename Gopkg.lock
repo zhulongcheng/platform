@@ -541,7 +541,8 @@
   branch = "master"
   name = "github.com/segmentio/kafka-go"
   packages = ["."]
-  revision = "44a19ca9cf5925ba3c5153dd0d9e5b44e8dfd717"
+  revision = "3d7fdecf1f4a239d0b211f88f2a2723f4cd9ce4f"
+  source = "github.com/influxdata/kafka-go"
 
 [[projects]]
   name = "github.com/sergi/go-diff"
@@ -718,6 +719,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "8666620edf4d5f9d8ea8917eba18447194a86b306dead9083728b9df5dd5e391"
+  inputs-digest = "2fc0ff3e0a51b42dfa1a52d79ec9cc7785bbb010afe8c0aca41e7ab52a540626"
   solver-name = "gps-cdcl"
   solver-version = 1
