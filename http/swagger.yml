@@ -5,6 +5,284 @@ info:
 servers:
   - url: /v1
 paths:
+  /cells:
+    post:
+      tags:
+        - Cells
+      summary: Create a cell
+      requestBody:
+          description: cell to create
+          required: true
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Cell"
+      responses:
+        '201':
+          description: Added cell
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Cell"
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    get:
+      tags:
+        - Cells
+      summary: Get all cells
+      parameters:
+        - in: query
+          name: organization
+          schema:
+            type: string
+          description: filter for dashboards belonging to a particular organization
+        - in: query
+          name: organizationID
+          schema:
+            type: string
+          description: filter for dashboards belonging to a particular organizationID
+        - in: query
+          name: user
+          schema:
+            type: string
+          description: filter for dashboards belonging to a particular user
+        - in: query
+          name: userID
+          schema:
+            type: string
+          description: filter for dashboards belonging to a particular userID
+      responses:
+        '200':
+          description: all cells
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Cells"
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  '/cells/{cellID}':
+   get:
+    tags:
+      - Cells
+    summary: Get a single Cell
+    parameters:
+        - in: path
+          name: cellID
+          schema:
+            type: string
+          required: true
+          description: ID of cell to update
+    responses:
+        '200':
+          description: get a single cell
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Cell"
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+   patch:
+      tags:
+        - Cells
+      summary: Update a single cell
+      requestBody:
+          description: patching of a cell
+          required: true
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Cell"
+      parameters:
+        - in: path
+          name: cellID
+          schema:
+            type: string
+          required: true
+          description: ID of cell to update
+      responses:
+        '200':
+          description: Updated cell
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Cell"
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+   delete:
+      tags:
+        - Cells
+      summary: Delete a cell
+      parameters:
+        - in: path
+          name: cellID
+          schema:
+            type: string
+          required: true
+          description: ID of cell to update
+      responses:
+        '202':
+          description: delete has been accepted
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /dashboards:
+    post:
+      tags:
+        - Dashboards
+      summary: Create a dashbaord
+      requestBody:
+        description: dashboard to create
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Dashboard"
+      responses:
+        '201':
+          description: Dashboard created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Dashboard"
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    get:
+      tags:
+        - Dashboards
+      summary: List all dashboards
+      parameters:
+        - in: query
+          name: organization
+          schema:
+            type: string
+          description: filter for dashboards belonging to a particular organization
+        - in: query
+          name: organizationID
+          schema:
+            type: string
+          description: filter for dashboards belonging to a particular organizationID
+        - in: query
+          name: user
+          schema:
+            type: string
+          description: filter for dashboards belonging to a particular user
+        - in: query
+          name: userID
+          schema:
+            type: string
+          description: filter for dashboards belonging to a particular userID
+      responses:
+        '200':
+         description: a list of dashboards
+         content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Dashboards"
+        default:
+          description: unexpected error
+          content:
+           application/json:
+             schema:
+               $ref: "#/components/schemas/Error"
+  '/dashboards/{dashboardID}':
+    get:
+      tags:
+        - Dashboards
+      summary: Get a dashboard by id
+      parameters:
+        - in: path
+          name: dashboardID
+          schema:
+            type: string
+          required: true
+          description: ID of dashboard to get
+      responses:
+        '200':
+          description: a dashboard
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Dashboard"
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    delete:
+      tags:
+        - Dashboards
+      summary: Delete a dashboard
+      parameters:
+        - in: path
+          name: dashboardID
+          schema:
+            type: string
+          required: true
+          description: ID of dashboard to delete
+      responses:
+        '202':
+          description: delete has been accepted
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    patch:
+      tags:
+        - Dashboards
+      summary: Update a dashboard
+      requestBody:
+        description: dashboard update to apply
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Dashboard"
+      parameters:
+        - in: path
+          name: dashboardID
+          schema:
+            type: string
+          required: true
+          description: ID of dashboard to update
+      responses:
+        '200':
+          description: An updated dashboard
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Dashboard"
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
   /buckets:
     get:
       tags:
@@ -627,6 +905,76 @@ components:
         prev:
           $ref: "#/components/schemas/Link"
       required: [self]
+    ChronografVisualization:
+      properties:
+        cached:
+          type: boolean
+        query:
+          type: string
+        type:
+          type: string
+          enum: ["common"]
+    VegaLiteVisualization:
+      properties:
+        vega_properties:
+          type: object
+        type:
+          type: string
+          enum: ["vegalite"]
+    MarkdownVisualization:
+      properties:
+        markdown:
+          type: string
+        type:
+          type: string
+          enum: ["markdown"]
+    Cell:
+      properties:
+        id:
+          readOnly: true
+          type: string
+        name:
+          type: string
+        visualization:
+          oneOf:
+            - $ref: "#/components/schemas/ChronografVisualization"
+            - $ref: "#/components/schemas/VegaLiteVisualization"
+            - $ref: "#/components/schemas/MarkdownVisualization"
+    Cells:
+      type: array
+      items:
+        $ref: "#/components/schemas/Cell"
+    DashboardCell:
+      properties:
+        cell:
+          $ref: "#/components/schemas/Link"
+        x:
+          type: integer
+          format: int32
+        y:
+          type: integer
+          format: int32
+        w:
+          type: integer
+          format: int32
+        h:
+          type: integer
+          format: int32
+    Dashboard:
+      properties:
+        id:
+          readOnly: true
+          type: string
+        name:
+          type: string
+        cells:
+          type: array
+          items:
+            $ref: "#/components/schemas/DashboardCell"
+    Dashboards:
+      type: array
+      items:
+        $ref: "#/components/schemas/Dashboard"
     Organization:
       properties:
         id:
@@ -727,3 +1075,4 @@ components:
           readOnly: true
           type: string
       required: [code, message]
+
