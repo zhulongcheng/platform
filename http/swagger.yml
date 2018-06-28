@@ -352,6 +352,8 @@ paths:
       tags:
         - Buckets
       summary: List all buckets
+      security:
+        - apiKeyAuth: [read-bucket]
       responses:
         '200':
           description: a list of buckets
@@ -971,6 +973,29 @@ paths:
               schema:
                 $ref: "#/components/schemas/Error"
 components:
+  securitySchemes:
+    apiKeyAuth:
+      type: apiKey
+      in: header
+      name: Authorization
+      description: API Key to authorize requests. Check the docs for specific permissions required for each route.
+      x-influx-permissions:
+        read-bucket:
+          action: read
+          resource: bucket
+        write-bucket:
+          action: write
+          resource: bucket
+        create-bucket:
+          action: create
+          resource: bucket
+        delete-bucket:
+          action: delete
+          resource: bucket
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: session
   schemas:
     Query:
       description: query influx with specified return formatting.
