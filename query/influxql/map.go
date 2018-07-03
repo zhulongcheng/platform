@@ -136,6 +136,10 @@ func (t *transpilerState) evalBinaryExpr(expr *influxql.BinaryExpr, in cursor) (
 			return b.eval(ast.AdditionOperator)
 		case influxql.SUB:
 			return b.eval(ast.SubtractionOperator)
+		case influxql.MUL:
+			return b.eval(ast.MultiplicationOperator)
+		case influxql.DIV:
+			return b.eval(ast.DivisionOperator)
 		case influxql.AND:
 			return b.logical(ast.AndOperator)
 		case influxql.OR:
