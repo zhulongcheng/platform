@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"regexp"
+	"strconv"
 	"time"
 
 	"github.com/influxdata/platform/query/interpreter"
@@ -18,7 +19,6 @@ import (
 const (
 	TableParameter = "table"
 
-	tableIDKey      = "id"
 	tableKindKey    = "kind"
 	tableParentsKey = "parents"
 	//tableSpecKey    = "spec"
@@ -137,7 +137,6 @@ func FinalizeBuiltIns() {
 }
 
 var TableObjectType = semantic.NewObjectType(map[string]semantic.Type{
-	tableIDKey:   semantic.String,
 	tableKindKey: semantic.String,
 	// TODO(nathanielc): The spec types vary significantly making type comparisons impossible, for now the solution is to state the type as an empty object.
 	//tableSpecKey: semantic.EmptyObject,
@@ -145,85 +144,116 @@ var TableObjectType = semantic.NewObjectType(map[string]semantic.Type{
 	tableParentsKey: semantic.NewArrayType(semantic.EmptyObject),
 })
 
+// IDer produces the mapping of table Objects to OpertionIDs
+type IDer interface {
+	ID(*TableObject) OperationID
+}
+type IDAwareOperationSpec interface {
+	IDer(ider IDer)
+}
+
 type TableObject struct {
-	ID      OperationID
 	Kind    OperationKind
 	Spec    OperationSpec
 	Parents values.Array
 }
 
-func (t TableObject) Operation() *Operation {
+func (t *TableObject) Operation(ider IDer) *Operation {
+	if idAware, ok := t.Spec.(IDAwareOperationSpec); ok {
+		idAware.IDer(ider)
+	}
+
 	return &Operation{
-		ID:   t.ID,
+		ID:   ider.ID(t),
 		Spec: t.Spec,
 	}
 }
 
-func (t TableObject) String() string {
-	return fmt.Sprintf("{id: %q, kind: %q}", t.ID, t.Kind)
+func (t *TableObject) String() string {
+	return fmt.Sprintf("{kind: %q}", t.Kind)
 }
 
-func (t TableObject) ToSpec() *Spec {
+type ider struct {
+	id     int
+	lookup map[*TableObject]OperationID
+}
+
+func (i *ider) ID(t *TableObject) OperationID {
+	id, ok := i.lookup[t]
+	if !ok {
+		i.id++
+		id = OperationID(string(t.Kind) + strconv.Itoa(i.id))
+		i.lookup[t] = id
+	}
+	return id
+}
+
+func (t *TableObject) ToSpec() *Spec {
 	visited := make(map[OperationID]bool)
+	ider := &ider{
+		id:     0,
+		lookup: make(map[*TableObject]OperationID),
+	}
 	spec := new(Spec)
-	t.buildSpec(spec, visited)
+	t.buildSpec(ider, spec, visited)
 	return spec
 }
 
-func (t TableObject) buildSpec(spec *Spec, visited map[OperationID]bool) {
-	id := t.ID
+func (t *TableObject) buildSpec(ider IDer, spec *Spec, visited map[OperationID]bool) {
+	id := ider.ID(t)
 	t.Parents.Range(func(i int, v values.Value) {
-		p := v.(TableObject)
-		if !visited[p.ID] {
+		p := v.(*TableObject)
+		pid := ider.ID(p)
+		if !visited[pid] {
 			// rescurse up parents
-			p.buildSpec(spec, visited)
+			p.buildSpec(ider, spec, visited)
 		}
 
 		spec.Edges = append(spec.Edges, Edge{
-			Parent: p.ID,
+			Parent: pid,
 			Child:  id,
 		})
 	})
 
 	visited[id] = true
-	spec.Operations = append(spec.Operations, t.Operation())
+	spec.Operations = append(spec.Operations, t.Operation(ider))
 }
 
-func (t TableObject) Type() semantic.Type {
+func (t *TableObject) Type() semantic.Type {
 	return TableObjectType
 }
 
-func (t TableObject) Str() string {
+func (t *TableObject) Str() string {
 	panic(values.UnexpectedKind(semantic.Object, semantic.String))
 }
-func (t TableObject) Int() int64 {
+func (t *TableObject) Int() int64 {
 	panic(values.UnexpectedKind(semantic.Object, semantic.Int))
 }
-func (t TableObject) UInt() uint64 {
+func (t *TableObject) UInt() uint64 {
 	panic(values.UnexpectedKind(semantic.Object, semantic.UInt))
 }
-func (t TableObject) Float() float64 {
+func (t *TableObject) Float() float64 {
 	panic(values.UnexpectedKind(semantic.Object, semantic.Float))
 }
-func (t TableObject) Bool() bool {
+func (t *TableObject) Bool() bool {
 	panic(values.UnexpectedKind(semantic.Object, semantic.Bool))
 }
-func (t TableObject) Time() values.Time {
+func (t *TableObject) Time() values.Time {
 	panic(values.UnexpectedKind(semantic.Object, semantic.Time))
 }
-func (t TableObject) Duration() values.Duration {
+func (t *TableObject) Duration() values.Duration {
 	panic(values.UnexpectedKind(semantic.Object, semantic.Duration))
 }
-func (t TableObject) Regexp() *regexp.Regexp {
+func (t *TableObject) Regexp() *regexp.Regexp {
 	panic(values.UnexpectedKind(semantic.Object, semantic.Regexp))
 }
-func (t TableObject) Array() values.Array {
+func (t *TableObject) Array() values.Array {
 	panic(values.UnexpectedKind(semantic.Object, semantic.Array))
 }
-func (t TableObject) Object() values.Object {
+func (t *TableObject) Object() values.Object {
 	return t
 }
-func (t TableObject) Equal(rhs values.Value) bool {
+func (t *TableObject) Equal(rhs values.Value) bool {
 	if t.Type() != rhs.Type() {
 		return false
 	}
@@ -240,14 +270,12 @@ func (t TableObject) Equal(rhs values.Value) bool {
 	}
 	return true
 }
-func (t TableObject) Function() values.Function {
+func (t *TableObject) Function() values.Function {
 	panic(values.UnexpectedKind(semantic.Object, semantic.Function))
 }
 
-func (t TableObject) Get(name string) (values.Value, bool) {
+func (t *TableObject) Get(name string) (values.Value, bool) {
 	switch name {
-	case tableIDKey:
-		return values.NewStringValue(string(t.ID)), true
 	case tableKindKey:
 		return values.NewStringValue(string(t.Kind)), true
 	case tableParentsKey:
@@ -257,20 +285,19 @@ func (t TableObject) Get(name string) (values.Value, bool) {
 	}
 }
 
-func (t TableObject) keys() []string {
-	return []string{tableIDKey, tableKindKey, tableParentsKey}
+func (t *TableObject) keys() []string {
+	return []string{tableKindKey, tableParentsKey}
 }
 
-func (t TableObject) Set(name string, v values.Value) {
-	//TableObject is immutable
+func (t *TableObject) Set(name string, v values.Value) {
+	// immutable
 }
 
-func (t TableObject) Len() int {
+func (t *TableObject) Len() int {
 	return 3
 }
 
-func (t TableObject) Range(f func(name string, v values.Value)) {
-	f(tableIDKey, values.NewStringValue(string(t.ID)))
+func (t *TableObject) Range(f func(name string, v values.Value)) {
 	f(tableKindKey, values.NewStringValue(string(t.Kind)))
 	f(tableParentsKey, t.Parents)
 }
@@ -329,13 +356,11 @@ func builtIns(qd *queryDomain) (map[string]values.Value, semantic.DeclarationSco
 }
 
 type Administration struct {
-	id      OperationID
 	parents values.Array
 }
 
-func newAdministration(id OperationID) *Administration {
+func newAdministration() *Administration {
 	return &Administration{
-		id: id,
 		// TODO(nathanielc): Once we can support recursive types change this to,
 		// interpreter.NewArray(TableObjectType)
 		parents: values.NewArray(semantic.EmptyObject),
@@ -348,7 +373,7 @@ func (a *Administration) AddParentFromArgs(args Arguments) error {
 	if err != nil {
 		return err
 	}
-	p, ok := parent.(TableObject)
+	p, ok := parent.(*TableObject)
 	if !ok {
 		return fmt.Errorf("argument is not a table object: got %T", parent)
 	}
@@ -358,11 +383,11 @@ func (a *Administration) AddParentFromArgs(args Arguments) error {
 
 // AddParent instructs the evaluation Context that a new edge should be created from the parent to the current operation.
 // Duplicate parents will be removed, so the caller need not concern itself with which parents have already been added.
-func (a *Administration) AddParent(np TableObject) {
+func (a *Administration) AddParent(np *TableObject) {
 	// Check for duplicates
 	found := false
-	a.parents.Range(func(i int, p values.Value) {
-		if p.(TableObject).ID == np.ID {
+	a.parents.Range(func(i int, v values.Value) {
+		if p, ok := v.(*TableObject); ok && p == np {
 			found = true
 		}
 	})
@@ -382,7 +407,7 @@ func NewDomain() Domain {
 type queryDomain struct {
 	id int
 
-	operations []TableObject
+	operations []*TableObject
 }
 
 func (d *queryDomain) NewID(name string) OperationID {
@@ -398,8 +423,12 @@ func (d *queryDomain) nextID() int {
 func (d *queryDomain) ToSpec() *Spec {
 	spec := new(Spec)
 	visited := make(map[OperationID]bool)
+	ider := &ider{
+		id:     0,
+		lookup: make(map[*TableObject]OperationID),
+	}
 	for _, t := range d.operations {
-		t.buildSpec(spec, visited)
+		t.buildSpec(ider, spec, visited)
 	}
 	return spec
 }
@@ -471,9 +500,7 @@ func (f *function) Call(argsObj values.Object) (values.Value, error) {
 }
 
 func (f *function) call(args interpreter.Arguments) (values.Value, error) {
-	id := f.qd.NewID(f.name)
-
-	a := newAdministration(id)
+	a := newAdministration()
 
 	spec, err := f.createOpSpec(Arguments{Arguments: args}, a)
 	if err != nil {
@@ -483,12 +510,11 @@ func (f *function) call(args interpreter.Arguments) (values.Value, error) {
 	if a.parents.Len() > 1 {
 		// Always add parents in a consistent order
 		a.parents.Sort(func(i, j values.Value) bool {
-			return i.(TableObject).ID < j.(TableObject).ID
+			return i.(*TableObject).ID < j.(*TableObject).ID
 		})
 	}
 
-	t := TableObject{
-		ID:      id,
+	t := &TableObject{
 		Kind:    spec.Kind(),
 		Spec:    spec,
 		Parents: a.parents,
