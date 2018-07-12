@@ -1,0 +1,5 @@
+from(db:"test")
+    |> range(start:2018-05-22T19:53:26Z, stop:2018-05-22T20:00:00Z)
+    |> filter(fn: (r) => r._field == "usage_guest")
+    |> window(every:1m)
+    |> count()

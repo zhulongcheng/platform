@@ -1,0 +1,10 @@
+#datatype,string,long,dateTime:RFC3339,dateTime:RFC3339,string,string,string,string,dateTime:RFC3339,long
+#partition,false,false,true,true,true,true,true,true,false,false
+#default,_result,,,,,,,,,
+,result,table,_start,_stop,_field,_measurement,cpu,host,_time,_value
+,,0,2018-05-22T19:53:26Z,2018-05-22T19:54:00Z,usage_guest,cpu,cpu-total,host.local,2018-05-22T19:54:00Z,1
+,,1,2018-05-22T19:54:00Z,2018-05-22T19:55:00Z,usage_guest,cpu,cpu-total,host.local,2018-05-22T19:55:00Z,1
+,,2,2018-05-22T19:55:00Z,2018-05-22T19:56:00Z,usage_guest,cpu,cpu-total,host.local,2018-05-22T19:56:00Z,1
+,,3,2018-05-22T19:56:00Z,2018-05-22T19:57:00Z,usage_guest,cpu,cpu-total,host.local,2018-05-22T19:57:00Z,1
+,,4,2018-05-22T19:57:00Z,2018-05-22T19:58:00Z,usage_guest,cpu,cpu-total,host.local,2018-05-22T19:58:00Z,1
+
