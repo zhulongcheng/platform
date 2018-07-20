@@ -36,8 +36,6 @@ type executionState struct {
 
 	resources query.ResourceManagement
 
-	bounds Bounds
-
 	results map[string]query.Result
 	sources []Source
 
@@ -77,10 +75,6 @@ func (e *executor) createExecutionState(ctx context.Context, orgID platform.ID, 
 		results:   make(map[string]query.Result, len(p.Results)),
 		// TODO(nathanielc): Have the planner specify the dispatcher throughput
 		dispatcher: newPoolDispatcher(10),
-		bounds: Bounds{
-			Start: Time(p.Bounds.Start.Time(p.Now).UnixNano()),
-			Stop:  Time(p.Bounds.Stop.Time(p.Now).UnixNano()),
-		},
 	}
 	nodes := make(map[plan.ProcedureID]Node, len(p.Procedures))
 	for name, yield := range p.Results {
@@ -223,9 +217,6 @@ func (ec executionContext) OrganizationID() platform.ID {
 
 func (ec executionContext) ResolveTime(qt query.Time) Time {
 	return Time(qt.Time(ec.es.p.Now).UnixNano())
-}
-func (ec executionContext) Bounds() Bounds {
-	return ec.es.bounds
 }
 
 func (ec executionContext) Allocator() *Allocator {

@@ -184,7 +184,6 @@ func createFromSource(prSpec plan.ProcedureSpec, dsid execute.DatasetID, a execu
 		w = execute.Window{
 			Every:  execute.Duration(spec.Window.Every),
 			Period: execute.Duration(spec.Window.Period),
-			Round:  execute.Duration(spec.Window.Round),
 			Start:  a.ResolveTime(spec.Window.Start),
 		}
 	} else {

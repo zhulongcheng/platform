@@ -34,11 +34,11 @@ func TestWindow_NewQuery(t *testing.T) {
 								Relative:   -4 * time.Hour,
 								IsRelative: true,
 							},
-							Every:         query.Duration(time.Hour),
-							Period:        query.Duration(time.Hour),
-							TimeCol:       execute.DefaultTimeColLabel,
-							StartColLabel: execute.DefaultStartColLabel,
-							StopColLabel:  execute.DefaultStopColLabel,
+							Every:    query.Duration(time.Hour),
+							Period:   query.Duration(time.Hour),
+							TimeCol:  execute.DefaultTimeColLabel,
+							StartCol: execute.DefaultStartColLabel,
+							StopCol:  execute.DefaultStopColLabel,
 						},
 					},
 				},
@@ -59,7 +59,7 @@ func TestWindow_NewQuery(t *testing.T) {
 
 func TestWindowOperation_Marshaling(t *testing.T) {
 	//TODO: Test marshalling of triggerspec
-	data := []byte(`{"id":"window","kind":"window","spec":{"every":"1m","period":"1h","start":"-4h","round":"1s"}}`)
+	data := []byte(`{"id":"window","kind":"window","spec":{"every":"1m","period":"1h","start":"-4h"}}`)
 	op := &query.Operation{
 		ID: "window",
 		Spec: &functions.WindowOpSpec{
@@ -69,7 +69,6 @@ func TestWindowOperation_Marshaling(t *testing.T) {
 				Relative:   -4 * time.Hour,
 				IsRelative: true,
 			},
-			Round: query.Duration(time.Second),
 		},
 	}
 
@@ -81,12 +80,10 @@ func TestFixedWindow_PassThrough(t *testing.T) {
 		fw := functions.NewFixedWindowTransformation(
 			d,
 			c,
-			execute.Bounds{},
 			execute.Window{
 				Every:  execute.Duration(time.Minute),
 				Period: execute.Duration(time.Minute),
 			},
-			false,
 			execute.DefaultTimeColLabel,
 			execute.DefaultStartColLabel,
 			execute.DefaultStopColLabel,
@@ -570,16 +567,11 @@ func TestFixedWindow_Process(t *testing.T) {
 			fw := functions.NewFixedWindowTransformation(
 				d,
 				c,
-				execute.Bounds{
-					Start: start,
-					Stop:  stop,
-				},
 				execute.Window{
 					Every:  tc.every,
 					Period: tc.period,
 					Start:  start,
 				},
-				false,
 				execute.DefaultTimeColLabel,
 				execute.DefaultStartColLabel,
 				execute.DefaultStopColLabel,
@@ -636,6 +628,91 @@ func TestFixedWindow_Process(t *testing.T) {
 
 			if !cmp.Equal(want, got) {
 				t.Errorf("unexpected tables -want/+got\n%s", cmp.Diff(want, got))
+			}
+		})
+	}
+}
+
+func TestGenerateWindows(t *testing.T) {
+	testCases := []struct {
+		name string
+		t    execute.Time
+		offset,
+		every,
+		period execute.Duration
+		want []execute.Bounds
+	}{
+		{
+			name:   "nonoverlapping",
+			t:      10,
+			offset: 0,
+			every:  5,
+			period: 5,
+			want: []execute.Bounds{
+				{Start: 10, Stop: 15},
+			},
+		},
+		{
+			name:   "overlapping",
+			t:      10,
+			offset: 0,
+			every:  5,
+			period: 15,
+			want: []execute.Bounds{
+				{Start: 0, Stop: 15},
+				{Start: 5, Stop: 20},
+				{Start: 10, Stop: 25},
+			},
+		},
+		{
+			name:   "hopping",
+			t:      7,
+			offset: 0,
+			every:  10,
+			period: 5,
+			want: []execute.Bounds{
+				{Start: 5, Stop: 10},
+			},
+		},
+		{
+			name:   "nonoverlapping with offset",
+			t:      10,
+			offset: 2,
+			every:  5,
+			period: 5,
+			want: []execute.Bounds{
+				{Start: 7, Stop: 12},
+			},
+		},
+		{
+			name:   "overlapping with offset",
+			t:      10,
+			offset: 2,
+			every:  5,
+			period: 15,
+			want: []execute.Bounds{
+				{Start: -3, Stop: 12},
+				{Start: 2, Stop: 17},
+				{Start: 7, Stop: 22},
+			},
+		},
+		{
+			name:   "hopping with offset",
+			t:      7,
+			offset: 2,
+			every:  10,
+			period: 5,
+			want: []execute.Bounds{
+				{Start: 7, Stop: 12},
+			},
+		},
+	}
+	for _, tc := range testCases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			got := functions.GenerateWindows(tc.t, tc.offset, tc.every, tc.period)
+			if !cmp.Equal(got, tc.want) {
+				t.Errorf("unexpected windows: -want/+got:\n%s", cmp.Diff(tc.want, got))
 			}
 		})
 	}

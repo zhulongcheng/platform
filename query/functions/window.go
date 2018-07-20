@@ -15,15 +15,13 @@ import (
 const WindowKind = "window"
 
 type WindowOpSpec struct {
-	Every              query.Duration    `json:"every"`
-	Period             query.Duration    `json:"period"`
-	Start              query.Time        `json:"start"`
-	Round              query.Duration    `json:"round"`
-	Triggering         query.TriggerSpec `json:"triggering"`
-	IgnoreGlobalBounds bool              `json:"ignore_global_bounds"`
-	TimeCol            string            `json:"time_col"`
-	StopColLabel       string            `json:"stop_col_label"`
-	StartColLabel      string            `json:"start_col_label"`
+	Every      query.Duration    `json:"every"`
+	Period     query.Duration    `json:"period"`
+	Start      query.Time        `json:"start"`
+	Triggering query.TriggerSpec `json:"triggering"`
+	TimeCol    string            `json:"time_col"`
+	StopCol    string            `json:"stop_col"`
+	StartCol   string            `json:"start_col"`
 }
 
 var infinityVar = values.NewDurationValue(math.MaxInt64)
@@ -33,9 +31,10 @@ var windowSignature = query.DefaultFunctionSignature()
 func init() {
 	windowSignature.Params["every"] = semantic.Duration
 	windowSignature.Params["period"] = semantic.Duration
-	windowSignature.Params["round"] = semantic.Duration
 	windowSignature.Params["start"] = semantic.Time
-	windowSignature.Params["ignoreGlobalBounds"] = semantic.Bool
+	windowSignature.Params["timeCol"] = semantic.String
+	windowSignature.Params["startCol"] = semantic.String
+	windowSignature.Params["stopCol"] = semantic.String
 
 	query.RegisterFunction(WindowKind, createWindowOpSpec, windowSignature)
 	query.RegisterOpSpec(WindowKind, newWindowOp)
@@ -64,11 +63,6 @@ func createWindowOpSpec(args query.Arguments, a *query.Administration) (query.Op
 	if periodSet {
 		spec.Period = period
 	}
-	if round, ok, err := args.GetDuration("round"); err != nil {
-		return nil, err
-	} else if ok {
-		spec.Round = round
-	}
 	if start, ok, err := args.GetTime("start"); err != nil {
 		return nil, err
 	} else if ok {
@@ -79,12 +73,6 @@ func createWindowOpSpec(args query.Arguments, a *query.Administration) (query.Op
 		return nil, errors.New(`window function requires at least one of "every" or "period" to be set`)
 	}
 
-	if v, ok, err := args.GetBool("ignoreGlobalBounds"); err != nil {
-		return nil, err
-	} else if ok {
-		spec.IgnoreGlobalBounds = v
-	}
-
 	if label, ok, err := args.GetString("timeCol"); err != nil {
 		return nil, err
 	} else if ok {
@@ -92,19 +80,19 @@ func createWindowOpSpec(args query.Arguments, a *query.Administration) (query.Op
 	} else {
 		spec.TimeCol = execute.DefaultTimeColLabel
 	}
-	if label, ok, err := args.GetString("startColLabel"); err != nil {
+	if label, ok, err := args.GetString("startCol"); err != nil {
 		return nil, err
 	} else if ok {
-		spec.StartColLabel = label
+		spec.StartCol = label
 	} else {
-		spec.StartColLabel = execute.DefaultStartColLabel
+		spec.StartCol = execute.DefaultStartColLabel
 	}
-	if label, ok, err := args.GetString("stopColLabel"); err != nil {
+	if label, ok, err := args.GetString("stopCol"); err != nil {
 		return nil, err
 	} else if ok {
-		spec.StopColLabel = label
+		spec.StopCol = label
 	} else {
-		spec.StopColLabel = execute.DefaultStopColLabel
+		spec.StopCol = execute.DefaultStopColLabel
 	}
 
 	// Apply defaults
@@ -126,12 +114,11 @@ func (s *WindowOpSpec) Kind() query.OperationKind {
 }
 
 type WindowProcedureSpec struct {
-	Window             plan.WindowSpec
-	IgnoreGlobalBounds bool
-	Triggering         query.TriggerSpec
+	Window     plan.WindowSpec
+	Triggering query.TriggerSpec
 	TimeCol,
-	StartColLabel,
-	StopColLabel string
+	StartCol,
+	StopCol string
 }
 
 func newWindowProcedure(qs query.OperationSpec, pa plan.Administration) (plan.ProcedureSpec, error) {
@@ -143,14 +130,12 @@ func newWindowProcedure(qs query.OperationSpec, pa plan.Administration) (plan.Pr
 		Window: plan.WindowSpec{
 			Every:  s.Every,
 			Period: s.Period,
-			Round:  s.Round,
 			Start:  s.Start,
 		},
-		IgnoreGlobalBounds: s.IgnoreGlobalBounds,
-		Triggering:         s.Triggering,
-		TimeCol:            s.TimeCol,
-		StartColLabel:      s.StartColLabel,
-		StopColLabel:       s.StopColLabel,
+		Triggering: s.Triggering,
+		TimeCol:    s.TimeCol,
+		StartCol:   s.StartCol,
+		StopCol:    s.StopCol,
 	}
 	if p.Triggering == nil {
 		p.Triggering = query.DefaultTrigger
@@ -163,8 +148,7 @@ func (s *WindowProcedureSpec) Kind() plan.ProcedureKind {
 }
 func (s *WindowProcedureSpec) Copy() plan.ProcedureSpec {
 	ns := new(WindowProcedureSpec)
-	ns.Window = s.Window
-	ns.Triggering = s.Triggering
+	*ns = *s
 	return ns
 }
 
@@ -188,56 +172,47 @@ func createWindowTransformation(id execute.DatasetID, mode execute.AccumulationM
 	t := NewFixedWindowTransformation(
 		d,
 		cache,
-		a.Bounds(),
 		execute.Window{
 			Every:  execute.Duration(s.Window.Every),
 			Period: execute.Duration(s.Window.Period),
-			Round:  execute.Duration(s.Window.Round),
 			Start:  start,
 		},
-		s.IgnoreGlobalBounds,
 		s.TimeCol,
-		s.StartColLabel,
-		s.StopColLabel,
+		s.StartCol,
+		s.StopCol,
 	)
 	return t, d, nil
 }
 
 type fixedWindowTransformation struct {
-	d      execute.Dataset
-	cache  execute.TableBuilderCache
-	w      execute.Window
-	bounds execute.Bounds
+	d     execute.Dataset
+	cache execute.TableBuilderCache
+	w     execute.Window
 
-	offset             execute.Duration
-	ignoreGlobalBounds bool
+	offset execute.Duration
 
 	timeCol,
-	startColLabel,
-	stopColLabel string
+	startCol,
+	stopCol string
 }
 
 func NewFixedWindowTransformation(
 	d execute.Dataset,
 	cache execute.TableBuilderCache,
-	bounds execute.Bounds,
 	w execute.Window,
-	ignoreGlobalBounds bool,
 	timeCol,
-	startColLabel,
-	stopColLabel string,
+	startCol,
+	stopCol string,
 ) execute.Transformation {
 	offset := execute.Duration(w.Start - w.Start.Truncate(w.Every))
 	return &fixedWindowTransformation{
-		d:                  d,
-		cache:              cache,
-		w:                  w,
-		bounds:             bounds,
-		offset:             offset,
-		ignoreGlobalBounds: ignoreGlobalBounds,
-		timeCol:            timeCol,
-		startColLabel:      startColLabel,
-		stopColLabel:       stopColLabel,
+		d:        d,
+		cache:    cache,
+		w:        w,
+		offset:   offset,
+		timeCol:  timeCol,
+		startCol: startCol,
+		stopCol:  stopCol,
 	}
 }
 
@@ -256,11 +231,11 @@ func (t *fixedWindowTransformation) Process(id execute.DatasetID, tbl query.Tabl
 	for j, c := range tbl.Cols() {
 		keyIdx := execute.ColIdx(c.Label, tbl.Key().Cols())
 		keyed := keyIdx >= 0
-		if c.Label == t.startColLabel {
+		if c.Label == t.startCol {
 			startColIdx = j
 			keyed = true
 		}
-		if c.Label == t.stopColLabel {
+		if c.Label == t.stopCol {
 			stopColIdx = j
 			keyed = true
 		}
@@ -273,7 +248,7 @@ func (t *fixedWindowTransformation) Process(id execute.DatasetID, tbl query.Tabl
 	if startColIdx == -1 {
 		startColIdx = len(newCols)
 		c := query.ColMeta{
-			Label: t.startColLabel,
+			Label: t.startCol,
 			Type:  query.TTime,
 		}
 		newCols = append(newCols, c)
@@ -283,7 +258,7 @@ func (t *fixedWindowTransformation) Process(id execute.DatasetID, tbl query.Tabl
 	if stopColIdx == -1 {
 		stopColIdx = len(newCols)
 		c := query.ColMeta{
-			Label: t.stopColLabel,
+			Label: t.stopCol,
 			Type:  query.TTime,
 		}
 		newCols = append(newCols, c)
@@ -295,7 +270,7 @@ func (t *fixedWindowTransformation) Process(id execute.DatasetID, tbl query.Tabl
 		l := cr.Len()
 		for i := 0; i < l; i++ {
 			tm := cr.Times(timeIdx)[i]
-			bounds := t.getWindowBounds(tm)
+			bounds := GenerateWindows(tm, t.offset, t.w.Every, t.w.Period)
 			for _, bnds := range bounds {
 				// Update key
 				cols := make([]query.ColMeta, len(keyCols))
@@ -303,9 +278,9 @@ func (t *fixedWindowTransformation) Process(id execute.DatasetID, tbl query.Tabl
 				for j, c := range keyCols {
 					cols[j] = c
 					switch c.Label {
-					case t.startColLabel:
+					case t.startCol:
 						vs[j] = values.NewTimeValue(bnds.Start)
-					case t.stopColLabel:
+					case t.stopCol:
 						vs[j] = values.NewTimeValue(bnds.Stop)
 					default:
 						vs[j] = tbl.Key().Value(keyColMap[j])
@@ -320,9 +295,9 @@ func (t *fixedWindowTransformation) Process(id execute.DatasetID, tbl query.Tabl
 				}
 				for j, c := range builder.Cols() {
 					switch c.Label {
-					case t.startColLabel:
+					case t.startCol:
 						builder.AppendTime(startColIdx, bnds.Start)
-					case t.stopColLabel:
+					case t.stopCol:
 						builder.AppendTime(stopColIdx, bnds.Stop)
 					default:
 						switch c.Type {
@@ -349,48 +324,32 @@ func (t *fixedWindowTransformation) Process(id execute.DatasetID, tbl query.Tabl
 	})
 }
 
-func (t *fixedWindowTransformation) getWindowBounds(now execute.Time) []execute.Bounds {
-	if t.w.Every == infinityVar.Duration() {
+// GenerateWindows produces a list of window bounds that contain the time t.
+// The boundaries start at an offset from the zero time, are of length period, and repeat at the every duration.
+func GenerateWindows(t execute.Time, offset, every, period execute.Duration) []execute.Bounds {
+	if every == infinityVar.Duration() {
 		return []execute.Bounds{
 			{Start: execute.MinTime, Stop: execute.MaxTime},
 		}
 	}
 
-	stop := now.Truncate(t.w.Every) + execute.Time(t.offset)
-	if now >= stop {
-		stop += execute.Time(t.w.Every)
+	start := t.Truncate(every) + execute.Time(offset)
+	if t >= stop {
+		stop += execute.Time(every)
 	}
-	start := stop - execute.Time(t.w.Period)
+	start := stop - execute.Time(period)
 
 	var bounds []execute.Bounds
 
-	for now >= start {
-		bnds := execute.Bounds{
+	for t >= start {
+		bounds = append(bounds, execute.Bounds{
 			Start: start,
 			Stop:  stop,
-		}
-
-		// Check global bounds
-		if !t.ignoreGlobalBounds {
-			if bnds.Stop > t.bounds.Stop {
-				bnds.Stop = t.bounds.Stop
-			}
-
-			if bnds.Start < t.bounds.Start {
-				bnds.Start = t.bounds.Start
-			}
-
-			// Check bounds again since we just clamped them.
-			if bnds.Contains(now) {
-				bounds = append(bounds, bnds)
-			}
-		} else {
-			bounds = append(bounds, bnds)
-		}
+		})
 
 		// Shift up to next bounds
-		stop += execute.Time(t.w.Every)
-		start += execute.Time(t.w.Every)
+		stop += execute.Time(every)
+		start += execute.Time(every)
 	}
 
 	return bounds

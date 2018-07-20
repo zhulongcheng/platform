@@ -20,7 +20,6 @@ type Administration interface {
 	OrganizationID() platform.ID
 
 	ResolveTime(qt query.Time) Time
-	Bounds() Bounds
 	Allocator() *Allocator
 	Parents() []DatasetID
 	ConvertID(plan.ProcedureID) DatasetID
