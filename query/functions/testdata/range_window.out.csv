@@ -1,0 +1,14 @@
+panic: runtime error: invalid memory address or nil pointer dereference
+[signal SIGSEGV: segmentation violation code=0x1 addr=0x58 pc=0x115ccb6]
+
+goroutine 1 [running]:
+github.com/influxdata/platform/query/interpreter.newArguments(0x0, 0x0, 0x1)
+	/user/go/src/github.com/influxdata/platform/query/interpreter/interpreter.go:956 +0x26
+github.com/influxdata/platform/query/interpreter.(*function).Call(0xc420558140, 0x0, 0x0, 0x3, 0xc4202ce2c8, 0x19, 0x18bf388)
+	/user/go/src/github.com/influxdata/platform/query/interpreter/interpreter.go:601 +0xeb
+github.com/influxdata/platform/query.toSpec(0xc4204004e0, 0x15c7d68)
+	/user/go/src/github.com/influxdata/platform/query/compile.go:143 +0x3a3
+github.com/influxdata/platform/query.Compile(0x15c0a20, 0xc4200ca008, 0xc420384000, 0x86, 0x149abf87, 0xed2e9c1bf, 0x0, 0x0, 0x0, 0x0, ...)
+	/user/go/src/github.com/influxdata/platform/query/compile.go:56 +0x2a8
+main.main()
+	/user/go/src/github.com/influxdata/platform/query/functions/prepcsvtests/prepcsvtests.go:73 +0x5e8
