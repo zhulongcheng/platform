@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/influxdata/platform/query/interpreter"
+	"github.com/pkg/errors"
 
 	"github.com/influxdata/platform/query"
 	"github.com/influxdata/platform/query/execute"
@@ -19,10 +20,12 @@ const DropKind = "drop"
 
 type RenameOpSpec struct {
 	RenameCols map[string]string `json:"columns"`
+	RenameFn   *semantic.FunctionExpression
 }
 
 type DropOpSpec struct {
-	DropCols []string `json:"columns"`
+	DropCols      []string `json:"columns"`
+	DropPredicate *semantic.FunctionExpression
 }
 
 var renameSignature = query.DefaultFunctionSignature()
@@ -30,12 +33,14 @@ var dropSignature = query.DefaultFunctionSignature()
 
 func init() {
 	renameSignature.Params["columns"] = semantic.Object
+	renameSignature.Params["fn"] = semantic.Function
 
 	query.RegisterFunction(RenameKind, createRenameOpSpec, renameSignature)
 	query.RegisterOpSpec(RenameKind, newRenameOp)
 	plan.RegisterProcedureSpec(RenameKind, newRenameProcedure, RenameKind)
 
 	dropSignature.Params["columns"] = semantic.NewArrayType(semantic.String)
+	dropSignature.Params["fn"] = semantic.Function
 
 	query.RegisterFunction(DropKind, createDropOpSpec, dropSignature)
 	query.RegisterOpSpec(DropKind, newDropOp)
@@ -49,28 +54,54 @@ func createRenameOpSpec(args query.Arguments, a *query.Administration) (query.Op
 	if err := a.AddParentFromArgs(args); err != nil {
 		return nil, err
 	}
-	cols, err := args.GetRequiredObject("columns")
-	if err != nil {
+	var cols values.Object
+	if c, ok, err := args.GetObject("columns"); err != nil {
 		return nil, err
+	} else if ok {
+		cols = c
 	}
 
-	renameCols := make(map[string]string, cols.Len())
-	// Check types of object values manually
-	cols.Range(func(name string, v values.Value) {
-		if err != nil {
-			return
-		}
-		if v.Type() != semantic.String {
-			err = fmt.Errorf("rename error: columns object contains non-string value of type %s", v.Type())
-			return
-		}
-		renameCols[name] = v.Str()
-	})
-	if err != nil {
+	var renameFn *semantic.FunctionExpression
+	if f, ok, err := args.GetFunction("fn"); err != nil {
 		return nil, err
+	} else if ok {
+		if fn, err := interpreter.ResolveFunction(f); err != nil {
+			return nil, err
+		} else {
+			renameFn = fn
+		}
 	}
+
+	if cols == nil && renameFn == nil {
+		return nil, errors.New("rename error: neither column list nor map function provided")
+	}
+
+	if cols != nil && renameFn != nil {
+		return nil, errors.New("rename error: both column list and map function provided")
+	}
+
 	spec := &RenameOpSpec{
-		RenameCols: renameCols,
+		RenameFn: renameFn,
+	}
+
+	if cols != nil {
+		var err error
+		renameCols := make(map[string]string, cols.Len())
+		// Check types of object values manually
+		cols.Range(func(name string, v values.Value) {
+			if err != nil {
+				return
+			}
+			if v.Type() != semantic.String {
+				err = fmt.Errorf("rename error: columns object contains non-string value of type %s", v.Type())
+				return
+			}
+			renameCols[name] = v.Str()
+		})
+		if err != nil {
+			return nil, err
+		}
+		spec.RenameCols = renameCols
 	}
 
 	return spec, nil
@@ -80,17 +111,45 @@ func createDropOpSpec(args query.Arguments, a *query.Administration) (query.Oper
 	if err := a.AddParentFromArgs(args); err != nil {
 		return nil, err
 	}
-	cols, err := args.GetRequiredArray("columns", semantic.String)
-	if err != nil {
+
+	var cols values.Array
+	if c, ok, err := args.GetArray("columns", semantic.String); err != nil {
 		return nil, err
+	} else if ok {
+		cols = c
 	}
 
-	dropCols, err := interpreter.ToStringArray(cols)
-	if err != nil {
+	var dropPredicate *semantic.FunctionExpression
+	if f, ok, err := args.GetFunction("fn"); err != nil {
 		return nil, err
+	} else if ok {
+		if fn, err := interpreter.ResolveFunction(f); err != nil {
+			return nil, err
+		} else {
+			dropPredicate = fn
+		}
 	}
+
+	if cols == nil && dropPredicate == nil {
+		return nil, errors.New("drop error: neither column list nor predicate function provided")
+	}
+
+	if cols != nil && dropPredicate != nil {
+		return nil, errors.New("drop error: both column list and predicate provided")
+	}
+
+	var dropCols []string
+	var err error
+	if cols != nil {
+		dropCols, err = interpreter.ToStringArray(cols)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	return &DropOpSpec{
-		DropCols: dropCols,
+		DropCols:      dropCols,
+		DropPredicate: dropPredicate,
 	}, nil
 }
 
@@ -110,10 +169,11 @@ func (s *DropOpSpec) Kind() query.OperationKind {
 	return DropKind
 }
 
-type RenameProcedureSpec struct {
-	RenameCols map[string]string
-	DropCols   map[string]bool
-	KeepCols   map[string]bool
+type RenameDropProcedureSpec struct {
+	RenameCols    map[string]string
+	RenameFn      *semantic.FunctionExpression
+	DropCols      map[string]bool
+	DropPredicate *semantic.FunctionExpression
 }
 
 func newRenameProcedure(qs query.OperationSpec, pa plan.Administration) (plan.ProcedureSpec, error) {
@@ -126,35 +186,33 @@ func newRenameProcedure(qs query.OperationSpec, pa plan.Administration) (plan.Pr
 	var renameCols map[string]string
 	if s.RenameCols != nil {
 		renameCols = s.RenameCols
-	} else {
-		renameCols = make(map[string]string)
 	}
 
-	return &RenameProcedureSpec{
+	return &RenameDropProcedureSpec{
 		RenameCols: renameCols,
+		RenameFn:   s.RenameFn,
 	}, nil
 }
 
-func (s *RenameProcedureSpec) Kind() plan.ProcedureKind {
+func (s *RenameDropProcedureSpec) Kind() plan.ProcedureKind {
 	return RenameKind
 }
 
-func (s *RenameProcedureSpec) Copy() plan.ProcedureSpec {
-	ns := new(RenameProcedureSpec)
+func (s *RenameDropProcedureSpec) Copy() plan.ProcedureSpec {
+	ns := new(RenameDropProcedureSpec)
 	ns.RenameCols = s.RenameCols
+	ns.DropCols = s.DropCols
+	ns.RenameFn = s.RenameFn
+	ns.DropPredicate = s.DropPredicate
 	return ns
 }
 
-func (s *RenameProcedureSpec) PushDownRules() []plan.PushDownProcedureSpec {
+func (s *RenameDropProcedureSpec) PushDownRules() []plan.PushDownProcedureSpec {
 	return nil
 }
 
-func (s *RenameProcedureSpec) PushDown() (root *plan.Procedure, dup func() *plan.Procedure) {
+func (s *RenameDropProcedureSpec) PushDown() (root *plan.Procedure, dup func() *plan.Procedure) {
 	return nil, nil
-}
-
-type DropProcedureSpec struct {
-	DropCols map[string]bool
 }
 
 func newDropProcedure(qs query.OperationSpec, pa plan.Administration) (plan.ProcedureSpec, error) {
@@ -162,33 +220,18 @@ func newDropProcedure(qs query.OperationSpec, pa plan.Administration) (plan.Proc
 	if !ok {
 		return nil, fmt.Errorf("invalid spec type %T", qs)
 	}
-	dropCols := make(map[string]bool)
+	var dropCols map[string]bool
 	if s.DropCols != nil {
+		dropCols = make(map[string]bool)
 		for _, c := range s.DropCols {
 			dropCols[c] = true
 		}
 	}
-	return &DropProcedureSpec{
-		DropCols: dropCols,
+
+	return &RenameDropProcedureSpec{
+		DropCols:      dropCols,
+		DropPredicate: s.DropPredicate,
 	}, nil
-}
-
-func (s *DropProcedureSpec) Kind() plan.ProcedureKind {
-	return DropKind
-}
-
-func (s *DropProcedureSpec) Copy() plan.ProcedureSpec {
-	ns := new(DropProcedureSpec)
-	ns.DropCols = s.DropCols
-	return ns
-}
-
-func (s *DropProcedureSpec) PushDownRules() []plan.PushDownProcedureSpec {
-	return nil
-}
-
-func (s *DropProcedureSpec) PushDown() (root *plan.Procedure, dup func() *plan.Procedure) {
-	return nil, nil
 }
 
 func createRenameDropTransformation(id execute.DatasetID, mode execute.AccumulationMode, spec plan.ProcedureSpec, a execute.Administration) (execute.Transformation, execute.Dataset, error) {
@@ -203,31 +246,48 @@ func createRenameDropTransformation(id execute.DatasetID, mode execute.Accumulat
 }
 
 type renameDropTransformation struct {
-	d          execute.Dataset
-	cache      execute.TableBuilderCache
-	renameCols map[string]string
-	dropCols   map[string]bool
-	keepCols   map[string]bool // TODO: Remove if not needed
+	d             execute.Dataset
+	cache         execute.TableBuilderCache
+	renameCols    map[string]string
+	renameFn      *execute.ColumnMapFn
+	dropCols      map[string]bool
+	dropPredicate *execute.ColumnPredicateFn
+	keepCols      map[string]bool // TODO: Remove if not needed
 }
 
 func NewRenameDropTransformation(d execute.Dataset, cache execute.TableBuilderCache, spec plan.ProcedureSpec) (*renameDropTransformation, error) {
-	switch s := spec.(type) {
-	case *RenameProcedureSpec:
-		return &renameDropTransformation{
-			d:          d,
-			cache:      cache,
-			renameCols: s.RenameCols,
-		}, nil
-	case *DropProcedureSpec:
-		return &renameDropTransformation{
-			d:        d,
-			cache:    cache,
-			dropCols: s.DropCols,
-		}, nil
-	default:
-		// May never trigger
+
+	s, ok := spec.(*RenameDropProcedureSpec)
+	if !ok {
 		return nil, fmt.Errorf("invalid spec type %T", spec)
 	}
+
+	var renameMapFn *execute.ColumnMapFn
+	var err error
+	if s.RenameFn != nil {
+		renameMapFn, err = execute.NewColumnMapFn(s.RenameFn)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	var dropPredicate *execute.ColumnPredicateFn
+	if s.DropPredicate != nil {
+		dropPredicate, err = execute.NewColumnPredicateFn(s.DropPredicate)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return &renameDropTransformation{
+		d:             d,
+		cache:         cache,
+		renameCols:    s.RenameCols,
+		renameFn:      renameMapFn,
+		dropCols:      s.DropCols,
+		dropPredicate: dropPredicate,
+	}, nil
+	// May never trigger
 }
 
 func (t *renameDropTransformation) Process(id execute.DatasetID, tbl query.Table) error {
@@ -240,22 +300,44 @@ func (t *renameDropTransformation) Process(id execute.DatasetID, tbl query.Table
 	// builder and the table - we need to keep track
 	colMap := make([]int, builder.NCols())
 	// TODO: error if overlap between dropCols and renameCols?
+	if t.dropPredicate != nil {
+		if err := t.dropPredicate.Prepare(); err != nil {
+			return err
+		}
+	} else if t.renameFn != nil {
+		if err := t.renameFn.Prepare(); err != nil {
+			return err
+		}
+	}
+
 	for i, c := range tbl.Cols() {
 		name := c.Label
 
+		// Cannot have both column list and dropPredicate; one must be nil
 		if t.dropCols != nil {
 			if _, exists := t.dropCols[name]; exists {
+				continue
+			}
+		} else if t.dropPredicate != nil {
+			if pass, err := t.dropPredicate.Eval(name); err != nil {
+				return err
+			} else if pass {
 				continue
 			}
 		}
 
 		col := c
+
+		// Cannot have both column list and renameFn; one must be nil
 		if t.renameCols != nil {
 			if newName, ok := t.renameCols[name]; ok {
-				col = query.ColMeta{
-					Label: newName,
-					Type:  c.Type,
-				}
+				col.Label = newName
+			}
+		} else if t.renameFn != nil {
+			if newName, err := t.renameFn.Eval(name); err != nil {
+				return err
+			} else {
+				col.Label = newName
 			}
 		}
 		colMap = append(colMap, i)
