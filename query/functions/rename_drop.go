@@ -163,13 +163,11 @@ func newDropProcedure(qs query.OperationSpec, pa plan.Administration) (plan.Proc
 	if !ok {
 		return nil, fmt.Errorf("invalid spec type %T", qs)
 	}
-	var dropCols map[string]bool
+	dropCols := make(map[string]bool)
 	if s.DropCols != nil {
 		for _, c := range s.DropCols {
 			dropCols[c] = true
 		}
-	} else {
-		dropCols = make(map[string]bool)
 	}
 	return &DropProcedureSpec{
 		DropCols: dropCols,
@@ -195,14 +193,10 @@ func (s *DerivativeProcedureSpec) PushDown() (root *plan.Procedure, dup func() *
 }
 
 func createRenameDropTransformation(id execute.DatasetID, mode execute.AccumulationMode, spec plan.ProcedureSpec, a execute.Administration) (execute.Transformation, execute.Dataset, error) {
-	s, ok := spec.(*RenameProcedureSpec)
-	if !ok {
-		return nil, nil, fmt.Errorf("invalid spec type %T", spec)
-	}
 	cache := execute.NewTableBuilderCache(a.Allocator())
 	d := execute.NewDataset(id, mode, cache)
 
-	t, err := NewRenameDropTransformation(d, cache, s)
+	t, err := NewRenameDropTransformation(d, cache, spec)
 	if err != nil {
 		return nil, nil, err
 	}
