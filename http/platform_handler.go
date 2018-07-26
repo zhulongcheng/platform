@@ -33,7 +33,7 @@ func setCORSResponseHeaders(w nethttp.ResponseWriter, r *nethttp.Request) {
 }
 
 var platformRoutesResponse = mustMarshalJSON(map[string]interface{}{
-	"sources": "/v2/sources",
+	"sources": "/chronogaf/v1/sources",
 	"flux": map[string]string{
 		"self":        "/v2/flux",
 		"ast":         "/v2/flux/ast",
