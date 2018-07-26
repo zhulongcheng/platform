@@ -16,7 +16,7 @@ The InfluxQL Transpiler exists to rewrite an InfluxQL query into its equivalent 
     6. [Evaluate the function](#evaluate-function)
     7. [Combine windows](#combine-windows)
 5. [Join the groups](#join-groups)
-6. [Map and eval columns](#map-and-eval)
+6. [Perform Arithmetic Operations and Rename Columns](#map-and-eval)
 7. [Encoding the results](#encoding)
 
 ## <a name="identify-cursors"></a> Identify the cursors
@@ -115,11 +115,23 @@ If there is only one group, this does not need to be done and can be skipped.
 
 If there are multiple groups, as is the case when there are multiple function calls, then we perform an `outer_join` using the time and any remaining group keys.
 
-## <a name="map-and-eval"></a> Map and eval the columns
+## <a name="map-and-eval"></a> Perform Arithmetic Operations and Rename Columns
 
-After joining the results if a join was required, then a `map` call is used to both evaluate the math functions and name the columns. The time is also passed through the `map()` function so it is available for the encoder.
+After joining the results if a join was required, then a `map` call is needed to evaluate arithmetic.  Since map can also
+rename columns, both operations can be performed.  The time is also passed through the `map()` function so it is available for the encoder.
 
-    result |> map(fn: (r) => {_time: r._time, max: r.val1, usage_system: r.val2})
+ result |> map(fn: (r) => {_time: r._time, max: r.val1, usage_system: r.val2, total_cpu: r.val2 + r.val3})
+
+If no column arithmetic is required, an more efficient method for preparing the result is to use the rename() and drop/keep functions.
+Rename will include any columns in the result without renaming them, so in this case _time does not need to be explicitly named. If columns need to be
+removed from the output, use `keep` to identify the columns that should remain:
+
+ result |> rename(columns: {val1: "max", val2: "usage_system"}) |> keep(columns: ["_time", "max", "usage_system"])
+
+
+
+
+
 
 This is the final result. It will also include any tags in the group key and the time will be located in the `_time` variable.
 
