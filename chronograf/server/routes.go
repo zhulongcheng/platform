@@ -105,9 +105,9 @@ func (a *AllRoutes) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			CustomLinks: customLinks,
 		},
 		Flux: getFluxLinksResponse{
-			Self:        "/chronograf/v1/flux",
-			AST:         "/chronograf/v1/flux/ast",
-			Suggestions: "/chronograf/v1/flux/suggestions",
+			Self:        "/v2/flux",
+			AST:         "/v2/flux/ast",
+			Suggestions: "/v2/flux/suggestions",
 		},
 	}
 
