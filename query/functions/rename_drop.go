@@ -29,10 +29,10 @@ var renameSignature = query.DefaultFunctionSignature()
 var dropSignature = query.DefaultFunctionSignature()
 
 func init() {
-	rangeSignature.Params["columns"] = semantic.Object
+	renameSignature.Params["columns"] = semantic.Object
 
 	query.RegisterFunction(RenameKind, createRenameOpSpec, renameSignature)
-	query.RegisterOpSpec(RenameKind, newRangeOp)
+	query.RegisterOpSpec(RenameKind, newRenameOp)
 	plan.RegisterProcedureSpec(RenameKind, newRenameProcedure, RenameKind)
 
 	dropSignature.Params["columns"] = semantic.NewArrayType(semantic.String)
