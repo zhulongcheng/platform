@@ -1,10 +1,11 @@
 import React, {PureComponent} from 'react'
+import {connect} from 'react-redux'
 import _ from 'lodash'
 
 import TimeMachine from 'src/flux/components/TimeMachine'
-import FluxHeader from 'src/flux/components/FluxHeader'
 import {ErrorHandling} from 'src/shared/decorators/errors'
 import KeyboardShortcuts from 'src/shared/components/KeyboardShortcuts'
+import PageHeader from 'src/reusable_ui/components/page_layout/PageHeader'
 
 import {
   validateSuccess,
@@ -17,7 +18,7 @@ import {bodyNodes} from 'src/flux/helpers'
 import {getSuggestions, getAST, getTimeSeries} from 'src/flux/apis'
 import {builder, argTypes, emptyAST} from 'src/flux/constants'
 
-import {Source, Service, Notification, FluxTable} from 'src/types'
+import {Source, Notification, FluxTable} from 'src/types'
 import {
   Suggestion,
   FlatBody,
@@ -36,7 +37,6 @@ interface Status {
 
 interface Props {
   links: Links
-  services: Service[]
   source: Source
   notify: (message: Notification) => void
   script: string
@@ -96,18 +96,18 @@ export class FluxPage extends PureComponent<Props, State> {
 
   public render() {
     const {suggestions, body, status} = this.state
-    const {script} = this.props
+    const {script, source} = this.props
 
     return (
       <FluxContext.Provider value={this.getContext}>
         <KeyboardShortcuts onControlEnter={this.getTimeSeries}>
           <div className="page hosts-list-page">
-            {this.header}
+            <PageHeader titleText="Flux Editor" fullWidth={true} />
             <TimeMachine
               body={body}
               script={script}
               status={status}
-              service={this.service}
+              source={source}
               suggestions={suggestions}
               onValidate={this.handleValidate}
               onAppendFrom={this.handleAppendFrom}
@@ -122,20 +122,6 @@ export class FluxPage extends PureComponent<Props, State> {
     )
   }
 
-  private get header(): JSX.Element {
-    const {services} = this.props
-
-    if (!services.length) {
-      return null
-    }
-
-    return <FluxHeader service={this.service} />
-  }
-
-  private get service(): Service {
-    return this.props.services[0]
-  }
-
   private get getContext(): Context {
     return {
       onAddNode: this.handleAddNode,
@@ -145,9 +131,9 @@ export class FluxPage extends PureComponent<Props, State> {
       onDeleteFuncNode: this.handleDeleteFuncNode,
       onGenerateScript: this.handleGenerateScript,
       onToggleYield: this.handleToggleYield,
-      service: this.service,
       data: this.state.data,
       scriptUpToYield: this.handleScriptUpToYield,
+      source: this.props.source,
     }
   }
 
@@ -635,7 +621,7 @@ export class FluxPage extends PureComponent<Props, State> {
   }
 
   private getTimeSeries = async () => {
-    const {script, links, notify} = this.props
+    const {script, links, notify, source} = this.props
 
     if (!script) {
       return
@@ -649,7 +635,10 @@ export class FluxPage extends PureComponent<Props, State> {
     }
 
     try {
-      const {tables, didTruncate} = await getTimeSeries(this.service, script)
+      const {tables, didTruncate} = await getTimeSeries(
+        source.links.query,
+        script
+      )
 
       this.setState({data: tables})
 
@@ -673,4 +662,11 @@ export class FluxPage extends PureComponent<Props, State> {
   }
 }
 
-export default FluxPage
+const mstp = ({links, script}) => {
+  return {
+    links: links.flux,
+    script,
+  }
+}
+
+export default connect(mstp, null)(FluxPage)

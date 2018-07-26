@@ -36,7 +36,7 @@ import {
 } from 'src/kapacitor'
 import {AdminChronografPage, AdminInfluxDBPage} from 'src/admin'
 import {SourcePage, ManageSources} from 'src/sources'
-import {CheckServices} from 'src/flux'
+import {FluxPage} from 'src/flux'
 import NotFound from 'src/shared/components/NotFound'
 
 import {getLinksAsync} from 'src/shared/actions/links'
@@ -160,7 +160,7 @@ class Root extends PureComponent<{}, State> {
               <Route path="manage-sources" component={ManageSources} />
               <Route path="manage-sources/new" component={SourcePage} />
               <Route path="manage-sources/:id/edit" component={SourcePage} />
-              <Route path="delorean" component={CheckServices} />
+              <Route path="delorean" component={FluxPage} />
             </Route>
           </Route>
           <Route path="*" component={NotFound} />
