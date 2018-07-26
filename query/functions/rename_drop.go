@@ -2,7 +2,6 @@ package functions
 
 import (
 	"fmt"
-	"log"
 
 	"github.com/influxdata/platform/query/interpreter"
 
@@ -16,7 +15,7 @@ import (
 const RenameKind = "rename"
 const DropKind = "drop"
 
-// TODO: keep transformation?
+// TODO: `keep` operation?
 
 type RenameOpSpec struct {
 	RenameCols map[string]string `json:"columns"`
@@ -188,7 +187,7 @@ func (s *DropProcedureSpec) PushDownRules() []plan.PushDownProcedureSpec {
 	return nil
 }
 
-func (s *DerivativeProcedureSpec) PushDown() (root *plan.Procedure, dup func() *plan.Procedure) {
+func (s *DropProcedureSpec) PushDown() (root *plan.Procedure, dup func() *plan.Procedure) {
 	return nil, nil
 }
 
@@ -263,14 +262,8 @@ func (t *renameDropTransformation) Process(id execute.DatasetID, tbl query.Table
 		builder.AddCol(col)
 	}
 
-	log.Println("cols: ", builder.Cols())
-	log.Println(colMap)
 	err := tbl.Do(func(cr query.ColReader) error {
-		l := cr.Len()
-		if l == 0 {
-			return nil
-		}
-		for i := 0; i < l; i++ {
+		for i := 0; i < cr.Len(); i++ {
 			execute.AppendMappedRecord(i, cr, builder, colMap)
 		}
 		return nil
