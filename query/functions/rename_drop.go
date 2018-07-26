@@ -252,7 +252,6 @@ type renameDropTransformation struct {
 	renameFn      *execute.ColumnMapFn
 	dropCols      map[string]bool
 	dropPredicate *execute.ColumnPredicateFn
-	keepCols      map[string]bool // TODO: Remove if not needed
 }
 
 func NewRenameDropTransformation(d execute.Dataset, cache execute.TableBuilderCache, spec plan.ProcedureSpec) (*renameDropTransformation, error) {
