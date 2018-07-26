@@ -1,6 +1,7 @@
 vendor
 .netrc
 .vs
+.vscode
 
 # binary databases
 idpdb.bolt
