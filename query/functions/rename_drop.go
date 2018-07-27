@@ -3,6 +3,8 @@ package functions
 import (
 	"fmt"
 
+	"github.com/influxdata/platform/query/compiler"
+
 	"github.com/influxdata/platform/query/interpreter"
 	"github.com/pkg/errors"
 
@@ -19,13 +21,13 @@ const DropKind = "drop"
 // TODO: `keep` operation?
 
 type RenameOpSpec struct {
-	RenameCols map[string]string `json:"columns"`
-	RenameFn   *semantic.FunctionExpression
+	RenameCols map[string]string            `json:"columns"`
+	RenameFn   *semantic.FunctionExpression `json:"fn"`
 }
 
 type DropOpSpec struct {
-	DropCols      []string `json:"columns"`
-	DropPredicate *semantic.FunctionExpression
+	DropCols      []string                     `json:"columns"`
+	DropPredicate *semantic.FunctionExpression `json:"fn"`
 }
 
 var renameSignature = query.DefaultFunctionSignature()
@@ -296,12 +298,35 @@ func createRenameDropTransformation(id execute.DatasetID, mode execute.Accumulat
 }
 
 type renameDropTransformation struct {
-	d             execute.Dataset
-	cache         execute.TableBuilderCache
-	renameCols    map[string]string
-	renameFn      *execute.ColumnMapFn
-	dropCols      map[string]bool
-	dropPredicate *execute.ColumnPredicateFn
+	d              execute.Dataset
+	cache          execute.TableBuilderCache
+	renameCols     map[string]string
+	renameFn       compiler.Func
+	renameColParam string
+	dropCols       map[string]bool
+	dropPredicate  compiler.Func
+	dropColParam   string
+}
+
+func newFunc(fn *semantic.FunctionExpression, types [2]semantic.Type) (compiler.Func, string, error) {
+	scope, decls := query.BuiltIns()
+	compileCache := compiler.NewCompilationCache(fn, scope, decls)
+	if len(fn.Params) != 1 {
+		return nil, "", fmt.Errorf("function should only have a single parameter, got %d", len(fn.Params))
+	}
+	paramName := fn.Params[0].Key.Name
+
+	compiled, err := compileCache.Compile(map[string]semantic.Type{
+		paramName: types[0],
+	})
+	if err != nil {
+		return nil, "", err
+	}
+
+	if compiled.Type() != types[1] {
+		return nil, "", fmt.Errorf("provided function for does not evaluate to type %s", types[1].Kind())
+	}
+	return compiled, paramName, nil
 }
 
 func NewRenameDropTransformation(d execute.Dataset, cache execute.TableBuilderCache, spec plan.ProcedureSpec) (*renameDropTransformation, error) {
@@ -311,32 +336,39 @@ func NewRenameDropTransformation(d execute.Dataset, cache execute.TableBuilderCa
 		return nil, fmt.Errorf("invalid spec type %T", spec)
 	}
 
-	var renameMapFn *execute.ColumnMapFn
-	var err error
+	var renameMapFn compiler.Func
+	var renameColParam string
 	if s.RenameFn != nil {
-		renameMapFn, err = execute.NewColumnMapFn(s.RenameFn)
+		compiledFn, param, err := newFunc(s.RenameFn, [2]semantic.Type{semantic.String, semantic.String})
 		if err != nil {
 			return nil, err
 		}
+		renameMapFn = compiledFn
+		renameColParam = param
+
 	}
 
-	var dropPredicate *execute.ColumnPredicateFn
+	var dropPredicate compiler.Func
+	var dropColParam string
 	if s.DropPredicate != nil {
-		dropPredicate, err = execute.NewColumnPredicateFn(s.DropPredicate)
+		compiledFn, param, err := newFunc(s.DropPredicate, [2]semantic.Type{semantic.String, semantic.Bool})
 		if err != nil {
 			return nil, err
 		}
+		dropPredicate = compiledFn
+		dropColParam = param
 	}
 
 	return &renameDropTransformation{
-		d:             d,
-		cache:         cache,
-		renameCols:    s.RenameCols,
-		renameFn:      renameMapFn,
-		dropCols:      s.DropCols,
-		dropPredicate: dropPredicate,
+		d:              d,
+		cache:          cache,
+		renameCols:     s.RenameCols,
+		renameFn:       renameMapFn,
+		renameColParam: renameColParam,
+		dropCols:       s.DropCols,
+		dropPredicate:  dropPredicate,
+		dropColParam:   dropColParam,
 	}, nil
-	// May never trigger
 }
 
 func (t *renameDropTransformation) Process(id execute.DatasetID, tbl query.Table) error {
@@ -349,16 +381,10 @@ func (t *renameDropTransformation) Process(id execute.DatasetID, tbl query.Table
 	// builder and the table - we need to keep track
 	colMap := make([]int, builder.NCols())
 	// TODO: error if overlap between dropCols and renameCols?
-	if t.dropPredicate != nil {
-		if err := t.dropPredicate.Prepare(); err != nil {
-			return err
-		}
-	} else if t.renameFn != nil {
-		if err := t.renameFn.Prepare(); err != nil {
-			return err
-		}
-	}
 
+	// these could be merged into one, but separate for clarity.
+	renameFnScope := make(map[string]values.Value, 1)
+	dropFnScope := make(map[string]values.Value, 1)
 	for i, c := range tbl.Cols() {
 		name := c.Label
 
@@ -368,7 +394,8 @@ func (t *renameDropTransformation) Process(id execute.DatasetID, tbl query.Table
 				continue
 			}
 		} else if t.dropPredicate != nil {
-			if pass, err := t.dropPredicate.Eval(name); err != nil {
+			dropFnScope[t.dropColParam] = values.NewStringValue(name)
+			if pass, err := t.dropPredicate.EvalBool(dropFnScope); err != nil {
 				return err
 			} else if pass {
 				continue
@@ -383,11 +410,12 @@ func (t *renameDropTransformation) Process(id execute.DatasetID, tbl query.Table
 				col.Label = newName
 			}
 		} else if t.renameFn != nil {
-			if newName, err := t.renameFn.Eval(name); err != nil {
+			renameFnScope[t.renameColParam] = values.NewStringValue(name)
+			newName, err := t.renameFn.EvalString(renameFnScope)
+			if err != nil {
 				return err
-			} else {
-				col.Label = newName
 			}
+			col.Label = newName
 		}
 		colMap = append(colMap, i)
 		builder.AddCol(col)
