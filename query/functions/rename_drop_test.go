@@ -364,7 +364,7 @@ func TestRenameDrop_Process(t *testing.T) {
 			}},
 		},
 		{
-			name: "rename no exist",
+			name: "drop no exist",
 			spec: &functions.RenameDropProcedureSpec{
 				DropCols: map[string]bool{
 					"no_exist": true,
@@ -390,7 +390,7 @@ func TestRenameDrop_Process(t *testing.T) {
 			wantErr: errors.New(`drop error: column "no_exist" doesn't exist`),
 		},
 		{
-			name: "drop no exist",
+			name: "rename no exist",
 			spec: &functions.RenameDropProcedureSpec{
 				RenameCols: map[string]string{
 					"no_exist": "no_exist1",
