@@ -125,11 +125,12 @@ func createDropOpSpec(args query.Arguments, a *query.Administration) (query.Oper
 	if f, ok, err := args.GetFunction("fn"); err != nil {
 		return nil, err
 	} else if ok {
-		if fn, err := interpreter.ResolveFunction(f); err != nil {
+		fn, err := interpreter.ResolveFunction(f)
+		if err != nil {
 			return nil, err
-		} else {
-			dropPredicate = fn
 		}
+
+		dropPredicate = fn
 	}
 
 	if cols == nil && dropPredicate == nil {
@@ -209,56 +210,6 @@ func (s *RenameDropProcedureSpec) Copy() plan.ProcedureSpec {
 	return ns
 }
 
-/*
-Push Down Rule cases:
-
-drop into drop, i.e.:
-
-|> drop(columns: ["a", "b", "c"])
-|> drop(columns: ["d", "e", "f"])
-==> drop(columns: ["a","b","c", "d", "e","f"]) //lists merged
-|> drop(fn: (col) => col =~ /a/)
-|> drop(fn: (col) => col =~ /b/)
-==> drop(fn: (col) => col =~ /a/ or col =~ /b/) // predicate logic merged
-
-cannot merge procedure with drop column argument and procedure with drop fn argument
-
-rename into rename, i.e.:
-
-|> rename(columns: {a: "b", c:"d"})
-|> rename(columns: {b:"c", e:"f"})
-==> rename(columns:{a:"c", c:"d", e:"f"})
-|> rename(fn: (col) => "{col}_new")
-|> rename(fn: (col) => "{col}_1")
-==> rename(fn: (col) => {
-	res = ((col) => "{col}_new")(col)
-	return "{res}_1"
-}) // nest function results
-
-drop into rename
-rename(columns: {a:"b"})
-|> drop(columns: ["b"])
-==> drop(columns:["a"])
-rename(fn: (col) => "{col}_new")
-|> drop(columns: ["a_new"])
-==> no simplification, all internal
-rename(fn: (col) => "{col}_new")
-|> drop(fn: (col) => col == "c_new")
-==> no simplification, all internal
-rename(columns:{a:"b"})
-|>   drop(fn: (col) => col == "b")
-==> drop(columns: ["a"])
-
-
-rename into drop:
-drop(columns:["c"])
-|> rename(columns:{"a","b"})
-==> no simplification, all internal
-drop(columns:["c"])
-|> rename(columns:{c:"d"})
-==> invalid!
-*/
-
 func (s *RenameDropProcedureSpec) PushDownRules() []plan.PushDownProcedureSpec {
 	return nil
 }
@@ -330,7 +281,6 @@ func newFunc(fn *semantic.FunctionExpression, types [2]semantic.Type) (compiler.
 }
 
 func NewRenameDropTransformation(d execute.Dataset, cache execute.TableBuilderCache, spec plan.ProcedureSpec) (*renameDropTransformation, error) {
-
 	s, ok := spec.(*RenameDropProcedureSpec)
 	if !ok {
 		return nil, fmt.Errorf("invalid spec type %T", spec)
@@ -383,11 +333,43 @@ func (t *renameDropTransformation) Process(id execute.DatasetID, tbl query.Table
 	// TODO: error if overlap between dropCols and renameCols?
 
 	// these could be merged into one, but separate for clarity.
-	renameFnScope := make(map[string]values.Value, 1)
-	dropFnScope := make(map[string]values.Value, 1)
+	if t.dropCols != nil && t.renameCols != nil {
+		for k := range t.renameCols {
+			if _, ok := t.dropCols[k]; ok {
+				return fmt.Errorf(`Cannot rename column "%s" which is marked for drop`, k)
+			}
+		}
+	}
+
+	var renameFnScope map[string]values.Value
+	if t.renameFn != nil {
+		renameFnScope = make(map[string]values.Value, 1)
+	}
+
+	var dropFnScope map[string]values.Value
+	if t.dropPredicate != nil {
+		dropFnScope = make(map[string]values.Value, 1)
+	}
+
+	builderCols := tbl.Cols()
+	if t.renameCols != nil {
+		for c := range t.renameCols {
+			if execute.ColIdx(c, builderCols) < 0 {
+				return fmt.Errorf(`rename error: column "%s" doesn't exist`, c)
+			}
+		}
+	}
+
+	if t.dropCols != nil {
+		for c := range t.dropCols {
+			if execute.ColIdx(c, builderCols) < 0 {
+				return fmt.Errorf(`drop error: column "%s" doesn't exist`, c)
+			}
+		}
+	}
+
 	for i, c := range tbl.Cols() {
 		name := c.Label
-
 		// Cannot have both column list and dropPredicate; one must be nil
 		if t.dropCols != nil {
 			if _, exists := t.dropCols[name]; exists {
@@ -403,7 +385,6 @@ func (t *renameDropTransformation) Process(id execute.DatasetID, tbl query.Table
 		}
 
 		col := c
-
 		// Cannot have both column list and renameFn; one must be nil
 		if t.renameCols != nil {
 			if newName, ok := t.renameCols[name]; ok {
@@ -438,9 +419,11 @@ func (t *renameDropTransformation) RetractTable(id execute.DatasetID, key query.
 func (t *renameDropTransformation) UpdateWatermark(id execute.DatasetID, mark execute.Time) error {
 	return t.d.UpdateWatermark(mark)
 }
+
 func (t *renameDropTransformation) UpdateProcessingTime(id execute.DatasetID, pt execute.Time) error {
 	return t.d.UpdateProcessingTime(pt)
 }
+
 func (t *renameDropTransformation) Finish(id execute.DatasetID, err error) {
 	t.d.Finish(err)
 }

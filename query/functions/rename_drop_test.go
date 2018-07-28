@@ -4,8 +4,11 @@ import (
 	"regexp"
 	"testing"
 
+	"github.com/influxdata/platform/query/values"
+
 	"github.com/influxdata/platform/query/ast"
 	"github.com/influxdata/platform/query/semantic"
+	"github.com/pkg/errors"
 
 	"github.com/influxdata/platform/query/plan"
 
@@ -359,6 +362,58 @@ func TestRenameDrop_Process(t *testing.T) {
 					{22.0},
 				},
 			}},
+		},
+		{
+			name: "rename no exist",
+			spec: &functions.RenameDropProcedureSpec{
+				DropCols: map[string]bool{
+					"no_exist": true,
+				},
+			},
+			data: []query.Table{&executetest.Table{
+				ColMeta: []query.ColMeta{
+					{Label: "server1", Type: query.TFloat},
+					{Label: "local", Type: query.TFloat},
+					{Label: "server2", Type: query.TFloat},
+				},
+				Data: [][]interface{}{
+					{1.0, 2.0, 3.0},
+					{11.0, 12.0, 13.0},
+					{21.0, 22.0, 23.0},
+				},
+			}},
+			want: []*executetest.Table{{
+				ColMeta:  []query.ColMeta{},
+				Data:     [][]interface{}(nil),
+				GroupKey: execute.NewGroupKey([]query.ColMeta{}, []values.Value{}),
+			}},
+			wantErr: errors.New(`drop error: column "no_exist" doesn't exist`),
+		},
+		{
+			name: "drop no exist",
+			spec: &functions.RenameDropProcedureSpec{
+				RenameCols: map[string]string{
+					"no_exist": "no_exist1",
+				},
+			},
+			data: []query.Table{&executetest.Table{
+				ColMeta: []query.ColMeta{
+					{Label: "server1", Type: query.TFloat},
+					{Label: "local", Type: query.TFloat},
+					{Label: "server2", Type: query.TFloat},
+				},
+				Data: [][]interface{}{
+					{1.0, 2.0, 3.0},
+					{11.0, 12.0, 13.0},
+					{21.0, 22.0, 23.0},
+				},
+			}},
+			want: []*executetest.Table{{
+				ColMeta:  []query.ColMeta{},
+				Data:     [][]interface{}(nil),
+				GroupKey: execute.NewGroupKey([]query.ColMeta{}, []values.Value{}),
+			}},
+			wantErr: errors.New(`rename error: column "no_exist" doesn't exist`),
 		},
 	}
 	for _, tc := range testCases {
