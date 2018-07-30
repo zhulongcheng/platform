@@ -85,6 +85,36 @@ func TestRenameDrop_NewQuery(t *testing.T) {
 			},
 		},
 		{
+			Name: "test keep query",
+			Raw:  `from(db:"mydb") |> keep(columns:["col1", "col2", "col3"]) |> sum()`,
+			Want: &query.Spec{
+				Operations: []*query.Operation{
+					{
+						ID: "from0",
+						Spec: &functions.FromOpSpec{
+							Database: "mydb",
+						},
+					},
+					{
+						ID: "keep1",
+						Spec: &functions.KeepOpSpec{
+							KeepCols: []string{"col1", "col2", "col3"},
+						},
+					},
+					{
+						ID: "sum2",
+						Spec: &functions.SumOpSpec{
+							AggregateConfig: execute.DefaultAggregateConfig,
+						},
+					},
+				},
+				Edges: []query.Edge{
+					{Parent: "from0", Child: "keep1"},
+					{Parent: "keep1", Child: "sum2"},
+				},
+			},
+		},
+		{
 			Name: "test drop query fn param",
 			Raw:  `from(db:"mydb") |> drop(fn: (col) => col =~ /reg*/) |> sum()`,
 			Want: &query.Spec{
@@ -122,6 +152,47 @@ func TestRenameDrop_NewQuery(t *testing.T) {
 				Edges: []query.Edge{
 					{Parent: "from0", Child: "drop1"},
 					{Parent: "drop1", Child: "sum2"},
+				},
+			},
+		},
+		{
+			Name: "test keep query fn param",
+			Raw:  `from(db:"mydb") |> keep(fn: (col) => col =~ /reg*/) |> sum()`,
+			Want: &query.Spec{
+				Operations: []*query.Operation{
+					{
+						ID: "from0",
+						Spec: &functions.FromOpSpec{
+							Database: "mydb",
+						},
+					},
+					{
+						ID: "keep1",
+						Spec: &functions.KeepOpSpec{
+							KeepPredicate: &semantic.FunctionExpression{
+								Params: []*semantic.FunctionParam{{Key: &semantic.Identifier{Name: "col"}}},
+								Body: &semantic.BinaryExpression{
+									Operator: ast.RegexpMatchOperator,
+									Left: &semantic.IdentifierExpression{
+										Name: "col",
+									},
+									Right: &semantic.RegexpLiteral{
+										Value: regexp.MustCompile(`reg*`),
+									},
+								},
+							},
+						},
+					},
+					{
+						ID: "sum2",
+						Spec: &functions.SumOpSpec{
+							AggregateConfig: execute.DefaultAggregateConfig,
+						},
+					},
+				},
+				Edges: []query.Edge{
+					{Parent: "from0", Child: "keep1"},
+					{Parent: "keep1", Child: "sum2"},
 				},
 			},
 		},
@@ -169,6 +240,12 @@ func TestRenameDrop_NewQuery(t *testing.T) {
 		{
 			Name:    "test drop query invalid",
 			Raw:     `from(db:"mydb") |> drop(fn: (col) => col == target, columns: ["a", "b"]) |> sum()`,
+			Want:    nil,
+			WantErr: true,
+		},
+		{
+			Name:    "test keep query invalid",
+			Raw:     `from(db:"mydb") |> keep(fn: (col) => col == target, columns: ["a", "b"]) |> sum()`,
 			Want:    nil,
 			WantErr: true,
 		},
@@ -227,7 +304,7 @@ func TestRenameDrop_Process(t *testing.T) {
 		{
 			name: "drop multiple cols",
 			spec: &functions.RenameDropProcedureSpec{
-				DropCols: map[string]bool{
+				DropKeepCols: map[string]bool{
 					"a": true,
 					"b": true,
 				},
@@ -252,6 +329,37 @@ func TestRenameDrop_Process(t *testing.T) {
 					{3.0},
 					{13.0},
 					{23.0},
+				},
+			}},
+		},
+		{
+			name: "keep multiple cols",
+			spec: &functions.RenameDropProcedureSpec{
+				DropKeepCols: map[string]bool{
+					"a": true,
+				},
+				KeepSpecified: true,
+			},
+			data: []query.Table{&executetest.Table{
+				ColMeta: []query.ColMeta{
+					{Label: "a", Type: query.TFloat},
+					{Label: "b", Type: query.TFloat},
+					{Label: "c", Type: query.TFloat},
+				},
+				Data: [][]interface{}{
+					{1.0, 2.0, 3.0},
+					{11.0, 12.0, 13.0},
+					{21.0, 22.0, 23.0},
+				},
+			}},
+			want: []*executetest.Table{{
+				ColMeta: []query.ColMeta{
+					{Label: "a", Type: query.TFloat},
+				},
+				Data: [][]interface{}{
+					{1.0},
+					{11.0},
+					{21.0},
 				},
 			}},
 		},
@@ -293,7 +401,7 @@ func TestRenameDrop_Process(t *testing.T) {
 		{
 			name: "drop predicate (col) => col ~= /reg/",
 			spec: &functions.RenameDropProcedureSpec{
-				DropPredicate: &semantic.FunctionExpression{
+				DropKeepPredicate: &semantic.FunctionExpression{
 					Params: []*semantic.FunctionParam{{Key: &semantic.Identifier{Name: "col"}}},
 					Body: &semantic.BinaryExpression{
 						Operator: ast.RegexpMatchOperator,
@@ -330,9 +438,50 @@ func TestRenameDrop_Process(t *testing.T) {
 			}},
 		},
 		{
+			name: "keep predicate (col) => col ~= /reg/",
+			spec: &functions.RenameDropProcedureSpec{
+				KeepSpecified: true,
+				DropKeepPredicate: &semantic.FunctionExpression{
+					Params: []*semantic.FunctionParam{{Key: &semantic.Identifier{Name: "col"}}},
+					Body: &semantic.BinaryExpression{
+						Operator: ast.RegexpMatchOperator,
+						Left: &semantic.IdentifierExpression{
+							Name: "col",
+						},
+						Right: &semantic.RegexpLiteral{
+							Value: regexp.MustCompile(`server*`),
+						},
+					},
+				},
+			},
+			data: []query.Table{&executetest.Table{
+				ColMeta: []query.ColMeta{
+					{Label: "server1", Type: query.TFloat},
+					{Label: "local", Type: query.TFloat},
+					{Label: "server2", Type: query.TFloat},
+				},
+				Data: [][]interface{}{
+					{1.0, 2.0, 3.0},
+					{11.0, 12.0, 13.0},
+					{21.0, 22.0, 23.0},
+				},
+			}},
+			want: []*executetest.Table{{
+				ColMeta: []query.ColMeta{
+					{Label: "server1", Type: query.TFloat},
+					{Label: "server2", Type: query.TFloat},
+				},
+				Data: [][]interface{}{
+					{1.0, 3.0},
+					{11.0, 13.0},
+					{21.0, 23.0},
+				},
+			}},
+		},
+		{
 			name: "drop and rename",
 			spec: &functions.RenameDropProcedureSpec{
-				DropCols: map[string]bool{
+				DropKeepCols: map[string]bool{
 					"server1": true,
 					"server2": true,
 				},
@@ -366,7 +515,7 @@ func TestRenameDrop_Process(t *testing.T) {
 		{
 			name: "drop no exist",
 			spec: &functions.RenameDropProcedureSpec{
-				DropCols: map[string]bool{
+				DropKeepCols: map[string]bool{
 					"no_exist": true,
 				},
 			},
@@ -414,6 +563,33 @@ func TestRenameDrop_Process(t *testing.T) {
 				GroupKey: execute.NewGroupKey([]query.ColMeta{}, []values.Value{}),
 			}},
 			wantErr: errors.New(`rename error: column "no_exist" doesn't exist`),
+		},
+		{
+			name: "keep no exist",
+			spec: &functions.RenameDropProcedureSpec{
+				KeepSpecified: true,
+				DropKeepCols: map[string]bool{
+					"no_exist": true,
+				},
+			},
+			data: []query.Table{&executetest.Table{
+				ColMeta: []query.ColMeta{
+					{Label: "server1", Type: query.TFloat},
+					{Label: "local", Type: query.TFloat},
+					{Label: "server2", Type: query.TFloat},
+				},
+				Data: [][]interface{}{
+					{1.0, 2.0, 3.0},
+					{11.0, 12.0, 13.0},
+					{21.0, 22.0, 23.0},
+				},
+			}},
+			want: []*executetest.Table{{
+				ColMeta:  []query.ColMeta{},
+				Data:     [][]interface{}(nil),
+				GroupKey: execute.NewGroupKey([]query.ColMeta{}, []values.Value{}),
+			}},
+			wantErr: errors.New(`keep error: column "no_exist" doesn't exist`),
 		},
 	}
 	for _, tc := range testCases {

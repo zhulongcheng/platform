@@ -17,8 +17,7 @@ import (
 
 const RenameKind = "rename"
 const DropKind = "drop"
-
-// TODO: `keep` operation?
+const KeepKind = "keep"
 
 type RenameOpSpec struct {
 	RenameCols map[string]string            `json:"columns"`
@@ -30,8 +29,14 @@ type DropOpSpec struct {
 	DropPredicate *semantic.FunctionExpression `json:"fn"`
 }
 
+type KeepOpSpec struct {
+	KeepCols      []string                     `json:"columns"`
+	KeepPredicate *semantic.FunctionExpression `json:"fn"`
+}
+
 var renameSignature = query.DefaultFunctionSignature()
 var dropSignature = query.DefaultFunctionSignature()
+var keepSignature = query.DefaultFunctionSignature()
 
 func init() {
 	renameSignature.Params["columns"] = semantic.Object
@@ -48,8 +53,17 @@ func init() {
 	query.RegisterOpSpec(DropKind, newDropOp)
 	plan.RegisterProcedureSpec(DropKind, newDropProcedure, DropKind)
 
+	keepSignature.Params["columns"] = semantic.Object
+	keepSignature.Params["fn"] = semantic.Function
+
+	query.RegisterFunction(KeepKind, createKeepOpSpec, keepSignature)
+	query.RegisterOpSpec(KeepKind, newKeepOp)
+	// TODO: RegisterProcedureSpec
+	plan.RegisterProcedureSpec(KeepKind, newDropProcedure, KeepKind)
+
 	execute.RegisterTransformation(RenameKind, createRenameDropTransformation)
 	execute.RegisterTransformation(DropKind, createRenameDropTransformation)
+	execute.RegisterTransformation(KeepKind, createRenameDropTransformation)
 }
 
 func createRenameOpSpec(args query.Arguments, a *query.Administration) (query.OperationSpec, error) {
@@ -156,6 +170,53 @@ func createDropOpSpec(args query.Arguments, a *query.Administration) (query.Oper
 	}, nil
 }
 
+func createKeepOpSpec(args query.Arguments, a *query.Administration) (query.OperationSpec, error) {
+	if err := a.AddParentFromArgs(args); err != nil {
+		return nil, err
+	}
+
+	var cols values.Array
+	if c, ok, err := args.GetArray("columns", semantic.String); err != nil {
+		return nil, err
+	} else if ok {
+		cols = c
+	}
+
+	var keepPredicate *semantic.FunctionExpression
+	if f, ok, err := args.GetFunction("fn"); err != nil {
+		return nil, err
+	} else if ok {
+		fn, err := interpreter.ResolveFunction(f)
+		if err != nil {
+			return nil, err
+		}
+
+		keepPredicate = fn
+	}
+
+	if cols == nil && keepPredicate == nil {
+		return nil, errors.New("keep error: neither column list nor predicate function provided")
+	}
+
+	if cols != nil && keepPredicate != nil {
+		return nil, errors.New("keep error: both column list and predicate provided")
+	}
+
+	var keepCols []string
+	var err error
+	if cols != nil {
+		keepCols, err = interpreter.ToStringArray(cols)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return &KeepOpSpec{
+		KeepCols:      keepCols,
+		KeepPredicate: keepPredicate,
+	}, nil
+}
+
 func newRenameOp() query.OperationSpec {
 	return new(RenameOpSpec)
 }
@@ -172,11 +233,23 @@ func (s *DropOpSpec) Kind() query.OperationKind {
 	return DropKind
 }
 
+func newKeepOp() query.OperationSpec {
+	return new(KeepOpSpec)
+}
+
+func (s *KeepOpSpec) Kind() query.OperationKind {
+	return KeepKind
+}
+
 type RenameDropProcedureSpec struct {
-	RenameCols    map[string]string
-	RenameFn      *semantic.FunctionExpression
-	DropCols      map[string]bool
-	DropPredicate *semantic.FunctionExpression
+	RenameCols map[string]string
+	RenameFn   *semantic.FunctionExpression
+	// The same field is used for both columns to drop and columns to keep
+	DropKeepCols map[string]bool
+	// the same field is used for the drop predicate and the keep predicate
+	DropKeepPredicate *semantic.FunctionExpression
+	// Denotes whether we're going to do a drop or a keep
+	KeepSpecified bool
 }
 
 func newRenameProcedure(qs query.OperationSpec, pa plan.Administration) (plan.ProcedureSpec, error) {
@@ -204,9 +277,9 @@ func (s *RenameDropProcedureSpec) Kind() plan.ProcedureKind {
 func (s *RenameDropProcedureSpec) Copy() plan.ProcedureSpec {
 	ns := new(RenameDropProcedureSpec)
 	ns.RenameCols = s.RenameCols
-	ns.DropCols = s.DropCols
+	ns.DropKeepCols = s.DropKeepCols
 	ns.RenameFn = s.RenameFn
-	ns.DropPredicate = s.DropPredicate
+	ns.DropKeepPredicate = s.DropKeepPredicate
 	return ns
 }
 
@@ -218,23 +291,40 @@ func (s *RenameDropProcedureSpec) PushDown() (root *plan.Procedure, dup func() *
 	return nil, nil
 }
 
+// Keep and Drop are only inverses, so they share the same procedure constructor
 func newDropProcedure(qs query.OperationSpec, pa plan.Administration) (plan.ProcedureSpec, error) {
-	s, ok := qs.(*DropOpSpec)
-	if !ok {
+	pr := &RenameDropProcedureSpec{}
+	switch s := qs.(type) {
+	case *DropOpSpec:
+		if s.DropCols != nil {
+			pr.DropKeepCols = toStringSet(s.DropCols)
+		}
+		pr.DropKeepPredicate = s.DropPredicate
+	case *KeepOpSpec:
+		// flip use of dropCols field from drop to keep
+		// we can't completely invert the list of columns or the predicate yet at this step,
+		// so we have to rely on this flag
+		pr.KeepSpecified = true
+		if s.KeepCols != nil {
+			pr.DropKeepCols = toStringSet(s.KeepCols)
+		}
+		pr.DropKeepPredicate = s.KeepPredicate
+
+	default:
 		return nil, fmt.Errorf("invalid spec type %T", qs)
 	}
-	var dropCols map[string]bool
-	if s.DropCols != nil {
-		dropCols = make(map[string]bool)
-		for _, c := range s.DropCols {
-			dropCols[c] = true
-		}
-	}
+	return pr, nil
+}
 
-	return &RenameDropProcedureSpec{
-		DropCols:      dropCols,
-		DropPredicate: s.DropPredicate,
-	}, nil
+func toStringSet(arr []string) map[string]bool {
+	if arr == nil {
+		return nil
+	}
+	ret := make(map[string]bool, len(arr))
+	for _, s := range arr {
+		ret[s] = true
+	}
+	return ret
 }
 
 func createRenameDropTransformation(id execute.DatasetID, mode execute.AccumulationMode, spec plan.ProcedureSpec, a execute.Administration) (execute.Transformation, execute.Dataset, error) {
@@ -249,14 +339,15 @@ func createRenameDropTransformation(id execute.DatasetID, mode execute.Accumulat
 }
 
 type renameDropTransformation struct {
-	d              execute.Dataset
-	cache          execute.TableBuilderCache
-	renameCols     map[string]string
-	renameFn       compiler.Func
-	renameColParam string
-	dropCols       map[string]bool
-	dropPredicate  compiler.Func
-	dropColParam   string
+	d                 execute.Dataset
+	cache             execute.TableBuilderCache
+	renameCols        map[string]string
+	renameFn          compiler.Func
+	renameColParam    string
+	dropKeepCols      map[string]bool
+	keepSpecified     bool
+	dropKeepPredicate compiler.Func
+	dropKeepColParam  string
 }
 
 func newFunc(fn *semantic.FunctionExpression, types [2]semantic.Type) (compiler.Func, string, error) {
@@ -275,8 +366,9 @@ func newFunc(fn *semantic.FunctionExpression, types [2]semantic.Type) (compiler.
 	}
 
 	if compiled.Type() != types[1] {
-		return nil, "", fmt.Errorf("provided function for does not evaluate to type %s", types[1].Kind())
+		return nil, "", fmt.Errorf("provided function does not evaluate to type %s", types[1].Kind())
 	}
+
 	return compiled, paramName, nil
 }
 
@@ -295,29 +387,30 @@ func NewRenameDropTransformation(d execute.Dataset, cache execute.TableBuilderCa
 		}
 		renameMapFn = compiledFn
 		renameColParam = param
-
 	}
 
-	var dropPredicate compiler.Func
-	var dropColParam string
-	if s.DropPredicate != nil {
-		compiledFn, param, err := newFunc(s.DropPredicate, [2]semantic.Type{semantic.String, semantic.Bool})
+	var dropKeepPredicate compiler.Func
+	var dropKeepColParam string
+	if s.DropKeepPredicate != nil {
+		compiledFn, param, err := newFunc(s.DropKeepPredicate, [2]semantic.Type{semantic.String, semantic.Bool})
 		if err != nil {
 			return nil, err
 		}
-		dropPredicate = compiledFn
-		dropColParam = param
+
+		dropKeepPredicate = compiledFn
+		dropKeepColParam = param
 	}
 
 	return &renameDropTransformation{
-		d:              d,
-		cache:          cache,
-		renameCols:     s.RenameCols,
-		renameFn:       renameMapFn,
-		renameColParam: renameColParam,
-		dropCols:       s.DropCols,
-		dropPredicate:  dropPredicate,
-		dropColParam:   dropColParam,
+		d:                 d,
+		cache:             cache,
+		renameCols:        s.RenameCols,
+		renameFn:          renameMapFn,
+		renameColParam:    renameColParam,
+		dropKeepCols:      s.DropKeepCols,
+		dropKeepPredicate: dropKeepPredicate,
+		dropKeepColParam:  dropKeepColParam,
+		keepSpecified:     s.KeepSpecified,
 	}, nil
 }
 
@@ -332,14 +425,15 @@ func (t *renameDropTransformation) Process(id execute.DatasetID, tbl query.Table
 	colMap := make([]int, builder.NCols())
 	// TODO: error if overlap between dropCols and renameCols?
 
-	// these could be merged into one, but separate for clarity.
-	if t.dropCols != nil && t.renameCols != nil {
+	if t.dropKeepCols != nil && t.renameCols != nil {
 		for k := range t.renameCols {
-			if _, ok := t.dropCols[k]; ok {
+			if _, ok := t.dropKeepCols[k]; ok {
 				return fmt.Errorf(`Cannot rename column "%s" which is marked for drop`, k)
 			}
 		}
 	}
+
+	// these could be merged into one, but separate for clarity.
 
 	var renameFnScope map[string]values.Value
 	if t.renameFn != nil {
@@ -347,7 +441,7 @@ func (t *renameDropTransformation) Process(id execute.DatasetID, tbl query.Table
 	}
 
 	var dropFnScope map[string]values.Value
-	if t.dropPredicate != nil {
+	if t.dropKeepPredicate != nil {
 		dropFnScope = make(map[string]values.Value, 1)
 	}
 
@@ -360,26 +454,42 @@ func (t *renameDropTransformation) Process(id execute.DatasetID, tbl query.Table
 		}
 	}
 
-	if t.dropCols != nil {
-		for c := range t.dropCols {
+	if t.dropKeepCols != nil {
+		for c := range t.dropKeepCols {
 			if execute.ColIdx(c, builderCols) < 0 {
+				if t.keepSpecified {
+					return fmt.Errorf(`keep error: column "%s" doesn't exist`, c)
+				}
 				return fmt.Errorf(`drop error: column "%s" doesn't exist`, c)
 			}
 		}
 	}
 
+	// If `keepSpecified` is true, i.e., we want to exclusively keep the columns listed in dropCols
+	// as opposed to exclusively dropping them, we update dropCols to be the list of all columns to drop
+	// to simplify further logic.
+	if t.keepSpecified && t.dropKeepCols != nil {
+		exclusiveDropCols := make(map[string]bool, len(tbl.Cols()))
+		for _, c := range tbl.Cols() {
+			if _, ok := t.dropKeepCols[c.Label]; !ok {
+				exclusiveDropCols[c.Label] = true
+			}
+		}
+		t.dropKeepCols = exclusiveDropCols
+	}
+
 	for i, c := range tbl.Cols() {
 		name := c.Label
-		// Cannot have both column list and dropPredicate; one must be nil
-		if t.dropCols != nil {
-			if _, exists := t.dropCols[name]; exists {
+		// Cannot have both column list and dropKeepPredicate; one must be nil
+		if t.dropKeepCols != nil {
+			if _, exists := t.dropKeepCols[name]; exists {
 				continue
 			}
-		} else if t.dropPredicate != nil {
-			dropFnScope[t.dropColParam] = values.NewStringValue(name)
-			if pass, err := t.dropPredicate.EvalBool(dropFnScope); err != nil {
+		} else if t.dropKeepPredicate != nil {
+			dropFnScope[t.dropKeepColParam] = values.NewStringValue(name)
+			if pass, err := t.dropKeepPredicate.EvalBool(dropFnScope); err != nil {
 				return err
-			} else if pass {
+			} else if pass != t.keepSpecified {
 				continue
 			}
 		}
