@@ -50,10 +50,6 @@ var skipTests = map[string]string{
 	"null_as_value":             "null not supported as value in influxql (https://github.com/influxdata/platform/issues/353)",
 	"difference_panic":          "difference() panics when no table is supplied",
 	"string_interp":             "string interpolation not working as expected in flux (https://github.com/influxdata/platform/issues/404)",
-	"drop_before_rename":        `error: rename error: column "old"  doesn't exist`,
-	"drop_after_rename":         `error: drop error: column "old" doesn't exist`,
-	"drop_newname_before":       `error: drop error: column "new" doesn't exist`,
-	"drop_referenced":           `error: function references unknown column "_field"`,
 }
 
 var qs = querytest.GetQueryServiceBridge()
