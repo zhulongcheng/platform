@@ -1,7 +1,6 @@
 package executetest
 
 import (
-	"log"
 	"sort"
 	"testing"
 
@@ -28,7 +27,6 @@ func ProcessTestHelper(
 
 	parentID := RandomDatasetID()
 	for _, b := range data {
-		log.Println("ranging over data...")
 		if err := tx.Process(parentID, b); err != nil {
 			if wantErr != nil && wantErr.Error() != err.Error() {
 				t.Fatalf("unexpected error -want/+got\n%s", cmp.Diff(wantErr.Error(), err.Error()))

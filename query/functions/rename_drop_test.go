@@ -4,8 +4,6 @@ import (
 	"regexp"
 	"testing"
 
-	"github.com/influxdata/platform/query/values"
-
 	"github.com/influxdata/platform/query/ast"
 	"github.com/influxdata/platform/query/semantic"
 	"github.com/pkg/errors"
@@ -531,11 +529,7 @@ func TestRenameDrop_Process(t *testing.T) {
 					{21.0, 22.0, 23.0},
 				},
 			}},
-			want: []*executetest.Table{{
-				ColMeta:  []query.ColMeta{},
-				Data:     [][]interface{}(nil),
-				GroupKey: execute.NewGroupKey([]query.ColMeta{}, []values.Value{}),
-			}},
+			want:    []*executetest.Table(nil),
 			wantErr: errors.New(`drop error: column "no_exist" doesn't exist`),
 		},
 		{
@@ -557,11 +551,7 @@ func TestRenameDrop_Process(t *testing.T) {
 					{21.0, 22.0, 23.0},
 				},
 			}},
-			want: []*executetest.Table{{
-				ColMeta:  []query.ColMeta{},
-				Data:     [][]interface{}(nil),
-				GroupKey: execute.NewGroupKey([]query.ColMeta{}, []values.Value{}),
-			}},
+			want:    []*executetest.Table(nil),
 			wantErr: errors.New(`rename error: column "no_exist" doesn't exist`),
 		},
 		{
@@ -584,11 +574,7 @@ func TestRenameDrop_Process(t *testing.T) {
 					{21.0, 22.0, 23.0},
 				},
 			}},
-			want: []*executetest.Table{{
-				ColMeta:  []query.ColMeta{},
-				Data:     [][]interface{}(nil),
-				GroupKey: execute.NewGroupKey([]query.ColMeta{}, []values.Value{}),
-			}},
+			want:    []*executetest.Table(nil),
 			wantErr: errors.New(`keep error: column "no_exist" doesn't exist`),
 		},
 	}
