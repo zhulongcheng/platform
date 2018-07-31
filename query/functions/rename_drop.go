@@ -478,10 +478,11 @@ func (t *renameDropTransformation) shouldDrop(col string) (bool, error) {
 	t.dropKeepScope[t.dropKeepColParam] = values.NewStringValue(col)
 	if shouldDrop, err := t.dropKeepPredicate.EvalBool(t.dropKeepScope); err != nil {
 		return false, err
-	} else if shouldDrop != t.keepSpecified {
-		return true, nil
+	} else if t.keepSpecified {
+		return !shouldDrop, nil
+	} else {
+		return shouldDrop, nil
 	}
-	return false, nil
 }
 
 func (t *renameDropTransformation) shouldDropCol(col string) (bool, error) {
