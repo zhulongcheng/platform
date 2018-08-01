@@ -343,6 +343,7 @@ type renameDropTransformation struct {
 	renameScope       compiler.Scope
 	renameColParam    string
 	dropKeepCols      map[string]bool
+	dropExclusiveCols map[string]bool
 	keepSpecified     bool
 	dropKeepPredicate compiler.Func
 	dropKeepScope     compiler.Scope
@@ -438,8 +439,9 @@ func (t *renameDropTransformation) keepToDropCols(tbl query.Table) error {
 	}
 
 	// If `keepSpecified` is true, i.e., we want to exclusively keep the columns listed in dropKeepCols
-	// as opposed to exclusively dropping them. So in that case, we invert the dropKeepCols map;
-	//  we update dropKeepCols to be the list of all other columns to drop to simplify further logic.
+	// as opposed to exclusively dropping them. So in that case, we invert the dropKeepCols map and store it
+	// in exclusiveDropCols; exclusiveDropCols may be changed with each call to `Process`, but
+	// `dropKeepCols` will not be.
 	if t.keepSpecified && t.dropKeepCols != nil {
 		exclusiveDropCols := make(map[string]bool, len(tbl.Cols()))
 		for _, c := range tbl.Cols() {
@@ -447,7 +449,9 @@ func (t *renameDropTransformation) keepToDropCols(tbl query.Table) error {
 				exclusiveDropCols[c.Label] = true
 			}
 		}
-		t.dropKeepCols = exclusiveDropCols
+		t.dropExclusiveCols = exclusiveDropCols
+	} else if t.dropKeepCols != nil {
+		t.dropExclusiveCols = t.dropKeepCols
 	}
 
 	return nil
@@ -486,8 +490,8 @@ func (t *renameDropTransformation) shouldDrop(col string) (bool, error) {
 }
 
 func (t *renameDropTransformation) shouldDropCol(col string) (bool, error) {
-	if t.dropKeepCols != nil {
-		if _, exists := t.dropKeepCols[col]; exists {
+	if t.dropExclusiveCols != nil {
+		if _, exists := t.dropExclusiveCols[col]; exists {
 			return true, nil
 		}
 	} else if t.dropKeepPredicate != nil {
@@ -528,14 +532,12 @@ func (t *renameDropTransformation) Process(id execute.DatasetID, tbl query.Table
 		return err
 	}
 
-	builder, created := t.cache.TableBuilder(tbl.Key())
-	if !created {
-		return fmt.Errorf("rename found duplicate table with key: %v", tbl.Key())
-	}
+	keyCols := make([]query.ColMeta, 0, len(tbl.Cols()))
+	keyValues := make([]values.Value, 0, len(tbl.Cols()))
+	builderCols := make([]query.ColMeta, 0, len(tbl.Cols()))
 	// If we remove columns, column indices will be different between the
 	// builder and the table - we need to keep track
-
-	colMap := make([]int, builder.NCols())
+	colMap := make([]int, 0, len(tbl.Cols()))
 
 	for i, c := range tbl.Cols() {
 		if shouldDrop, err := t.shouldDropCol(c.Label); err != nil {
@@ -544,12 +546,28 @@ func (t *renameDropTransformation) Process(id execute.DatasetID, tbl query.Table
 			continue
 		}
 
+		keyIdx := execute.ColIdx(c.Label, tbl.Key().Cols())
+		keyed := keyIdx >= 0
+
 		if err := t.renameCol(&c); err != nil {
 			return err
 		}
 
+		if keyed {
+			keyCols = append(keyCols, c)
+			keyValues = append(keyValues, tbl.Key().Value(keyIdx))
+		}
+
 		colMap = append(colMap, i)
-		builder.AddCol(c)
+		builderCols = append(builderCols, c)
+	}
+
+	key := execute.NewGroupKey(keyCols, keyValues)
+	builder, created := t.cache.TableBuilder(key)
+	if created {
+		for _, c := range builderCols {
+			builder.AddCol(c)
+		}
 	}
 
 	err := tbl.Do(func(cr query.ColReader) error {

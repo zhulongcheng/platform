@@ -4,6 +4,8 @@ import (
 	"regexp"
 	"testing"
 
+	"github.com/influxdata/platform/query/values"
+
 	"github.com/influxdata/platform/query/ast"
 	"github.com/influxdata/platform/query/semantic"
 	"github.com/pkg/errors"
@@ -577,6 +579,149 @@ func TestRenameDrop_Process(t *testing.T) {
 			want:    []*executetest.Table(nil),
 			wantErr: errors.New(`keep error: column "no_exist" doesn't exist`),
 		},
+		{
+			name: "rename group key",
+			spec: &functions.RenameDropProcedureSpec{
+				RenameCols: map[string]string{
+					"1a": "1b",
+					"2a": "2b",
+					"3a": "3b",
+				},
+			},
+			data: []query.Table{&executetest.Table{
+				ColMeta: []query.ColMeta{
+					{Label: "1a", Type: query.TFloat},
+					{Label: "2a", Type: query.TFloat},
+					{Label: "3a", Type: query.TFloat},
+				},
+				Data: [][]interface{}{
+					{1.0, 2.0, 3.0},
+					{1.0, 12.0, 13.0},
+					{1.0, 22.0, 23.0},
+				},
+				KeyCols:   []string{"1a"},
+				KeyValues: []interface{}{1.0},
+				GroupKey: execute.NewGroupKey(
+					[]query.ColMeta{{
+						Label: "1a",
+						Type:  query.TFloat,
+					}},
+					[]values.Value{values.NewFloatValue(1.0)},
+				),
+			}},
+			want: []*executetest.Table{{
+				ColMeta: []query.ColMeta{
+					{Label: "1b", Type: query.TFloat},
+					{Label: "2b", Type: query.TFloat},
+					{Label: "3b", Type: query.TFloat},
+				},
+				Data: [][]interface{}{
+					{1.0, 2.0, 3.0},
+					{1.0, 12.0, 13.0},
+					{1.0, 22.0, 23.0},
+				},
+				KeyCols:   []string{"1b"},
+				KeyValues: []interface{}{1.0},
+				GroupKey: execute.NewGroupKey(
+					[]query.ColMeta{{
+						Label: "1b",
+						Type:  query.TFloat,
+					}},
+					[]values.Value{values.NewFloatValue(1.0)},
+				),
+			}},
+		},
+		{
+			name: "drop group key",
+			spec: &functions.RenameDropProcedureSpec{
+				DropKeepCols: map[string]bool{
+					"2a": true,
+				},
+			},
+			data: []query.Table{&executetest.Table{
+				ColMeta: []query.ColMeta{
+					{Label: "1a", Type: query.TFloat},
+					{Label: "2a", Type: query.TFloat},
+					{Label: "3a", Type: query.TFloat},
+				},
+				Data: [][]interface{}{
+					{1.0, 2.0, 3.0},
+					{11.0, 2.0, 13.0},
+					{21.0, 2.0, 23.0},
+				},
+				KeyCols:   []string{"2a"},
+				KeyValues: []interface{}{2.0},
+				GroupKey: execute.NewGroupKey(
+					[]query.ColMeta{{
+						Label: "2a",
+						Type:  query.TFloat,
+					}},
+					[]values.Value{values.NewFloatValue(2.0)},
+				),
+			}},
+			want: []*executetest.Table{{
+				ColMeta: []query.ColMeta{
+					{Label: "1a", Type: query.TFloat},
+					{Label: "3a", Type: query.TFloat},
+				},
+				Data: [][]interface{}{
+					{1.0, 3.0},
+					{11.0, 13.0},
+					{21.0, 23.0},
+				},
+				KeyCols:   []string(nil),
+				KeyValues: []interface{}(nil),
+				GroupKey:  execute.NewGroupKey([]query.ColMeta{}, []values.Value{}),
+			}},
+		},
+		{
+			name: "keep group key",
+			spec: &functions.RenameDropProcedureSpec{
+				DropKeepCols: map[string]bool{
+					"1a": true,
+				},
+				KeepSpecified: true,
+			},
+			data: []query.Table{&executetest.Table{
+				ColMeta: []query.ColMeta{
+					{Label: "1a", Type: query.TFloat},
+					{Label: "2a", Type: query.TFloat},
+					{Label: "3a", Type: query.TFloat},
+				},
+				Data: [][]interface{}{
+					{1.0, 2.0, 3.0},
+					{1.0, 12.0, 3.0},
+					{1.0, 22.0, 3.0},
+				},
+				KeyCols:   []string{"1a", "3a"},
+				KeyValues: []interface{}{1.0, 3.0},
+				GroupKey: execute.NewGroupKey(
+					[]query.ColMeta{
+						{Label: "1a", Type: query.TFloat},
+						{Label: "3a", Type: query.TFloat},
+					},
+					[]values.Value{values.NewFloatValue(1.0), values.NewFloatValue(3.0)},
+				),
+			}},
+			want: []*executetest.Table{{
+				ColMeta: []query.ColMeta{
+					{Label: "1a", Type: query.TFloat},
+				},
+				Data: [][]interface{}{
+					{1.0},
+					{1.0},
+					{1.0},
+				},
+				KeyCols:   []string{"1a"},
+				KeyValues: []interface{}{1.0},
+				GroupKey: execute.NewGroupKey(
+					[]query.ColMeta{
+						{Label: "1a", Type: query.TFloat},
+					},
+					[]values.Value{values.NewFloatValue(1.0)},
+				),
+			}},
+		},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -586,6 +731,20 @@ func TestRenameDrop_Process(t *testing.T) {
 				tc.want,
 				tc.wantErr,
 				func(d execute.Dataset, c execute.TableBuilderCache) execute.Transformation {
+					/*if tc.groupKeyWant != nil && tc.groupKeyData != nil && tc.want != nil {
+						// populate group keys for the test case
+						for _, table := range tc.data {
+							tbl, ok := table.(*executetest.Table)
+							if !ok {
+								t.Fatal("failed to set group key")
+							}
+							tbl.GroupKey = tc.groupKeyData()
+						}
+						for _, table := range tc.want {
+							table.GroupKey = tc.groupKeyWant()
+						}
+					}*/
+
 					tr, err := functions.NewRenameDropTransformation(d, c, tc.spec)
 					if err != nil {
 						t.Fatal(err)
