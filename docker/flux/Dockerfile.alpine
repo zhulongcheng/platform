@@ -1,0 +1,12 @@
+FROM alpine:3.7
+
+RUN echo 'hosts: files dns' >> /etc/nsswitch.conf
+RUN apk add --no-cache tzdata bash
+
+COPY fluxd /usr/bin/fluxd
+
+EXPOSE 8093
+
+COPY entrypoint.sh /entrypoint.sh
+ENTRYPOINT ["/entrypoint.sh"]
+CMD ["fluxd"]

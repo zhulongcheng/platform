@@ -70,3 +70,9 @@ dockers:
     dockerfile: docker/flux/Dockerfile
     extra_files:
       - docker/flux/entrypoint.sh
+  -
+    binary: fluxd
+    image: quay.io/influxdb/flux
+    dockerfile: docker/flux/Dockerfile.alpine
+    tag_templates:
+      - "{{ .Version }}-alpine"
