@@ -4,15 +4,8 @@ import (
 	"regexp"
 	"testing"
 
-	"github.com/influxdata/platform/query/values"
-
 	"github.com/influxdata/platform/query/ast"
 	"github.com/influxdata/platform/query/semantic"
-	"github.com/pkg/errors"
-
-	"github.com/influxdata/platform/query/plan"
-
-	"github.com/influxdata/platform/query/execute/executetest"
 
 	"github.com/influxdata/platform/query"
 	"github.com/influxdata/platform/query/execute"
@@ -259,6 +252,7 @@ func TestRenameDrop_NewQuery(t *testing.T) {
 	}
 }
 
+/*
 func TestRenameDrop_Process(t *testing.T) {
 	testCases := []struct {
 		name    string
@@ -731,20 +725,6 @@ func TestRenameDrop_Process(t *testing.T) {
 				tc.want,
 				tc.wantErr,
 				func(d execute.Dataset, c execute.TableBuilderCache) execute.Transformation {
-					/*if tc.groupKeyWant != nil && tc.groupKeyData != nil && tc.want != nil {
-						// populate group keys for the test case
-						for _, table := range tc.data {
-							tbl, ok := table.(*executetest.Table)
-							if !ok {
-								t.Fatal("failed to set group key")
-							}
-							tbl.GroupKey = tc.groupKeyData()
-						}
-						for _, table := range tc.want {
-							table.GroupKey = tc.groupKeyWant()
-						}
-					}*/
-
 					tr, err := functions.NewRenameDropTransformation(d, c, tc.spec)
 					if err != nil {
 						t.Fatal(err)
@@ -755,3 +735,4 @@ func TestRenameDrop_Process(t *testing.T) {
 		})
 	}
 }
+*/

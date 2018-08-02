@@ -10,7 +10,6 @@ import (
 
 	"github.com/influxdata/platform/query"
 	"github.com/influxdata/platform/query/execute"
-	"github.com/influxdata/platform/query/plan"
 	"github.com/influxdata/platform/query/semantic"
 	"github.com/influxdata/platform/query/values"
 )
@@ -44,25 +43,18 @@ func init() {
 
 	query.RegisterFunction(RenameKind, createRenameOpSpec, renameSignature)
 	query.RegisterOpSpec(RenameKind, newRenameOp)
-	plan.RegisterProcedureSpec(RenameKind, newRenameProcedure, RenameKind)
 
 	dropSignature.Params["columns"] = semantic.NewArrayType(semantic.String)
 	dropSignature.Params["fn"] = semantic.Function
 
 	query.RegisterFunction(DropKind, createDropOpSpec, dropSignature)
 	query.RegisterOpSpec(DropKind, newDropOp)
-	plan.RegisterProcedureSpec(DropKind, newDropProcedure, DropKind)
 
 	keepSignature.Params["columns"] = semantic.Object
 	keepSignature.Params["fn"] = semantic.Function
 
 	query.RegisterFunction(KeepKind, createKeepOpSpec, keepSignature)
 	query.RegisterOpSpec(KeepKind, newKeepOp)
-	plan.RegisterProcedureSpec(KeepKind, newDropProcedure, KeepKind)
-
-	execute.RegisterTransformation(RenameKind, createRenameDropTransformation)
-	execute.RegisterTransformation(DropKind, createRenameDropTransformation)
-	execute.RegisterTransformation(KeepKind, createRenameDropTransformation)
 }
 
 func createRenameOpSpec(args query.Arguments, a *query.Administration) (query.OperationSpec, error) {
@@ -240,116 +232,6 @@ func (s *KeepOpSpec) Kind() query.OperationKind {
 	return KeepKind
 }
 
-type RenameDropProcedureSpec struct {
-	RenameCols map[string]string
-	RenameFn   *semantic.FunctionExpression
-	// The same field is used for both columns to drop and columns to keep
-	DropKeepCols map[string]bool
-	// the same field is used for the drop predicate and the keep predicate
-	DropKeepPredicate *semantic.FunctionExpression
-	// Denotes whether we're going to do a drop or a keep
-	KeepSpecified bool
-}
-
-func newRenameProcedure(qs query.OperationSpec, pa plan.Administration) (plan.ProcedureSpec, error) {
-	s, ok := qs.(*RenameOpSpec)
-
-	if !ok {
-		return nil, fmt.Errorf("invalid spec type %T", qs)
-	}
-
-	var renameCols map[string]string
-	if s.RenameCols != nil {
-		renameCols = s.RenameCols
-	}
-
-	return &RenameDropProcedureSpec{
-		RenameCols: renameCols,
-		RenameFn:   s.RenameFn,
-	}, nil
-}
-
-func (s *RenameDropProcedureSpec) Kind() plan.ProcedureKind {
-	return RenameKind
-}
-
-func (s *RenameDropProcedureSpec) Copy() plan.ProcedureSpec {
-	ns := new(RenameDropProcedureSpec)
-	ns.RenameCols = s.RenameCols
-	ns.DropKeepCols = s.DropKeepCols
-	ns.RenameFn = s.RenameFn
-	ns.DropKeepPredicate = s.DropKeepPredicate
-	return ns
-}
-
-func (s *RenameDropProcedureSpec) PushDownRules() []plan.PushDownProcedureSpec {
-	return nil
-}
-
-func (s *RenameDropProcedureSpec) PushDown() (root *plan.Procedure, dup func() *plan.Procedure) {
-	return nil, nil
-}
-
-// Keep and Drop are inverses, so they share the same procedure constructor
-func newDropProcedure(qs query.OperationSpec, pa plan.Administration) (plan.ProcedureSpec, error) {
-	pr := &RenameDropProcedureSpec{}
-	switch s := qs.(type) {
-	case *DropOpSpec:
-		if s.DropCols != nil {
-			pr.DropKeepCols = toStringSet(s.DropCols)
-		}
-		pr.DropKeepPredicate = s.DropPredicate
-	case *KeepOpSpec:
-		// Flip use of dropCols field from drop to keep
-		pr.KeepSpecified = true
-		if s.KeepCols != nil {
-			pr.DropKeepCols = toStringSet(s.KeepCols)
-		}
-		pr.DropKeepPredicate = s.KeepPredicate
-
-	default:
-		return nil, fmt.Errorf("invalid spec type %T", qs)
-	}
-	return pr, nil
-}
-
-func toStringSet(arr []string) map[string]bool {
-	if arr == nil {
-		return nil
-	}
-	ret := make(map[string]bool, len(arr))
-	for _, s := range arr {
-		ret[s] = true
-	}
-	return ret
-}
-
-func createRenameDropTransformation(id execute.DatasetID, mode execute.AccumulationMode, spec plan.ProcedureSpec, a execute.Administration) (execute.Transformation, execute.Dataset, error) {
-	cache := execute.NewTableBuilderCache(a.Allocator())
-	d := execute.NewDataset(id, mode, cache)
-
-	t, err := NewRenameDropTransformation(d, cache, spec)
-	if err != nil {
-		return nil, nil, err
-	}
-	return t, d, nil
-}
-
-type renameDropTransformation struct {
-	d                 execute.Dataset
-	cache             execute.TableBuilderCache
-	renameCols        map[string]string
-	renameFn          compiler.Func
-	renameScope       compiler.Scope
-	renameColParam    string
-	dropKeepCols      map[string]bool
-	dropExclusiveCols map[string]bool
-	keepSpecified     bool
-	dropKeepPredicate compiler.Func
-	dropKeepScope     compiler.Scope
-	dropKeepColParam  string
-}
-
 func newFunc(fn *semantic.FunctionExpression, types [2]semantic.Type) (compiler.Func, string, error) {
 	scope, decls := query.BuiltIns()
 	compileCache := compiler.NewCompilationCache(fn, scope, decls)
@@ -372,145 +254,60 @@ func newFunc(fn *semantic.FunctionExpression, types [2]semantic.Type) (compiler.
 	return compiled, paramName, nil
 }
 
-func NewRenameDropTransformation(d execute.Dataset, cache execute.TableBuilderCache, spec plan.ProcedureSpec) (*renameDropTransformation, error) {
-	s, ok := spec.(*RenameDropProcedureSpec)
+type RenameMutator struct {
+	RenameCols map[string]string
+	RenameFn   compiler.Func
+	scope      map[string]values.Value
+	paramName  string
+}
+
+func newRenameMutator(qs query.OperationSpec) (*RenameMutator, error) {
+	s, ok := qs.(*RenameOpSpec)
+
+	m := &RenameMutator{}
 	if !ok {
-		return nil, fmt.Errorf("invalid spec type %T", spec)
+		return nil, fmt.Errorf("invalid spec type %T", qs)
 	}
 
-	var renameMapFn compiler.Func
-	var renameScope compiler.Scope
-	var renameColParam string
+	if s.RenameCols != nil {
+		m.RenameCols = s.RenameCols
+	}
+
 	if s.RenameFn != nil {
 		compiledFn, param, err := newFunc(s.RenameFn, [2]semantic.Type{semantic.String, semantic.String})
 		if err != nil {
 			return nil, err
 		}
-		renameMapFn = compiledFn
-		renameColParam = param
-		// Scope for calling the rename map function
-		renameScope = make(map[string]values.Value, 1)
+
+		m.RenameFn = compiledFn
+		m.paramName = param
+		m.scope = make(map[string]values.Value, 1)
 	}
-
-	var dropKeepPredicate compiler.Func
-	var dropKeepColParam string
-	var dropKeepScope compiler.Scope
-	if s.DropKeepPredicate != nil {
-		compiledFn, param, err := newFunc(s.DropKeepPredicate, [2]semantic.Type{semantic.String, semantic.Bool})
-		if err != nil {
-			return nil, err
-		}
-
-		dropKeepPredicate = compiledFn
-		dropKeepColParam = param
-		// Scope for calling the drop/keep predicate function
-		dropKeepScope = make(map[string]values.Value, 1)
-	}
-
-	return &renameDropTransformation{
-		d:                 d,
-		cache:             cache,
-		renameCols:        s.RenameCols,
-		renameFn:          renameMapFn,
-		renameScope:       renameScope,
-		renameColParam:    renameColParam,
-		dropKeepCols:      s.DropKeepCols,
-		dropKeepPredicate: dropKeepPredicate,
-		dropKeepScope:     dropKeepScope,
-		dropKeepColParam:  dropKeepColParam,
-		keepSpecified:     s.KeepSpecified,
-	}, nil
+	return m, nil
 }
 
-func (t *renameDropTransformation) keepToDropCols(tbl query.Table) error {
-	cols := tbl.Cols()
-
-	// Check to make sure we aren't trying to `drop` or `keep` a column which
-	// is not present in the table.
-	if t.dropKeepCols != nil {
-		for c := range t.dropKeepCols {
-			if execute.ColIdx(c, cols) < 0 {
-				if t.keepSpecified {
-					return fmt.Errorf(`keep error: column "%s" doesn't exist`, c)
-				}
-				return fmt.Errorf(`drop error: column "%s" doesn't exist`, c)
-			}
-		}
-	}
-
-	// If `keepSpecified` is true, i.e., we want to exclusively keep the columns listed in dropKeepCols
-	// as opposed to exclusively dropping them. So in that case, we invert the dropKeepCols map and store it
-	// in exclusiveDropCols; exclusiveDropCols may be changed with each call to `Process`, but
-	// `dropKeepCols` will not be.
-	if t.keepSpecified && t.dropKeepCols != nil {
-		exclusiveDropCols := make(map[string]bool, len(tbl.Cols()))
-		for _, c := range tbl.Cols() {
-			if _, ok := t.dropKeepCols[c.Label]; !ok {
-				exclusiveDropCols[c.Label] = true
-			}
-		}
-		t.dropExclusiveCols = exclusiveDropCols
-	} else if t.dropKeepCols != nil {
-		t.dropExclusiveCols = t.dropKeepCols
-	}
-
-	return nil
-}
-
-func (t *renameDropTransformation) checkColumnReferences(tbl query.Table) error {
-	cols := tbl.Cols()
-	if t.renameCols != nil {
-		for c := range t.renameCols {
+func (m *RenameMutator) checkColumnReferences(cols []query.ColMeta) error {
+	if m.RenameCols != nil {
+		for c := range m.RenameCols {
 			if execute.ColIdx(c, cols) < 0 {
 				return fmt.Errorf(`rename error: column "%s" doesn't exist`, c)
 			}
 		}
 	}
-
-	if t.dropKeepCols != nil && t.renameCols != nil {
-		for k := range t.renameCols {
-			if _, ok := t.dropKeepCols[k]; ok {
-				return fmt.Errorf(`rename error: cannot rename column "%s" which is marked for drop`, k)
-			}
-		}
-	}
-
 	return nil
 }
 
-func (t *renameDropTransformation) shouldDrop(col string) (bool, error) {
-	t.dropKeepScope[t.dropKeepColParam] = values.NewStringValue(col)
-	if shouldDrop, err := t.dropKeepPredicate.EvalBool(t.dropKeepScope); err != nil {
-		return false, err
-	} else if t.keepSpecified {
-		return !shouldDrop, nil
-	} else {
-		return shouldDrop, nil
-	}
-}
-
-func (t *renameDropTransformation) shouldDropCol(col string) (bool, error) {
-	if t.dropExclusiveCols != nil {
-		if _, exists := t.dropExclusiveCols[col]; exists {
-			return true, nil
-		}
-	} else if t.dropKeepPredicate != nil {
-		return t.shouldDrop(col)
-	}
-	return false, nil
-}
-
-func (t *renameDropTransformation) renameCol(col *query.ColMeta) error {
+func (m *RenameMutator) renameCol(col *query.ColMeta) error {
 	if col == nil {
 		return errors.New("rename error: cannot rename nil column")
 	}
-	if t.renameCols != nil {
-		if newName, ok := t.renameCols[col.Label]; ok {
+	if m.RenameCols != nil {
+		if newName, ok := m.RenameCols[col.Label]; ok {
 			col.Label = newName
 		}
-	} else if t.renameFn != nil {
-		t.renameScope[t.renameColParam] = values.NewStringValue(col.Label)
-		newName, err := t.renameFn.EvalString(t.renameScope)
+	} else if m.RenameFn != nil {
+		m.scope[m.paramName] = values.NewStringValue(col.Label)
+		newName, err := m.RenameFn.EvalString(m.scope)
 		if err != nil {
 			return err
 		}
@@ -519,79 +316,219 @@ func (t *renameDropTransformation) renameCol(col *query.ColMeta) error {
 	return nil
 }
 
-func (t *renameDropTransformation) Process(id execute.DatasetID, tbl query.Table) error {
-	// Adjust internal column list depending
-	// on whether this is a keep or a drop operation
-	if err := t.keepToDropCols(tbl); err != nil {
+func (m *RenameMutator) Mutate(ctx *BuilderContext) error {
+
+	if err := m.checkColumnReferences(ctx.Cols()); err != nil {
 		return err
 	}
 
-	// Check to make sure we don't have duplicates between the drop and rename column lists,
-	// or whether we're rename a column that doesn't exist.
-	if err := t.checkColumnReferences(tbl); err != nil {
-		return err
-	}
+	keyCols := make([]query.ColMeta, 0, len(ctx.Cols()))
+	keyValues := make([]values.Value, 0, len(ctx.Cols()))
+	newCols := make([]query.ColMeta, 0, len(ctx.Cols()))
+	newColMap := make([]int, 0, len(ctx.Cols()))
 
-	keyCols := make([]query.ColMeta, 0, len(tbl.Cols()))
-	keyValues := make([]values.Value, 0, len(tbl.Cols()))
-	builderCols := make([]query.ColMeta, 0, len(tbl.Cols()))
-	// If we remove columns, column indices will be different between the
-	// builder and the table - we need to keep track
-	colMap := make([]int, 0, len(tbl.Cols()))
-
-	for i, c := range tbl.Cols() {
-		if shouldDrop, err := t.shouldDropCol(c.Label); err != nil {
-			return err
-		} else if shouldDrop {
-			continue
-		}
-
-		keyIdx := execute.ColIdx(c.Label, tbl.Key().Cols())
+	for i, c := range ctx.Cols() {
+		keyIdx := execute.ColIdx(c.Label, ctx.Key().Cols())
 		keyed := keyIdx >= 0
 
-		if err := t.renameCol(&c); err != nil {
+		if err := m.renameCol(&c); err != nil {
 			return err
 		}
 
 		if keyed {
 			keyCols = append(keyCols, c)
-			keyValues = append(keyValues, tbl.Key().Value(keyIdx))
+			keyValues = append(keyValues, ctx.Key().Value(keyIdx))
 		}
-
-		colMap = append(colMap, i)
-		builderCols = append(builderCols, c)
+		newCols = append(newCols, c)
+		newColMap = append(newColMap, i)
 	}
 
-	key := execute.NewGroupKey(keyCols, keyValues)
-	builder, created := t.cache.TableBuilder(key)
-	if created {
-		for _, c := range builderCols {
-			builder.AddCol(c)
-		}
-	}
+	ctx.UpdateCols(newCols)
+	ctx.UpdateKey(execute.NewGroupKey(keyCols, keyValues))
+	ctx.UpdateColMap(newColMap)
 
-	err := tbl.Do(func(cr query.ColReader) error {
-		for i := 0; i < cr.Len(); i++ {
-			execute.AppendMappedRecord(i, cr, builder, colMap)
-		}
+	return nil
+}
+
+func (m *RenameMutator) Copy() SchemaMutator {
+	nm := new(RenameMutator)
+	nm.RenameCols = m.RenameCols
+	nm.RenameFn = m.RenameFn
+	return nm
+}
+
+type DropKeepMutator struct {
+	DropKeepCols      map[string]bool
+	dropExclusiveCols map[string]bool
+	DropKeepPredicate compiler.Func
+	Keep              bool
+	paramName         string
+	scope             map[string]values.Value
+}
+
+func toStringSet(arr []string) map[string]bool {
+	if arr == nil {
 		return nil
-	})
-
-	return err
+	}
+	ret := make(map[string]bool, len(arr))
+	for _, s := range arr {
+		ret[s] = true
+	}
+	return ret
 }
 
-func (t *renameDropTransformation) RetractTable(id execute.DatasetID, key query.GroupKey) error {
-	return t.d.RetractTable(key)
+func newDropKeepMutator(qs query.OperationSpec) (*DropKeepMutator, error) {
+	m := &DropKeepMutator{}
+	switch s := qs.(type) {
+	case *DropOpSpec:
+		if s.DropCols != nil {
+			m.DropKeepCols = toStringSet(s.DropCols)
+		}
+		if s.DropPredicate != nil {
+			compiledFn, param, err := newFunc(s.DropPredicate, [2]semantic.Type{semantic.String, semantic.Bool})
+			if err != nil {
+				return nil, err
+			}
+			m.DropKeepPredicate = compiledFn
+			m.paramName = param
+			m.scope = make(map[string]values.Value, 1)
+		}
+	case *KeepOpSpec:
+		if s.KeepCols != nil {
+			m.DropKeepCols = toStringSet(s.KeepCols)
+		}
+		if s.KeepPredicate != nil {
+			compiledFn, param, err := newFunc(s.KeepPredicate, [2]semantic.Type{semantic.String, semantic.Bool})
+			if err != nil {
+				return nil, err
+			}
+			m.DropKeepPredicate = compiledFn
+			m.paramName = param
+			m.scope = make(map[string]values.Value, 1)
+		}
+		m.Keep = true
+	}
+
+	return m, nil
 }
 
-func (t *renameDropTransformation) UpdateWatermark(id execute.DatasetID, mark execute.Time) error {
-	return t.d.UpdateWatermark(mark)
+func (m *DropKeepMutator) checkColumnReferences(cols []query.ColMeta) error {
+	if m.DropKeepCols != nil {
+		for c := range m.DropKeepCols {
+			if execute.ColIdx(c, cols) < 0 {
+				if m.Keep {
+					return fmt.Errorf(`keep error: column "%s" doesn't exist`, c)
+				}
+				return fmt.Errorf(`drop error: column "%s" doesn't exist`, c)
+			}
+		}
+	}
+	return nil
 }
 
-func (t *renameDropTransformation) UpdateProcessingTime(id execute.DatasetID, pt execute.Time) error {
-	return t.d.UpdateProcessingTime(pt)
+func (m *DropKeepMutator) shouldDrop(col string) (bool, error) {
+	m.scope[m.paramName] = values.NewStringValue(col)
+	if shouldDrop, err := m.DropKeepPredicate.EvalBool(m.scope); err != nil {
+		return false, err
+	} else if m.Keep {
+		return !shouldDrop, nil
+	} else {
+		return shouldDrop, nil
+	}
 }
 
-func (t *renameDropTransformation) Finish(id execute.DatasetID, err error) {
-	t.d.Finish(err)
+func (m *DropKeepMutator) shouldDropCol(col string) (bool, error) {
+	if m.dropExclusiveCols != nil {
+		if _, exists := m.dropExclusiveCols[col]; exists {
+			return true, nil
+		}
+	} else if m.DropKeepPredicate != nil {
+		return m.shouldDrop(col)
+	}
+	return false, nil
+}
+
+func (m *DropKeepMutator) keepToDropCols(cols []query.ColMeta) {
+
+	// If `m.Keep` is true, i.e., we want to exclusively keep the columns listed in DropKeepCols
+	// as opposed to exclusively dropping them. So in that case, we invert the DropKeepCols map and store it
+	// in exclusiveDropCols; exclusiveDropCols may be changed with each call to `Mutate`, but
+	// `DropKeepCols` will not be.
+	if m.Keep && m.DropKeepCols != nil {
+		exclusiveDropCols := make(map[string]bool, len(cols))
+		for _, c := range cols {
+			if _, ok := m.DropKeepCols[c.Label]; !ok {
+				exclusiveDropCols[c.Label] = true
+			}
+		}
+		m.dropExclusiveCols = exclusiveDropCols
+	} else if m.DropKeepCols != nil {
+		m.dropExclusiveCols = m.DropKeepCols
+	}
+}
+
+func (m *DropKeepMutator) Mutate(ctx *BuilderContext) error {
+	if err := m.checkColumnReferences(ctx.Cols()); err != nil {
+		return err
+	}
+
+	m.keepToDropCols(ctx.Cols())
+
+	keyCols := make([]query.ColMeta, 0, len(ctx.Cols()))
+	keyValues := make([]values.Value, 0, len(ctx.Cols()))
+	newCols := make([]query.ColMeta, 0, len(ctx.Cols()))
+	newColMap := make([]int, 0, len(ctx.Cols()))
+
+	for i, c := range ctx.Cols() {
+		if shouldDrop, err := m.shouldDropCol(c.Label); err != nil {
+			return err
+		} else if shouldDrop {
+			continue
+		}
+
+		keyIdx := execute.ColIdx(c.Label, ctx.Key().Cols())
+		if keyIdx >= 0 {
+			keyCols = append(keyCols, c)
+			keyValues = append(keyValues, ctx.Key().Value(keyIdx))
+		}
+		newCols = append(newCols, c)
+		newColMap = append(newColMap, i)
+	}
+
+	ctx.UpdateCols(newCols)
+	ctx.UpdateKey(execute.NewGroupKey(keyCols, keyValues))
+	ctx.UpdateColMap(newColMap)
+
+	return nil
+}
+
+func (m *DropKeepMutator) Copy() SchemaMutator {
+	nm := new(DropKeepMutator)
+	nm.DropKeepCols = m.DropKeepCols
+	nm.DropKeepPredicate = m.DropKeepPredicate
+	return nm
+}
+
+func (s *RenameOpSpec) GetMutator() (SchemaMutator, error) {
+	m, err := newRenameMutator(s)
+	if err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
+func (s *DropOpSpec) GetMutator() (SchemaMutator, error) {
+	m, err := newDropKeepMutator(s)
+	if err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
+func (s *KeepOpSpec) GetMutator() (SchemaMutator, error) {
+	m, err := newDropKeepMutator(s)
+	if err != nil {
+		return nil, err
+	}
+	return m, nil
 }
