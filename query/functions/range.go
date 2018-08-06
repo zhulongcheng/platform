@@ -135,23 +135,35 @@ func (s *RangeProcedureSpec) PushDownRules() []plan.PushDownRule {
 		Match: func(spec plan.ProcedureSpec) bool {
 			return s.TimeCol == "_time"
 		},
+	}, {
+		Root:    FromPromKind,
+		Through: []plan.ProcedureKind{GroupKind, LimitKind, FilterKind},
+		Match: func(spec plan.ProcedureSpec) bool {
+			return s.TimeCol == "_time"
+		},
 	}}
 }
 func (s *RangeProcedureSpec) PushDown(root *plan.Procedure, dup func() *plan.Procedure) {
-	selectSpec := root.Spec.(*FromProcedureSpec)
-	if selectSpec.BoundsSet {
-		// Example case where this matters
-		//    var data = select(database: "mydb")
-		//    var past = data.range(start:-2d,stop:-1d)
-		//    var current = data.range(start:-1d,stop:now)
-		root = dup()
-		selectSpec = root.Spec.(*FromProcedureSpec)
-		selectSpec.BoundsSet = false
-		selectSpec.Bounds = plan.BoundsSpec{}
-		return
+	switch spec := root.Spec.(type) {
+	case *FromProcedureSpec:
+		if spec.BoundsSet {
+			// Example case where this matters
+			//    var data = select(database: "mydb")
+			//    var past = data.range(start:-2d,stop:-1d)
+			//    var current = data.range(start:-1d,stop:now)
+			root = dup()
+			spec = root.Spec.(*FromProcedureSpec)
+			spec.BoundsSet = false
+			spec.Bounds = plan.BoundsSpec{}
+			return
+		}
+		spec.BoundsSet = true
+		spec.Bounds = s.Bounds
+	case *FromPromProcedureSpec:
+		spec.Bounds = s.Bounds
+	default:
+		panic(fmt.Sprintf("unsuported procedure spec %v to push range down to", spec))
 	}
-	selectSpec.BoundsSet = true
-	selectSpec.Bounds = s.Bounds
 }
 
 func (s *RangeProcedureSpec) TimeBounds() plan.BoundsSpec {
