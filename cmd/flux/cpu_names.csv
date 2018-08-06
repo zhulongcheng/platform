@@ -1,0 +1,7 @@
+#datatype,string,string
+#group,true,true
+#default,,
+,cpu,name
+,cpu0,paul
+,cpu2,rachel
+,cpu1,kit
