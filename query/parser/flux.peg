@@ -384,6 +384,9 @@ StringLiteral
   = ( '"' DoubleStringChar* '"' ) {
       return stringLiteral(c.text, c.pos)
     }
+  / ( '`' (!'`' .)* '`' ) {
+      return stringLiteral(c.text, c.pos)
+    }
   / ( '"' DoubleStringChar* ( EOL / EOF ) ) {
       return "", errors.New("string literal not terminated")
     }
@@ -475,6 +478,7 @@ __
 
 Comment
   = "//" [^\r\n]* EOL
+  / "/*" (!"*/" .)* "*/"
 
 ws
   = [ \t\r\n]
