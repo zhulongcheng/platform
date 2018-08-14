@@ -16,6 +16,14 @@ GOBINDATA := $(shell go list -f {{.Root}}  github.com/kevinburke/go-bindata 2> /
 UISOURCES := $(shell find chronograf/ui -type f -not \( -path chronograf/ui/build/\* -o -path chronograf/ui/node_modules/\* -prune \) )
 YARN := $(shell command -v yarn 2> /dev/null)
 
+# Used to determine wether the generated assets file are in place
+# so that we can tell the compiler to skip their placeholder files
+CHRONOGENASSETS := $(wildcard chronograf/**/*_gen.go)
+$(info gaf: $(CHRONOGENASSETS))
+
+ifneq ($(CHRONOGENASSETS),)
+	GO_TAGS="assetsplaceholder"
+endif
 
 GO_ARGS=-tags '$(GO_TAGS)'
 

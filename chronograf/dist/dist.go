@@ -36,7 +36,7 @@ func (b *BindataAssets) Handler() http.Handler {
 // addCacheHeaders requests an hour of Cache-Control and sets an ETag based on file size and modtime
 func (b *BindataAssets) addCacheHeaders(filename string, w http.ResponseWriter) error {
 	w.Header().Add("Cache-Control", "public, max-age=3600")
-	fi, err := AssetInfo(filename)
+	fi, err := GeneratedAssetInfo(filename)
 	if err != nil {
 		return err
 	}
@@ -56,7 +56,7 @@ func (b *BindataAssets) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// def wraps the assets to return the default file if the file doesn't exist
 	def := func(name string) ([]byte, error) {
 		// If the named asset exists, then return it directly.
-		octets, err := Asset(name)
+		octets, err := GeneratedAsset(name)
 		if err != nil {
 			// If this is at / then we just error out so we can return a Directory
 			// This directory will then be redirected by go to the /index.html
@@ -71,7 +71,7 @@ func (b *BindataAssets) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			if err := b.addCacheHeaders(b.Default, w); err != nil {
 				return nil, err
 			}
-			return Asset(b.Default)
+			return GeneratedAsset(b.Default)
 		}
 		if err := b.addCacheHeaders(name, w); err != nil {
 			return nil, err
@@ -80,8 +80,8 @@ func (b *BindataAssets) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	var dir http.FileSystem = &assetfs.AssetFS{
 		Asset:     def,
-		AssetDir:  AssetDir,
-		AssetInfo: AssetInfo,
+		AssetDir:  GeneratedAssetDir,
+		AssetInfo: GeneratedAssetInfo,
 		Prefix:    b.Prefix,
 	}
 	http.FileServer(dir).ServeHTTP(w, r)

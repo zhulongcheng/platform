@@ -6,7 +6,7 @@ import "net/http"
 
 // Spec servers the swagger.json file from bindata
 func Spec() http.HandlerFunc {
-	swagger, err := Asset("swagger.json")
+	swagger, err := GeneratedAsset("swagger.json")
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)

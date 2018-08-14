@@ -17,10 +17,10 @@ type BinLayoutsStore struct {
 
 // All returns the set of all layouts
 func (s *BinLayoutsStore) All(ctx context.Context) ([]chronograf.Layout, error) {
-	names := AssetNames()
+	names := GeneratedAssetNames()
 	layouts := make([]chronograf.Layout, len(names))
 	for i, name := range names {
-		octets, err := Asset(name)
+		octets, err := GeneratedAsset(name)
 		if err != nil {
 			s.Logger.
 				WithField("component", "apps").
