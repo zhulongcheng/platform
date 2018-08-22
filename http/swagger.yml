@@ -883,6 +883,46 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+  '/tasks/{taskId}/runs/{begin}/{end}/retry':
+    post:
+      tags:
+        - Tasks
+      summary: Retry a task run on interval [begin, end)
+      parameters:
+        - in: path
+          name: taskId
+          schema:
+            type: string
+          required: true
+          description: task ID
+        - in: path
+          name: begin
+          schema:
+            type: string
+            format: date-time
+          required: true
+          description: beginning of retry interval
+        - in: path
+          name: end
+          schema:
+            type: string
+            format: date-time
+          required: true
+          description: ending of retry interval
+      responses:
+        '200':
+          description: The newly created retry runs
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Run"
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
   '/tasks/{taskId}/logs':
     get:
       tags:

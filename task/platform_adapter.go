@@ -157,6 +157,10 @@ func (p pAdapter) RetryRun(ctx context.Context, id platform.ID) (*platform.Run, 
 	return nil, errors.New("not yet implemented")
 }
 
+func (p pAdapter) RetryRuns(ctx context.Context, filter platform.RunFilter) ([]*platform.Run, error) {
+	return nil, errors.New("not yet implemented")
+}
+
 func toPlatformTask(t backend.StoreTask) (*platform.Task, error) {
 	opts, err := options.FromScript(t.Script)
 	if err != nil {

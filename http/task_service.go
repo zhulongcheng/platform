@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/influxdata/platform"
 	kerrors "github.com/influxdata/platform/kit/errors"
@@ -36,6 +37,7 @@ func NewTaskHandler() *TaskHandler {
 	h.HandlerFunc("GET", "/v1/tasks/:tid/runs", h.handleGetRuns)
 	h.HandlerFunc("GET", "/v1/tasks/:tid/runs/:rid", h.handleGetRun)
 	h.HandlerFunc("POST", "/v1/tasks/:tid/runs/:rid/retry", h.handleRetryRun)
+	h.HandlerFunc("POST", "/tasks/:tid/runs/:begin/:end/retry", h.handleManuallyRunTimeRange)
 
 	return h
 }
@@ -460,5 +462,65 @@ func decodeRetryRunRequest(ctx context.Context, r *http.Request) (*retryRunReque
 
 	return &retryRunRequest{
 		RunID: i,
+	}, nil
+}
+
+func (h *TaskHandler) handleManuallyRunTimeRange(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	req, err := decodeManuallyRunTimeRange(ctx, r)
+	if err != nil {
+		EncodeError(ctx, err, w)
+		return
+	}
+
+	err = h.TaskService.ManuallyRunTimeRange(req.taskID, req.span.Start.UTC().Unix(), req.span.Stop.UTC().Unix())
+	if err != nil {
+		EncodeError(ctx, err, w)
+		return
+	}
+
+	if err := encodeResponse(ctx, w, http.StatusOK, nil); err != nil {
+		EncodeError(ctx, err, w)
+		return
+	}
+}
+
+type manualRunsRequest struct {
+	span   platform.Timespan
+	taskID platform.ID
+}
+
+func decodeManuallyRunTimeRange(ctx context.Context, r *http.Request) (*manualRunsRequest, error) {
+	params := httprouter.ParamsFromContext(ctx)
+	var err error
+	req := manualRunsRequest{}
+
+	begin, err := time.Parse(time.RFC3339, params.ByName("begin")) //params.ByName("end")
+	if err != nil {
+		return nil, kerrors.InvalidDataf("you must provide a valid RCC3339 time string for 'begin'")
+	}
+
+	end, err := time.Parse(time.RFC3339, params.ByName("end")) //params.ByName("end")
+	if err != nil {
+		return nil, kerrors.InvalidDataf("you must provide a valid RCC3339 time string for 'end'")
+	}
+
+	id := params.ByName("tid")
+	if id == "" {
+		return nil, kerrors.InvalidDataf("url missing id")
+	}
+
+	var i platform.ID
+	if err := i.DecodeFromString(id); err != nil {
+		return nil, err
+	}
+
+	return &manualRunsRequest{
+		span: platform.Timespan{
+			Start: begin,
+			Stop:  end,
+		},
+		taskID: i,
 	}, nil
 }

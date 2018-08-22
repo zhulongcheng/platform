@@ -1,6 +1,8 @@
 package platform
 
-import "context"
+import (
+	"context"
+)
 
 // Task is a task. 🎊
 type Task struct {
@@ -59,6 +61,9 @@ type TaskService interface {
 
 	// Creates and returns a new run (which is a retry of another run)
 	RetryRun(ctx context.Context, id ID) (*Run, error)
+
+	// Creates runs for every task that should run in a time range.
+	ManuallyRunTimeRange(id ID, start, stop int64) error
 }
 
 // TaskUpdate represents updates to a task

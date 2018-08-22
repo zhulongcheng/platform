@@ -126,6 +126,9 @@ type Store interface {
 	// DeleteUser deletes a user with userID.
 	DeleteUser(ctx context.Context, userID platform.ID) error
 
+	// Creates runs for every task that should run in a time range.
+	ManuallyRunTimeRange(id platform.ID, start, stop int64) error
+
 	// Close closes the store for usage and cleans up running processes.
 	Close() error
 }
