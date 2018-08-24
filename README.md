@@ -2,7 +2,6 @@
 # InfluxData Platform [![CircleCI](https://circleci.com/gh/influxdata/platform.svg?style=svg)](https://circleci.com/gh/influxdata/platform)
 =======
 #BUMP FOR TESTING
-#BUMP to test if hooks are being picked up
 
 # InfluxData Platform
 >>>>>>> for testing
