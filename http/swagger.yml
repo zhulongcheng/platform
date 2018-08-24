@@ -353,7 +353,7 @@ paths:
         - Buckets
       summary: List all buckets
       security:
-        - apiKeyAuth: [read-bucket]
+        - tokenAuth: [read-bucket]
       responses:
         '200':
           description: a list of buckets
@@ -974,12 +974,12 @@ paths:
                 $ref: "#/components/schemas/Error"
 components:
   securitySchemes:
-    apiKeyAuth:
-      type: apiKey
-      in: header
-      name: Authorization
+    tokenHeaderAuth:
+      type: http
+      scheme: bearer
       description: API Key to authorize requests. Check the docs for specific permissions required for each route.
       x-influx-permissions:
+        description: Permissions available to users for API authorization. See specific routes for required permissions.
         read-bucket:
           action: read
           resource: bucket
@@ -992,10 +992,58 @@ components:
         delete-bucket:
           action: delete
           resource: bucket
-    cookieAuth:
+        read-user:
+          action: read
+          resource: user
+        write-user:
+          action: write
+          resource: user
+        create-user:
+          action: create
+          resource: user
+        delete-user:
+          action: delete
+          resource: user
+        read-org:
+          action: read
+          resource: org
+        write-org:
+          action: write
+          resource: org
+        create-org:
+          action: create
+          resource: org
+        delete-org:
+          action: delete
+          resource: org
+        read-authorization:
+          action: read
+          resource: authorization
+        write-authorization:
+          action: write
+          resource: authorization
+        create-authorization:
+          action: create
+          resource: authorization
+        delete-authorization:
+          action: delete
+          resource: authorization
+        read-task:
+          action: read
+          resource: task
+        write-task:
+          action: write
+          resource: task
+        create-task:
+          action: create
+          resource: task
+        delete-task:
+          action: delete
+          resource: task
+    tokenQueryAuth:
       type: apiKey
-      in: cookie
-      name: session
+      in: query
+      description: Same permissions as tokenHeaderAuth, but token is an http query parameter.
   schemas:
     Query:
       description: query influx with specified return formatting.
