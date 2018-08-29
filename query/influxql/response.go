@@ -1,5 +1,15 @@
 package influxql
 
+import (
+	"fmt"
+	"sort"
+	"time"
+
+	"github.com/influxdata/platform/query"
+	"github.com/influxdata/platform/query/execute"
+	"github.com/influxdata/platform/query/values"
+)
+
 // all of this code is copied more or less verbatim from the influxdb repo.
 // we copy instead of sharing because we want to prevent inadvertent breaking
 // changes introduced by the transpiler vs the actual InfluxQL engine.
@@ -8,12 +18,12 @@ package influxql
 
 type Response struct {
 	Results []Result `json:"results,omitempty"`
-	Err     string   `json:"error,omitempty"`
+	Error   string   `json:"error,omitempty"`
 }
 
 func (r *Response) error(err error) {
 	r.Results = nil
-	r.Err = err.Error()
+	r.Error = err.Error()
 }
 
 // Message represents a user-facing message to be included with the result.
@@ -41,4 +51,304 @@ type Row struct {
 	Columns []string          `json:"columns,omitempty"`
 	Values  [][]interface{}   `json:"values,omitempty"`
 	Partial bool              `json:"partial,omitempty"`
+}
+
+// More returns true if there are results left on the response.
+// It is used to implement query.ResultIterator.
+func (r *Response) More() bool {
+	return len(r.Results) > 0
+}
+
+// Next destructively retrieves the next query.Result.
+// It is used to implement query.ResultIterator.
+func (r *Response) Next() query.Result {
+	res := r.Results[0]
+	r.Results = r.Results[1:]
+	return res
+}
+
+// Cancel is a noop.
+// It is used to implement query.ResultIterator.
+func (r *Response) Cancel() {}
+
+// Err returns an error if the response contained an error.
+// It is used to implement query.ResultIterator.
+func (r *Response) Err() error {
+	if r.Error != "" {
+		return fmt.Errorf(r.Error)
+	}
+
+	return nil
+}
+
+// Name returns the results statement id.
+// It is used to implement query.Result.
+func (r Result) Name() string {
+	return fmt.Sprintf("%d", r.StatementID)
+}
+
+// Tables returns the original as a query.TableIterator.
+// It is used to implement query.Result.
+func (r Result) Tables() query.TableIterator {
+	return r
+}
+
+// Do iterates through the series of a Result.
+// It is used to implement query.Result.
+func (r Result) Do(f func(query.Table) error) error {
+	for _, row := range r.Series {
+		if err := f(row); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// Key constructs the query.GroupKey for a Row from the rows
+// tags and measurement.
+// It is used to implement query.Table and query.ColReader.
+func (r *Row) Key() query.GroupKey {
+	cols := make([]query.ColMeta, len(r.Tags)+1) // plus one is for measurement
+	vs := make([]values.Value, len(r.Tags)+1)
+	kvs := make([]interface{}, len(r.Tags)+1)
+	colMeta := r.Cols()
+	labels := append(r.tags(), "_measurement")
+	for j, label := range labels {
+		idx := execute.ColIdx(label, colMeta)
+		if idx < 0 {
+			panic(fmt.Errorf("table invalid: missing group column %q", label))
+		}
+		cols[j] = colMeta[idx]
+		kvs[j] = "string"
+		v, err := values.NewValue(kvs[j], execute.ConvertToKind(cols[j].Type))
+		if err != nil {
+			panic(err)
+		}
+		vs[j] = v
+	}
+
+	return execute.NewGroupKey(cols, vs)
+}
+
+// forEachValue iterates through a column at an index and applies f to each entry.
+// The iteration stops if f returns true.
+// Data in a column is laid out in the following way:
+//   [ r.Columns... , r.tags()... , r.Name ]
+func (r *Row) forEachValue(idx int, f func(v interface{}) bool) {
+	if idx < len(r.Columns) {
+		// for any of the columns, we can simple iterate through each of the values
+		for _, row := range r.Values {
+			done := f(row[idx])
+			if done {
+				return
+			}
+		}
+		return
+	}
+
+	if idx < len(r.Columns)+len(r.Tags) {
+		// for any of the tags, we simply repeat the iteration cycle len(r.Values) many times
+		tags := r.tags()
+		tag := tags[idx-len(r.Columns)]
+		for _ = range r.Values {
+			done := f(r.Tags[tag])
+			if done {
+				return
+			}
+		}
+		return
+	}
+
+	if idx < len(r.Columns)+len(r.Tags)+1 {
+		// for any of the measurement, we simply repeat the iteration cycle len(r.Values) many times
+		for _ = range r.Values {
+			done := f(r.Name)
+			if done {
+				return
+			}
+		}
+		return
+	}
+}
+
+// tags returns the tag keys for a Row.
+func (r *Row) tags() []string {
+	tags := []string{}
+	for t := range r.Tags {
+		tags = append(tags, t)
+	}
+	sort.Strings(tags)
+	return tags
+}
+
+// Cols returns the columns for a row where the data is laid out in the following way:
+//   [ r.Columns... , r.tags()... , r.Name ]
+// It is used to implement query.Table and query.ColReader.
+func (r *Row) Cols() []query.ColMeta {
+	colMeta := make([]query.ColMeta, len(r.Columns)+len(r.Tags)+1)
+	for i, col := range r.Columns {
+		colMeta[i] = query.ColMeta{
+			Label: col,
+			Type:  query.TInvalid,
+		}
+		if col == "time" {
+			// rename the time column
+			colMeta[i].Label = "_time"
+			colMeta[i].Type = query.TTime
+		}
+	}
+
+	if len(r.Values) < 1 {
+		panic("must have at least one value")
+	}
+	data := r.Values[0]
+	for i := range r.Columns {
+		v := data[i]
+		if colMeta[i].Label == "_time" {
+			continue
+		}
+		switch v.(type) {
+		case float64:
+			colMeta[i].Type = query.TFloat
+		case int64:
+			colMeta[i].Type = query.TInt
+		case uint64:
+			colMeta[i].Type = query.TUInt
+		case bool:
+			colMeta[i].Type = query.TBool
+		case string:
+			colMeta[i].Type = query.TString
+		}
+	}
+
+	tags := r.tags()
+
+	leng := len(r.Columns)
+	for i, tag := range tags {
+		colMeta[leng+i] = query.ColMeta{
+			Label: tag,
+			Type:  query.TString,
+		}
+	}
+
+	leng = leng + len(tags)
+	colMeta[leng] = query.ColMeta{
+		Label: "_measurement",
+		Type:  query.TString,
+	}
+
+	return colMeta
+}
+
+// Do applies f to itself. This is because Row is a query.ColReader.
+// It is used to implement query.Table.
+func (r *Row) Do(f func(query.ColReader) error) error {
+	return f(r)
+}
+
+// RefCount is a noop.
+// It is used to implement query.ColReader.
+func (r *Row) RefCount(n int) {}
+
+// Empty returns true if a Row has no values.
+// It is used to implement query.Table.
+func (r *Row) Empty() bool { return r.Len() == 0 }
+
+// Len returns the length or r.Values
+// It is used to implement query.ColReader.
+func (r *Row) Len() int {
+	return len(r.Values)
+}
+
+// Bools returns the values in column index j as bools.
+// It will panic if any value in the column is not a bool.
+// It is used to implement query.ColReader.
+func (r *Row) Bools(j int) []bool {
+	bools := []bool{}
+	r.forEachValue(j, func(v interface{}) bool {
+		bools = append(bools, v.(bool))
+		return false
+	})
+
+	return bools
+}
+
+// Ints returns the values in column index j as ints.
+// It will panic if any value in the column is not a int64.
+// It is used to implement query.ColReader.
+func (r *Row) Ints(j int) []int64 {
+	ints := []int64{}
+	r.forEachValue(j, func(v interface{}) bool {
+		ints = append(ints, v.(int64))
+		return false
+	})
+
+	return ints
+}
+
+// UInts returns the values in column index j as ints.
+// It will panic if any value in the column is not a uint64.
+// It is used to implement query.ColReader.
+func (r *Row) UInts(j int) []uint64 {
+	uints := []uint64{}
+	r.forEachValue(j, func(v interface{}) bool {
+		uints = append(uints, v.(uint64))
+		return false
+	})
+
+	return uints
+}
+
+// Floats returns the values in column index j as floats.
+// It will panic if any value in the column is not a float64.
+// It is used to implement query.ColReader.
+func (r *Row) Floats(j int) []float64 {
+	floats := []float64{}
+	r.forEachValue(j, func(v interface{}) bool {
+		floats = append(floats, v.(float64))
+		return false
+	})
+
+	return floats
+}
+
+// Strings returns the values in column index j as strings.
+// It will panic if any value in the column is not a string.
+// It is used to implement query.ColReader.
+func (r *Row) Strings(j int) []string {
+	strings := []string{}
+	r.forEachValue(j, func(v interface{}) bool {
+		strings = append(strings, v.(string))
+		return false
+	})
+
+	return strings
+}
+
+// Times returns the values in column index j as value.Times.
+// It will panic if any value in the column is not an time.RFC3339
+// time formated string, float64, or int64.
+// It is used to implement query.ColReader.
+func (r *Row) Times(j int) []values.Time {
+	times := []values.Time{}
+	r.forEachValue(j, func(v interface{}) bool {
+		switch val := v.(type) {
+		case int64:
+			times = append(times, values.Time(val))
+		case float64:
+			times = append(times, values.Time(val))
+		case string:
+			t, err := time.Parse(time.RFC3339, val)
+			if err != nil {
+				panic(fmt.Sprintf("time %q did not parse: %v", val, err))
+			}
+			times = append(times, values.ConvertTime(t))
+		default:
+			panic(fmt.Sprintf("unsupported time type %T", val))
+		}
+		return false
+	})
+
+	return times
 }
