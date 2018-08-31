@@ -2,7 +2,7 @@
 import React, {Component} from 'react'
 
 // Components
-import RefreshingGraph from 'src/shared/components/RefreshingGraph'
+import RefreshingGraph from '../RefreshingView'
 
 // Types
 import {TimeRange, Template} from 'src/types'

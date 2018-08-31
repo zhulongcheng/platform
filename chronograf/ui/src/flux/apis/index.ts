@@ -48,13 +48,18 @@ interface GetTimeSeriesResult {
   tables: FluxTable[]
 }
 
+export enum QueryType {
+  Flux = 'flux',
+  InfluxQL = 'influxql',
+}
+
 export const getTimeSeries = async (
   url: string, // query URI
-  query: string
+  query: string,
+  type: QueryType
 ): Promise<GetTimeSeriesResult> => {
   let responseBody: string
   let responseByteLength: number
-  const type = 'flux'
   const dialect = {
     delimiter: ',',
     header: true,

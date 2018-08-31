@@ -3,7 +3,7 @@ import _ from 'lodash'
 
 import {ErrorHandling} from 'src/shared/decorators/errors'
 import TimeMachineVis from 'src/flux/components/TimeMachineVis'
-import {getTimeSeries} from 'src/flux/apis'
+import {getTimeSeries, QueryType} from 'src/flux/apis'
 import {getDeep} from 'src/utils/wrappers'
 
 import {FluxTable} from 'src/types'
@@ -60,7 +60,11 @@ class YieldFuncNode extends PureComponent<Props, State> {
 
   private getData = async (): Promise<void> => {
     const {script, source} = this.props
-    const results = await getTimeSeries(source.links.query, script)
+    const results = await getTimeSeries(
+      source.links.query,
+      script,
+      QueryType.Flux
+    )
     const data = getDeep<FluxTable[]>(results, 'tables', [])
     this.setState({data})
   }

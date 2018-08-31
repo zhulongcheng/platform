@@ -10,16 +10,19 @@ import {ErrorHandlingWith} from 'src/shared/decorators/errors'
 import InvalidData from 'src/shared/components/InvalidData'
 
 // Utils
-import {
-  timeSeriesToDygraph,
-  TimeSeriesToDyGraphReturnType,
-} from 'src/utils/timeSeriesTransformers'
+import {TimeSeriesToDyGraphReturnType} from 'src/utils/timeSeriesTransformers'
+import {fluxTablesToDygraph} from 'src/shared/parsing/flux/dygraph'
 
 // Types
 import {ColorString} from 'src/types/colors'
 import {DecimalPlaces} from 'src/types/dashboards'
-import {TimeSeriesServerResponse} from 'src/types/series'
-import {Axes, TimeRange, RemoteDataState} from 'src/types'
+import {
+  Axes,
+  TimeRange,
+  RemoteDataState,
+  DygraphValue,
+  FluxTable,
+} from 'src/types'
 import {ViewType, CellQuery} from 'src/types/v2'
 
 interface Props {
@@ -30,7 +33,7 @@ interface Props {
   colors: ColorString[]
   loading: RemoteDataState
   decimalPlaces: DecimalPlaces
-  data: TimeSeriesServerResponse[]
+  data: FluxTable[]
   viewID: string
   cellHeight: number
   staticLegend: boolean
@@ -48,7 +51,14 @@ class LineGraph extends PureComponent<LineGraphProps> {
   }
 
   private isValidData: boolean = true
-  private timeSeries: TimeSeriesToDyGraphReturnType
+  private timeSeries: any
+
+  private get labels(): string[] {
+    const {data} = this.props
+    const names = data.map(d => d.name)
+
+    return ['time', ...names]
+  }
 
   public componentWillMount() {
     const {data} = this.props
@@ -56,11 +66,8 @@ class LineGraph extends PureComponent<LineGraphProps> {
   }
 
   public parseTimeSeries(data) {
-    const {location} = this.props
-
-    this.timeSeries = timeSeriesToDygraph(data, location.pathname)
-    const timeSeries = _.get(this.timeSeries, 'timeSeries', [])
-    this.isValidData = this.validateTimeSeries(timeSeries)
+    this.timeSeries = fluxTablesToDygraph(data)
+    const x = this.timeSeries
   }
 
   public componentWillUpdate(nextProps) {
@@ -74,10 +81,6 @@ class LineGraph extends PureComponent<LineGraphProps> {
   }
 
   public render() {
-    if (!this.isValidData) {
-      return <InvalidData />
-    }
-
     const {
       data,
       axes,
@@ -93,8 +96,6 @@ class LineGraph extends PureComponent<LineGraphProps> {
       decimalPlaces,
       handleSetHoverTime,
     } = this.props
-
-    const {labels, timeSeries, dygraphSeries} = this.timeSeries
 
     const options = {
       rightGap: 0,
@@ -120,13 +121,13 @@ class LineGraph extends PureComponent<LineGraphProps> {
           viewID={viewID}
           colors={colors}
           onZoom={onZoom}
-          labels={labels}
+          labels={this.labels}
           queries={queries}
           options={options}
           timeRange={timeRange}
-          timeSeries={timeSeries}
+          timeSeries={this.timeSeries}
           staticLegend={staticLegend}
-          dygraphSeries={dygraphSeries}
+          dygraphSeries={{}}
           isGraphFilled={this.isGraphFilled}
           containerStyle={this.containerStyle}
           handleSetHoverTime={handleSetHoverTime}

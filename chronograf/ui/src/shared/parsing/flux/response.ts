@@ -98,3 +98,4 @@ export const parseTables = (responseChunk: string): FluxTable[] => {
 
   return tables
 }
+  

@@ -1,7 +1,7 @@
 import React, {SFC} from 'react'
 import {connect} from 'react-redux'
 
-import RefreshingGraph from 'src/shared/components/RefreshingGraph'
+import RefreshingGraph from '../../shared/components/RefreshingView'
 import buildQueries from 'src/utils/buildQueriesForGraphs'
 import VisualizationName from 'src/dashboards/components/VisualizationName'
 

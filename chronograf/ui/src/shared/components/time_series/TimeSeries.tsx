@@ -1,4 +1,3 @@
-// Library
 import React, {Component} from 'react'
 import _ from 'lodash'
 
@@ -7,7 +6,7 @@ import {fetchTimeSeries} from 'src/shared/apis/v2/timeSeries'
 
 // Types
 import {Template, CellQuery, RemoteDataState} from 'src/types'
-import {TimeSeriesServerResponse, TimeSeriesResponse} from 'src/types/series'
+import {FluxTable} from 'src/types/flux'
 
 // Utils
 import AutoRefresh from 'src/utils/AutoRefresh'
@@ -15,7 +14,7 @@ import AutoRefresh from 'src/utils/AutoRefresh'
 export const DEFAULT_TIME_SERIES = [{response: {results: []}}]
 
 interface RenderProps {
-  timeSeries: TimeSeriesServerResponse[]
+  timeSeries: FluxTable[]
   loading: RemoteDataState
 }
 
@@ -30,7 +29,7 @@ interface Props {
 interface State {
   loading: RemoteDataState
   isFirstFetch: boolean
-  timeSeries: TimeSeriesServerResponse[]
+  timeSeries: FluxTable[]
 }
 
 class TimeSeries extends Component<Props, State> {
@@ -42,7 +41,7 @@ class TimeSeries extends Component<Props, State> {
   constructor(props: Props) {
     super(props)
     this.state = {
-      timeSeries: DEFAULT_TIME_SERIES,
+      timeSeries: [],
       loading: RemoteDataState.NotStarted,
       isFirstFetch: false,
     }
@@ -74,7 +73,7 @@ class TimeSeries extends Component<Props, State> {
     }
 
     if (!queries.length) {
-      return this.setState({timeSeries: DEFAULT_TIME_SERIES})
+      return this.setState({timeSeries: []})
     }
 
     this.setState({loading: RemoteDataState.Loading, isFirstFetch})
@@ -89,12 +88,8 @@ class TimeSeries extends Component<Props, State> {
         templates
       )
 
-      const newSeries = timeSeries.map((response: TimeSeriesResponse) => ({
-        response,
-      }))
-
       this.setState({
-        timeSeries: newSeries,
+        timeSeries,
         loading: RemoteDataState.Done,
       })
     } catch (err) {
@@ -105,11 +100,7 @@ class TimeSeries extends Component<Props, State> {
   public render() {
     const {timeSeries, loading, isFirstFetch} = this.state
 
-    const hasValues = _.some(timeSeries, s => {
-      const results = _.get(s, 'response.results', [])
-      const v = _.some(results, r => r.series)
-      return v
-    })
+    const hasValues = _.some(timeSeries, s => !!s.data.length)
 
     if (isFirstFetch && loading === RemoteDataState.Loading) {
       return (
