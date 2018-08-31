@@ -20,15 +20,31 @@ export const fluxTablesToDygraph = (data: FluxTable[]): DygraphValue[][] => {
   data.forEach((table, i) => {
     const header = table.data[0]
     const timeColIndex = header.findIndex(col => col === '_time')
-    // TODO(desa): make it actually work with _value and in general
-    // const valueColIndex = header.findIndex(col => col === 'mean')
-    const valueColIndex = header.findIndex(col => col === 'mean')
+    const valueColIndexMap = {}
+    header
+      .filter(
+        el =>
+          el !== '_time' &&
+          el !== '_start' &&
+          el !== '_stop' &&
+          el !== '_field' &&
+          el !== 'table' &&
+          el !== 'result' &&
+          el !== '' &&
+          !(el in table.groupKey)
+      )
+      .forEach(h => {
+        valueColIndexMap[h] = header.findIndex(col => col === h)
+      })
 
     table.data.slice(1).forEach(row => {
       const time = row[timeColIndex]
-      const value = row[valueColIndex]
-
-      valuesForTime[time][i] = +value
+      const values = []
+      Object.keys(valueColIndexMap).forEach(val => {
+        const value = row[valueColIndexMap[val]]
+        values.push(+value)
+      })
+      valuesForTime[time] = values
     })
   })
 
