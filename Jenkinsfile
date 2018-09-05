@@ -10,7 +10,7 @@ node("dind") {
     //   return
     // }
     container('dind') {
-        test_build()
+        compat.test_build()
     }
 }
 
