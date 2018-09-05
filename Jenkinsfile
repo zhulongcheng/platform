@@ -8,7 +8,7 @@ node("dind") {
     // }
     container('dind') {
         step("checkout"){
-            scm checkout
+            checkout scm
         }
     }
 }
