@@ -7,7 +7,7 @@ node("dind") {
     //   return
     // }
     container('dind') {
-        step("checkout"){
+        stage("checkout"){
             checkout scm
         }
     }
