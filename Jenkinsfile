@@ -1,10 +1,12 @@
 
-pipeline{
-    agent any
-    stage("checkout"){
-        steps{
-            scm checkout
-            sh ''
+pipeline {
+    agent {docker:'dind'}
+    stages {
+        stage("checkout"){
+            steps{
+                scm checkout
+                sh ''
+            }
         }
     }
 }
