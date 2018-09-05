@@ -9,7 +9,7 @@ node("dind") {
     //   return
     // }
     container('dind') {
-        @Library("api-compatibility").org.apicompattest.test_build()
+        @Library("api-compatibility").test_build()
     }
 }
 
