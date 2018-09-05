@@ -1,6 +1,5 @@
-
-
 properties([disableConcurrentBuilds()])
+
 
 
 node("dind") {
