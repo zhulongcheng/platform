@@ -1,18 +1,7 @@
 
-// pipeline {
-//     agent any
-//     stages {
-//         stage("checkout"){
-//             steps{
-//                 scm checkout
-//                 sh 'ls -al'
-//             }
-//         }
-//     }
-// }
 
 properties([disableConcurrentBuilds()])
-@Library("api-compatibility")
+@Library("api-compatibility") _
 
 node("dind") {
     // If not in a PR and not in master branch, discard the build
@@ -24,3 +13,17 @@ node("dind") {
         org.apicompattest.test_build()
     }
 }
+
+
+
+// pipeline {
+//     agent any
+//     stages {
+//         stage("checkout"){
+//             steps{
+//                 scm checkout
+//                 sh 'ls -al'
+//             }
+//         }
+//     }
+// }
