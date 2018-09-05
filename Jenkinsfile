@@ -1,6 +1,6 @@
 
 pipeline {
-    agent {docker:'dind'}
+    agent any,
     stages {
         stage("checkout"){
             steps{
