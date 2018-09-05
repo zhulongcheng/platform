@@ -9,7 +9,9 @@ pipeline{
         // }
         container('dind') {
             stage("checkout"){
-                scm checkout
+                steps{
+                    scm checkout
+                }
             }
         }
     }
