@@ -1,7 +1,6 @@
 
 
 properties([disableConcurrentBuilds()])
-@Library("api-compatibility") _
 
 node("dind") {
     // If not in a PR and not in master branch, discard the build
@@ -10,7 +9,7 @@ node("dind") {
     //   return
     // }
     container('dind') {
-        org.apicompattest.test_build()
+        @Library("api-compatibility").org.apicompattest.test_build()
     }
 }
 
