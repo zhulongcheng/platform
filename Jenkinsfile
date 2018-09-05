@@ -14,7 +14,6 @@ node("dind") {
     }
 }
 
-
 // pipeline {
 //     agent any
 //     stages {
