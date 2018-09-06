@@ -6,19 +6,22 @@ The InfluxQL Transpiler exists to rewrite an InfluxQL query into its equivalent 
 
 1. [Identify the cursors](#identify-cursors)
 2. [Identify the query type](#identify-query-type)
-3. [Group the cursors](#group-cursors)
-4. [Create the cursors for each group](#create-groups)
-    1. [Create cursor](#create-cursor)
-    2. [Filter by measurement and fields](#filter-cursor)
-    3. [Generate the pivot table](#generate-pivot-table)
-    4. [Evaluate the condition](#evaluate-condition)
-    5. [Perform the grouping](#perform-grouping)
-    6. [Evaluate the function](#evaluate-function)
-    7. [Normalize the time column](#normalize-time)
-    8. [Combine windows](#combine-windows)
-5. [Join the groups](#join-groups)
-6. [Map and eval columns](#map-and-eval)
-7. [Encoding the results](#encoding)
+3. [Processing Meta Queries](#process-meta-queries)
+    1. [Processing SHOW TAG VALUES](#process-show-tag-values)
+4. [Processing Data Queries](#process-data-queries)
+    1. [Group the cursors](#group-cursors)
+    2. [Create the cursors for each group](#create-groups)
+        1. [Create cursor](#create-cursor)
+        2. [Filter by measurement and fields](#filter-cursor)
+        3. [Generate the pivot table](#generate-pivot-table)
+        4. [Evaluate the condition](#evaluate-condition)
+        5. [Perform the grouping](#perform-grouping)
+        6. [Evaluate the function](#evaluate-function)
+        7. [Normalize the time column](#normalize-time)
+        8. [Combine windows](#combine-windows)
+    5. [Join the groups](#join-groups)
+    6. [Map and eval columns](#map-and-eval)
+5. [Encoding the results](#encoding)
 
 ## <a name="identify-cursors"></a> Identify the cursors
 
@@ -32,8 +35,40 @@ For the following query, it is easy to identify the cursors:
 
 ## <a name="identify-query-type"></a> Identify the query type
 
-There are three types of queries: raw, aggregate, and selector. A raw query is one where all of the cursors reference a variable. An aggregate is one where all of the cursors reference a function call. A selector is one where there is exactly one function call that is a selector (such as `max()` or `min()`) and the remaining variables, if there are any, are variables. If there is only one function call with no variables and that function is a selector, then the function type is a selector.
+There are four types of queries: meta, raw, aggregate, and selector. A meta query is one that retrieves descriptive information about a measurement or series, rather than about the data within the measurement or series. A raw query is one where all of the cursors reference a variable. An aggregate is one where all of the cursors reference a function call. A selector is one where there is exactly one function call that is a selector (such as `max()` or `min()`) and the remaining variables, if there are any, are variables. If there is only one function call with no variables and that function is a selector, then the function type is a selector.
 
+# <a name="process-meta-queries"></a>Processing Meta Queries 
+
+## <a name="process-show-tag-values"></a>Processing SHOW TAG VALUES
+Show tag values has the full form: 
+
+```
+SHOW TAG VALUES 
+  [ON <database_name>]
+  [FROM <measurement>] 
+  WITH KEY [ [<operator> "<tag_key>" | <regular_expression>] | [IN ("<tag_key1>","<tag_key2")]] 
+  [WHERE <tag_key> <operator> ['<tag_value>' | <regular_expression>]] 
+  [LIMIT_clause] 
+  [OFFSET_clause]
+```
+
+In flux, for a single `<tag key>`, we can get the tag values: 
+```  
+from(db:<database_name>)
+         |> range(start:<start>)
+         |> filter(fn:(r) => r._measurement == <measurement>)
+         |> group(by:[<tag_key>])
+         |> distinct(column:<tag_key>)
+         |> group(none:true)
+```
+
+TODO: In some cases `<tag_key>` is instead a set identified by a regex or IN clause.  Need to determine the best way to 
+issue a query to get the values for multiple tag keys.  The trivial solution is to issue and yield multiple queries. 
+
+TODO: supporting `<regular_expression>` filters will require some kind of language support since the transpiler is not 
+schema-aware.  
+
+# <a name="process-data-queries"></a>Processing Data Queries
 ## <a name="group-cursors"></a> Group the cursors
 
 We group the cursors based on the query type. For raw queries and selectors, all of the cursors are put into the same group. For aggregates, each function call is put into a separate group so they can be joined at the end.
