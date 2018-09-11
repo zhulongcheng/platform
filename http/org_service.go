@@ -88,10 +88,10 @@ func (h *OrgHandler) handlePostOrg(w http.ResponseWriter, r *http.Request) {
 
 	// create internal org bucket
 	systemBucket := &platform.Bucket{
-		OrganizationID:  req.Org.ID,
-		Name:            "task-logs",
-		RetentionPeriod: time.Hour * 24 * 7,
-		Type:            platform.BucketTypeLogs,
+		OrganizationID:   req.Org.ID,
+		Name:             "task-logs",
+		RetentionPeriods: []time.Duration{time.Hour * 24 * 7},
+		Type:             platform.BucketTypeLogs,
 	}
 
 	// TODO(jm): if this fails, revert org creation

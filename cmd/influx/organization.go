@@ -84,10 +84,10 @@ func createInternalBucket(o *platform.Organization) (*platform.Bucket, error) {
 	}
 
 	bucket := &platform.Bucket{
-		OrganizationID:  o.ID,
-		Name:            "task-logs",
-		RetentionPeriod: time.Hour * 24 * 7,
-		Type:            platform.BucketTypeLogs,
+		OrganizationID:   o.ID,
+		Name:             "task-logs",
+		RetentionPeriods: []time.Duration{time.Hour * 24 * 7},
+		Type:             platform.BucketTypeLogs,
 	}
 
 	if err := bucketS.CreateBucket(context.Background(), bucket); err != nil {

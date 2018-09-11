@@ -14,13 +14,13 @@ const (
 
 // Bucket is a bucket. 🎉
 type Bucket struct {
-	ID                  ID            `json:"id,omitempty"`
-	OrganizationID      ID            `json:"organizationID,omitempty"`
-	Organization        string        `json:"organization,omitempty"`
-	Name                string        `json:"name"`
-	RetentionPolicyName string        `json:"rp,omitempty"` // This to support v1 sources
-	RetentionPeriod     time.Duration `json:"retentionPeriod"`
-	Type                BucketType    `json:"-"` // Only user buckets will be visible over HTTP
+	ID                  ID              `json:"id,omitempty"`
+	OrganizationID      ID              `json:"organizationID,omitempty"`
+	Organization        string          `json:"organization,omitempty"`
+	Name                string          `json:"name"`
+	RetentionPolicyName string          `json:"rp,omitempty"` // This to support v1 sources
+	RetentionPeriods    []time.Duration `json:"retentionPeriods"`
+	Type                BucketType      `json:"-"` // Only user buckets will be visible over HTTP
 }
 
 // BucketService represents a service for managing bucket data.
@@ -49,8 +49,8 @@ type BucketService interface {
 // BucketUpdate represents updates to a bucket.
 // Only fields which are set are updated.
 type BucketUpdate struct {
-	Name            *string        `json:"name,omitempty"`
-	RetentionPeriod *time.Duration `json:"retentionPeriod,omitempty"`
+	Name             *string          `json:"name,omitempty"`
+	RetentionPeriods []*time.Duration `json:"retentionsPeriod,omitempty"`
 }
 
 // BucketFilter represents a set of filter that restrict the returned results.

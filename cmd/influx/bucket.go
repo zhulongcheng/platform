@@ -62,9 +62,9 @@ func bucketCreateF(cmd *cobra.Command, args []string) {
 	}
 
 	b := &platform.Bucket{
-		Name:            bucketCreateFlags.name,
-		RetentionPeriod: bucketCreateFlags.retention,
-		Type:            platform.BucketTypeUser,
+		Name:             bucketCreateFlags.name,
+		RetentionPeriods: []time.Duration{bucketCreateFlags.retention},
+		Type:             platform.BucketTypeUser,
 	}
 
 	if bucketCreateFlags.org != "" {
@@ -96,7 +96,7 @@ func bucketCreateF(cmd *cobra.Command, args []string) {
 	w.Write(map[string]interface{}{
 		"ID":             b.ID.String(),
 		"Name":           b.Name,
-		"Retention":      b.RetentionPeriod,
+		"Retentions":     b.RetentionPeriods,
 		"Organization":   b.Organization,
 		"OrganizationID": b.OrganizationID.String(),
 	})
@@ -185,7 +185,7 @@ func bucketFindF(cmd *cobra.Command, args []string) {
 		w.Write(map[string]interface{}{
 			"ID":             b.ID.String(),
 			"Name":           b.Name,
-			"Retention":      b.RetentionPeriod,
+			"Retention":      b.RetentionPeriods,
 			"Organization":   b.Organization,
 			"OrganizationID": b.OrganizationID.String(),
 		})
@@ -234,7 +234,7 @@ func bucketUpdateF(cmd *cobra.Command, args []string) {
 		update.Name = &bucketUpdateFlags.name
 	}
 	if bucketUpdateFlags.retention != 0 {
-		update.RetentionPeriod = &bucketUpdateFlags.retention
+		update.RetentionPeriods = []*time.Duration{&bucketUpdateFlags.retention}
 	}
 
 	b, err := s.UpdateBucket(context.Background(), id, update)
@@ -247,14 +247,14 @@ func bucketUpdateF(cmd *cobra.Command, args []string) {
 	w.WriteHeaders(
 		"ID",
 		"Name",
-		"Retention",
+		"Retentions",
 		"Organization",
 		"OrganizationID",
 	)
 	w.Write(map[string]interface{}{
 		"ID":             b.ID.String(),
 		"Name":           b.Name,
-		"Retention":      b.RetentionPeriod,
+		"Retentions":     b.RetentionPeriods,
 		"Organization":   b.Organization,
 		"OrganizationID": b.OrganizationID.String(),
 	})
@@ -297,7 +297,7 @@ func bucketDeleteF(cmd *cobra.Command, args []string) {
 	w.WriteHeaders(
 		"ID",
 		"Name",
-		"Retention",
+		"Retentions",
 		"Organization",
 		"OrganizationID",
 		"Deleted",
@@ -305,7 +305,7 @@ func bucketDeleteF(cmd *cobra.Command, args []string) {
 	w.Write(map[string]interface{}{
 		"ID":             b.ID.String(),
 		"Name":           b.Name,
-		"Retention":      b.RetentionPeriod,
+		"Retentions":     b.RetentionPeriods,
 		"Organization":   b.Organization,
 		"OrganizationID": b.OrganizationID.String(),
 		"Deleted":        true,

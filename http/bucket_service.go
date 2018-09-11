@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"path"
 	"strings"
+	"time"
 
 	"github.com/influxdata/platform"
 	errors "github.com/influxdata/platform/kit/errors"
@@ -41,6 +42,9 @@ type bucketResponse struct {
 }
 
 func newBucketResponse(b *platform.Bucket) *bucketResponse {
+	if len(b.RetentionPeriods) == 0 {
+		b.RetentionPeriods = []time.Duration{0}
+	}
 	return &bucketResponse{
 		Links: map[string]string{
 			"self": fmt.Sprintf("/v1/buckets/%s", b.ID),
@@ -77,6 +81,9 @@ func (h *BucketHandler) handlePostBucket(w http.ResponseWriter, r *http.Request)
 	if err != nil {
 		EncodeError(ctx, err, w)
 		return
+	}
+	if len(req.Bucket.RetentionPeriods) == 0 {
+		req.Bucket.RetentionPeriods = []time.Duration{0}
 	}
 
 	if err := h.BucketService.CreateBucket(ctx, req.Bucket); err != nil {

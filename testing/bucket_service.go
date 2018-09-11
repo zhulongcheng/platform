@@ -1018,11 +1018,11 @@ func UpdateBucket(
 			},
 			wants: wants{
 				bucket: &platform.Bucket{
-					ID:              idFromString(t, bucketOneID),
-					OrganizationID:  idFromString(t, orgOneID),
-					Organization:    "theorg",
-					Name:            "bucket1",
-					RetentionPeriod: 100 * time.Minute,
+					ID:               idFromString(t, bucketOneID),
+					OrganizationID:   idFromString(t, orgOneID),
+					Organization:     "theorg",
+					Name:             "bucket1",
+					RetentionPeriods: []time.Duration{100 * time.Minute},
 				},
 			},
 		},
@@ -1055,11 +1055,11 @@ func UpdateBucket(
 			},
 			wants: wants{
 				bucket: &platform.Bucket{
-					ID:              idFromString(t, bucketTwoID),
-					OrganizationID:  idFromString(t, orgOneID),
-					Organization:    "theorg",
-					Name:            "changed",
-					RetentionPeriod: 101 * time.Minute,
+					ID:               idFromString(t, bucketTwoID),
+					OrganizationID:   idFromString(t, orgOneID),
+					Organization:     "theorg",
+					Name:             "changed",
+					RetentionPeriods: []time.Duration{101 * time.Minute},
 				},
 			},
 		},
@@ -1077,7 +1077,7 @@ func UpdateBucket(
 			}
 			if tt.args.retention != 0 {
 				d := time.Duration(tt.args.retention) * time.Minute
-				upd.RetentionPeriod = &d
+				upd.RetentionPeriods = []*time.Duration{&d}
 			}
 
 			bucket, err := s.UpdateBucket(ctx, tt.args.id, upd)

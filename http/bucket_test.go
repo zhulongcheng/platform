@@ -73,7 +73,7 @@ func TestService_handleGetBuckets(t *testing.T) {
       "id": "30",
       "organizationID": "3130",
       "name": "hello",
-      "retentionPeriod": 0
+      "retentionPeriods": [0]
     },
     {
       "links": {
@@ -83,7 +83,7 @@ func TestService_handleGetBuckets(t *testing.T) {
       "id": "32",
       "organizationID": "3230",
       "name": "example",
-      "retentionPeriod": 0
+      "retentionPeriods": [0]
     }
   ]
 }
@@ -202,7 +202,7 @@ func TestService_handleGetBucket(t *testing.T) {
   "id": "020f755c3c082000",
   "organizationID": "020f755c3c082000",
   "name": "hello",
-  "retentionPeriod": 0
+  "retentionPeriods": [0]
 }
 `,
 			},
@@ -312,7 +312,7 @@ func TestService_handlePostBucket(t *testing.T) {
   "organizationID": "30",
   "organization": "30",
   "name": "hello",
-  "retentionPeriod": 0
+  "retentionPeriods": [0]
 }
 `,
 			},
@@ -451,9 +451,9 @@ func TestService_handlePatchBucket(t *testing.T) {
 		BucketService platform.BucketService
 	}
 	type args struct {
-		id        string
-		name      string
-		retention time.Duration
+		id         string
+		name       string
+		retentions []time.Duration
 	}
 	type wants struct {
 		statusCode  int
@@ -483,8 +483,12 @@ func TestService_handlePatchBucket(t *testing.T) {
 								d.Name = *upd.Name
 							}
 
-							if upd.RetentionPeriod != nil {
-								d.RetentionPeriod = *upd.RetentionPeriod
+							if len(upd.RetentionPeriods) != 0 {
+								retPolicies := []time.Duration{}
+								for _, dd := range upd.RetentionPeriods {
+									retPolicies = append(retPolicies, *dd)
+								}
+								d.RetentionPeriods = retPolicies
 							}
 
 							return d, nil
@@ -495,9 +499,9 @@ func TestService_handlePatchBucket(t *testing.T) {
 				},
 			},
 			args: args{
-				id:        "020f755c3c082000",
-				name:      "example",
-				retention: 1234,
+				id:         "020f755c3c082000",
+				name:       "example",
+				retentions: []time.Duration{1234},
 			},
 			wants: wants{
 				statusCode:  http.StatusOK,
@@ -511,7 +515,7 @@ func TestService_handlePatchBucket(t *testing.T) {
   "id": "020f755c3c082000",
   "organizationID": "020f755c3c082000",
   "name": "example",
-  "retentionPeriod": 1234
+  "retentionPeriods": [1234]
 }
 `,
 			},
@@ -544,8 +548,12 @@ func TestService_handlePatchBucket(t *testing.T) {
 			if tt.args.name != "" {
 				upd.Name = &tt.args.name
 			}
-			if tt.args.retention != 0 {
-				upd.RetentionPeriod = &tt.args.retention
+			if len(tt.args.retentions) != 0 {
+				retPolicies := []*time.Duration{}
+				for _, dd := range tt.args.retentions {
+					retPolicies = append(retPolicies, &dd)
+				}
+				upd.RetentionPeriods = retPolicies
 			}
 
 			b, err := json.Marshal(upd)

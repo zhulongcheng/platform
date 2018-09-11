@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"time"
 
 	"github.com/coreos/bbolt"
 	"github.com/influxdata/platform"
@@ -354,8 +355,12 @@ func (c *Client) updateBucket(ctx context.Context, tx *bolt.Tx, id platform.ID, 
 		return nil, err
 	}
 
-	if upd.RetentionPeriod != nil {
-		b.RetentionPeriod = *upd.RetentionPeriod
+	if upd.RetentionPeriods != nil {
+		rps := []time.Duration{}
+		for _, rrr := range upd.RetentionPeriods {
+			rps = append(rps, *rrr)
+		}
+		b.RetentionPeriods = rps
 	}
 
 	if upd.Name != nil {
