@@ -75,13 +75,13 @@ func newTranspilerState(dbrpMappingSvc platform.DBRPMappingService, config *Conf
 }
 
 func (t *transpilerState) Transpile(ctx context.Context, id int, s influxql.Statement) error {
-	switch s.(type) {
+	switch stmt := s.(type) {
 	case *influxql.SelectStatement:
-		if err := t.selectTranspile(ctx, id, s.(*influxql.SelectStatement)); err != nil {
+		if err := t.transpileSelect(ctx, id, stmt); err != nil {
 			return err
 		}
 	case *influxql.ShowTagValuesStatement:
-		if err := t.showTagValuesTranspile(ctx, id, s.(*influxql.ShowTagValuesStatement)); err != nil {
+		if err := t.transpileShowTagValues(ctx, id, stmt); err != nil {
 			return err
 		}
 	default:
@@ -90,12 +90,12 @@ func (t *transpilerState) Transpile(ctx context.Context, id int, s influxql.Stat
 	return nil
 }
 
-func (t *transpilerState) showTagValuesTranspile(ctx context.Context, id int, stmt *influxql.ShowTagValuesStatement) error {
+func (t *transpilerState) transpileShowTagValues(ctx context.Context, id int, stmt *influxql.ShowTagValuesStatement) error {
 
 	return nil
 }
 
-func (t *transpilerState) selectTranspile(ctx context.Context, id int, stmt *influxql.SelectStatement) error {
+func (t *transpilerState) transpileSelect(ctx context.Context, id int, stmt *influxql.SelectStatement) error {
 	// Clone the select statement and omit the time from the list of column names.
 	t.stmt = stmt.Clone()
 	t.stmt.OmitTime = true
