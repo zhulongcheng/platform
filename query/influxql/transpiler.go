@@ -91,6 +91,27 @@ func (t *transpilerState) Transpile(ctx context.Context, id int, s influxql.Stat
 }
 
 func (t *transpilerState) transpileShowTagValues(ctx context.Context, id int, stmt *influxql.ShowTagValuesStatement) error {
+	// Clone the select statement and omit the time from the list of column names.
+	t.stmt = stmt.Clone()
+	t.stmt.OmitTime = true
+	t.id = id
+
+	m, ok := stmt.Sources[0].(*influxql.Measurement)
+	if !ok {
+		return nil, errors.New("unimplemented: source must be a measurement")
+	}
+	db, rp := m.Database, m.RetentionPolicy
+	if db == "" {
+		if t.config.DefaultDatabase == "" {
+			return "", errors.New("database is required")
+		}
+		db = t.config.DefaultDatabase
+	}
+	if rp == "" {
+		if t.config.DefaultRetentionPolicy != "" {
+			rp = t.config.DefaultRetentionPolicy
+		}
+	}
 
 	return nil
 }
