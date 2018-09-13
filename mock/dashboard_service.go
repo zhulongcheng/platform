@@ -9,7 +9,7 @@ import (
 var _ platform.DashboardService = &DashboardService{}
 
 type DashboardService struct {
-	CreateDashboardF   func(context.Context, *platform.Dashboard) error
+	CreateDashboardF   func(context.Context, *platform.Dashboard, ...*platform.View) error
 	FindDashboardByIDF func(context.Context, platform.ID) (*platform.Dashboard, error)
 	FindDashboardsF    func(context.Context, platform.DashboardFilter) ([]*platform.Dashboard, int, error)
 	UpdateDashboardF   func(context.Context, platform.ID, platform.DashboardUpdate) (*platform.Dashboard, error)
@@ -30,8 +30,8 @@ func (s *DashboardService) FindDashboards(ctx context.Context, filter platform.D
 	return s.FindDashboardsF(ctx, filter)
 }
 
-func (s *DashboardService) CreateDashboard(ctx context.Context, b *platform.Dashboard) error {
-	return s.CreateDashboardF(ctx, b)
+func (s *DashboardService) CreateDashboard(ctx context.Context, b *platform.Dashboard, views ...*platform.View) error {
+	return s.CreateDashboardF(ctx, b, views...)
 }
 
 func (s *DashboardService) UpdateDashboard(ctx context.Context, id platform.ID, upd platform.DashboardUpdate) (*platform.Dashboard, error) {

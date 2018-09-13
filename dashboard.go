@@ -21,7 +21,7 @@ type DashboardService interface {
 	FindDashboards(ctx context.Context, filter DashboardFilter) ([]*Dashboard, int, error)
 
 	// CreateDashboard creates a new dashboard and sets b.ID with the new identifier.
-	CreateDashboard(ctx context.Context, b *Dashboard) error
+	CreateDashboard(ctx context.Context, b *Dashboard, views ...*View) error
 
 	// UpdateDashboard updates a single dashboard with changeset.
 	// Returns the new dashboard state after update.

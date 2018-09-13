@@ -642,7 +642,15 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Dashboard"
+                type: object
+                allOf:
+                  - $ref: "#/components/schemas/Dashboard"
+                  - type: object
+                    properties:
+                      views:
+                        type: array
+                        items:
+                          $ref: "#/components/schemas/View"
       responses:
         '201':
           description: Added dashboard

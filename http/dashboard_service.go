@@ -151,29 +151,29 @@ func (h *DashboardHandler) handlePostDashboard(w http.ResponseWriter, r *http.Re
 		EncodeError(ctx, err, w)
 		return
 	}
-	if err := h.DashboardService.CreateDashboard(ctx, req.Dashboard); err != nil {
+	dash := &req.Dashboard
+	if err := h.DashboardService.CreateDashboard(ctx, dash, req.Views...); err != nil {
 		EncodeError(ctx, errors.InternalErrorf("Error loading dashboards: %v", err), w)
 		return
 	}
 
-	if err := encodeResponse(ctx, w, http.StatusCreated, newDashboardResponse(req.Dashboard)); err != nil {
+	if err := encodeResponse(ctx, w, http.StatusCreated, newDashboardResponse(dash)); err != nil {
 		EncodeError(ctx, err, w)
 		return
 	}
 }
 
 type postDashboardRequest struct {
-	Dashboard *platform.Dashboard
+	platform.Dashboard
+	Views []*platform.View `json:"views"`
 }
 
 func decodePostDashboardRequest(ctx context.Context, r *http.Request) (*postDashboardRequest, error) {
-	c := &platform.Dashboard{}
+	c := &postDashboardRequest{}
 	if err := json.NewDecoder(r.Body).Decode(c); err != nil {
 		return nil, err
 	}
-	return &postDashboardRequest{
-		Dashboard: c,
-	}, nil
+	return c, nil
 }
 
 // hanldeGetDashboard retrieves a dashboard by ID.

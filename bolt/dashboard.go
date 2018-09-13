@@ -145,12 +145,22 @@ func (c *Client) findDashboards(ctx context.Context, tx *bolt.Tx, filter platfor
 }
 
 // CreateDashboard creates a platform dashboard and sets d.ID.
-func (c *Client) CreateDashboard(ctx context.Context, d *platform.Dashboard) error {
+func (c *Client) CreateDashboard(ctx context.Context, d *platform.Dashboard, vs ...*platform.View) error {
 	return c.db.Update(func(tx *bolt.Tx) error {
 		d.ID = c.IDGenerator.ID()
 
+		views := make(map[string]platform.ID, len(vs))
+		for _, v := range vs {
+			oldID := v.ID.String()
+			if err := c.createView(ctx, tx, v); err != nil {
+				return err
+			}
+			views[oldID] = v.ID
+		}
+
 		for _, cell := range d.Cells {
 			cell.ID = c.IDGenerator.ID()
+			cell.ViewID = views[cell.ViewID.String()]
 
 			if err := c.createViewIfNotExists(ctx, tx, cell, platform.AddDashboardCellOptions{}); err != nil {
 				return err
