@@ -65,7 +65,7 @@ Flux is a data scripting language. To learn Flux we walk through a handful of si
     > // Flux has lists too, list values must be the same type.
     > l = [1,2,3,i]
     > l
-    [1,2,3,1]
+    [1, 2, 3, 1]
     >
     > // Flux also has primitive values for durations and times.
     > d = 3h5m // 3 hours and 5 minutes
@@ -173,26 +173,26 @@ At this point we have learned how to use various transformations:
 The process of learning Flux is about learning each of the available transformations. This allows you to start with the bits that you need and then incrementally add to your knowledge as your needs grow.
 
 
-Before we end, here is one last example to learn how to use two more operations `join` and `map`.  The `join` transformation take two table streams and combines them into a single stream of tables. The `map` transformation applies a function to each row of the table, producing a new row in the output table.
+Before we end, here is one last example to learn how to use three more operations `join`, `map` and `yield`.  The `join` transformation take two table streams and combines them into a single stream of tables. The `map` transformation applies a function to each row of the table, producing a new row in the output table. The `yield` operation instructs Flux to return the table data to the client, the `run` function is calling yield internally. Sometimes it is helpful to call yield explicitly as we will see below.
 
 For this example we are going to join our memory used percent with the system uptime. Maybe we will find a correlation that indicates we have some kind of memory leak?
 
     > // First we need to get each sequence of tables
     > used_percent = from(bucket:"telegraf/autogen") |> range(start:-1m) |> filter(fn:(r) => r._measurement == "mem" and r._field == "used_percent")
-    > run()
+    > used_percent |> yield()
     > uptime = from(bucket:"telegraf/autogen") |> range(start:-1m) |> filter(fn:(r) => r._measurement == "system" and r._field == "uptime")
-    > run()
+    > uptime |> yield()
     >
     > // Now for the join, we need to specify the tables to join and which columns to use when joining.
     > // Here we only care to join on _time.
-    > joined = join(tables:{used_percent: used_percent, uptime:uptime}, on:["_time"])
-    > run()
+    > joined = join(tables:{used_percent: used_percent, uptime:uptime}, on:["_time", "_start", "_stop"])
+    > joined |> yield()
     > // Notice the result now has multiple _value columns, one for used_percent and uptime.
     > // At this point we could graph these results and visually inspect the data for some kind of correlation.
     >
     > // Perhaps the ratio of the two values is a meaningfull metric to visualize as well?
     > // Let's explore how we could do that using the `map` transformation.
-    > joined |> map(fn:(r) => ({_value: r._value_used_percent / r._value_uptime}))
+    > joined |> map(fn:(r) => ({_value: r._value_used_percent / float(v:r._value_uptime)}))
     > // We use an anonymous function to compute the ratio between used_percent and uptime.
     > // The columns of the table are the properties of the object `r` passed into the function.
     > // Finally, the result of this computation is stored as the _value column on the output table.
@@ -201,4 +201,4 @@ For this example we are going to join our memory used percent with the system up
 
 Great! We now have the foundational transformations under our belt, `from`, `range`, `filter`, `group`, `window`, and `join`.
 By composing those transformations we can transform and shape our data to get the results we need.
-
+All the available transformations are documented in the Flux [Spec](https://github.com/influxdata/flux/tree/master/docs).
