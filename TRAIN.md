@@ -4,12 +4,19 @@
 
 ### InfluxDB
 
-Install and run InfluxDB:
+Install and nightly InfluxDB binary and run it:
 
-    cd path/to/influxdb
-    git checkout sgc-flux
-    go build -o influxd ./cmd/influxd
-    ./influxd
+Mac OS X
+
+    wget https://dl.influxdata.com/influxdb/nightlies/influxdb-nightly_darwin_amd64.tar.gz
+    tar zxvf influxdb-nightly_darwin_amd64.tar.gz
+    cp influxdb-1.7.0*/usr/bin/influxd /path/to/bin/influxd
+
+Linux
+
+    wget https://dl.influxdata.com/influxdb/nightlies/influxdb-nightly_linux_amd64.tar.gz
+    tar xvfz influxdb-nightly_linux_amd64.tar.gz
+    cp influxdb-1.7.0*/usr/bin/influxd /path/to/bin/influxd
 
 Install the influx command download the nightly:
 
