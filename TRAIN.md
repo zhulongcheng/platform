@@ -25,6 +25,9 @@ Linux
     tar xvfz fluxd_nightly_linux_amd64.tar.gz
     cd fluxd_nightly_linux_amd64
 
+### Telegraf
+
+The examples that follow will use Telegraf data. Make sure you have Telegraf installed and running.
 
 ### REPL
 
@@ -86,7 +89,6 @@ To build our first query we need to learn the `from`, `range`, and `filter` func
 By chaining these functions together we can get a small subset of the data from our `telegraf` database.
 
     > from(bucket:"telegraf/autogen") |> range(start:-20s) |> filter(fn:(r) => r._measurement == "cpu")
-    ...
     > // The |> pipe forward operator means, pass the result of the previous expression into the next.
     > // By using |> we can easily create a chain of operations.
     >
@@ -137,7 +139,7 @@ By chaining these functions together we can get a small subset of the data from 
     > run()
     >
 
-Now let's look into windowing data into time buckets for processing. The `window` function is just a special kind of grouping operation that changes the table grouping to be aligned with windows. At this point you may have noticed that the data has two columns: _start and _stop. The convention is that the _start column contains a time value that represents the lower time bound for the row. Similarly the _stop column contains a time value that represents the exclusive upper time bound for the row. The range function added these columns to the data based on the range you passed it as well as grouping by these columns. The result is that by default rows for the same range of time belong in the same table. The window function provides a way to change grouping based on time by chaining the _start and _stop columns.
+Now let's look into windowing data into groups for processing. The `window` function is just a special kind of grouping operation that changes the table grouping to be aligned with windows. At this point you may have noticed that the data has two columns: _start and _stop. The convention is that the _start column contains a time value that represents the lower time bound for the row. Similarly the _stop column contains a time value that represents the exclusive upper time bound for the row. The window function provides a way to change grouping based on time by updating the _start and _stop columns.
 
 Let's see an example and let's use a different dataset to change things up a bit.
 
@@ -185,14 +187,14 @@ For this example we are going to join our memory used percent with the system up
     >
     > // Now for the join, we need to specify the tables to join and which columns to use when joining.
     > // Here we only care to join on _time.
-    > joined = join(tables:{used_percent: used_percent, uptime:uptime}, on:["_time", "_start", "_stop"])
+    > joined = join(tables:{used_percent: used_percent, uptime:uptime}, on:["_time", "_start", "_stop", "host"])
     > joined |> yield()
     > // Notice the result now has multiple _value columns, one for used_percent and uptime.
     > // At this point we could graph these results and visually inspect the data for some kind of correlation.
     >
     > // Perhaps the ratio of the two values is a meaningfull metric to visualize as well?
     > // Let's explore how we could do that using the `map` transformation.
-    > joined |> map(fn:(r) => ({_value: r._value_used_percent / float(v:r._value_uptime)}))
+    > joined |> map(fn:(r) => ({_time:r._time, _value: r._value_used_percent / float(v:r._value_uptime)}))
     > // We use an anonymous function to compute the ratio between used_percent and uptime.
     > // The columns of the table are the properties of the object `r` passed into the function.
     > // Finally, the result of this computation is stored as the _value column on the output table.
