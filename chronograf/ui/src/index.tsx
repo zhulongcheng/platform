@@ -30,6 +30,7 @@ import {notify} from 'src/shared/actions/notifications'
 import 'src/style/chronograf.scss'
 
 import * as ErrorsModels from 'src/types/errors'
+import OnboardingWizard from 'src/onboarding/containers/OnboardingWizard'
 
 const errorsQueue = []
 
@@ -96,6 +97,7 @@ class Root extends PureComponent<{}, State> {
     return this.state.ready ? (
       <Provider store={store}>
         <Router history={history}>
+          <Route path="setup" component={OnboardingWizard} />
           <Route component={App}>
             <Route path="/" component={CheckSources}>
               <Route path="dashboards/:dashboardID" component={DashboardPage} />

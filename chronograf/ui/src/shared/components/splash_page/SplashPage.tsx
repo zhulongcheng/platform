@@ -6,10 +6,7 @@ interface Props {
 
 const SplashPage: SFC<Props> = ({children}) => (
   <div className="auth-page">
-    <div className="auth-box">
-      <div className="auth-logo" />
-      {children}
-    </div>
+    <div className="auth-box">{children}</div>
     <p className="auth-credits">
       Made by <span className="icon cubo-uniform" />InfluxData
     </p>
