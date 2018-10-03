@@ -20,6 +20,8 @@ type Service struct {
 	dbrpMappingKV         sync.Map
 	userResourceMappingKV sync.Map
 	scraperTargetKV       sync.Map
+	onboardingKV          sync.Map
+	basicAuthKV           sync.Map
 
 	TokenGenerator platform.TokenGenerator
 	IDGenerator    platform.IDGenerator

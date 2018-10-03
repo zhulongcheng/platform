@@ -4,11 +4,10 @@ import (
 	"context"
 	"testing"
 
-	"github.com/influxdata/platform"
 	platformtesting "github.com/influxdata/platform/testing"
 )
 
-func initUserService(f platformtesting.UserFields, t *testing.T) (platform.UserService, func()) {
+func initUserService(f platformtesting.UserFields, t *testing.T) (platformtesting.UserServiceNBasicAuth, func()) {
 	s := NewService()
 	s.IDGenerator = f.IDGenerator
 	ctx := context.Background()
@@ -48,4 +47,14 @@ func TestUserService_FindUser(t *testing.T) {
 func TestUserService_UpdateUser(t *testing.T) {
 	t.Parallel()
 	platformtesting.UpdateUser(initUserService, t)
+}
+
+func TestBasicAuth(t *testing.T) {
+	t.Parallel()
+	platformtesting.BasicAuth(initUserService, t)
+}
+
+func TestBasicAuth_CompareAndSet(t *testing.T) {
+	t.Parallel()
+	platformtesting.CompareAndSetPassword(initUserService, t)
 }

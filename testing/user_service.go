@@ -31,6 +31,12 @@ var userCmpOptions = cmp.Options{
 	}),
 }
 
+// UserServiceNBasicAuth combines both User Service and BasicAuth Service
+type UserServiceNBasicAuth interface {
+	platform.UserService
+	platform.BasicAuthService
+}
+
 // UserFields will include the IDGenerator, and users
 type UserFields struct {
 	IDGenerator platform.IDGenerator
@@ -39,11 +45,11 @@ type UserFields struct {
 
 // UserService tests all the service functions.
 func UserService(
-	init func(UserFields, *testing.T) (platform.UserService, func()), t *testing.T,
+	init func(UserFields, *testing.T) (UserServiceNBasicAuth, func()), t *testing.T,
 ) {
 	tests := []struct {
 		name string
-		fn   func(init func(UserFields, *testing.T) (platform.UserService, func()),
+		fn   func(init func(UserFields, *testing.T) (UserServiceNBasicAuth, func()),
 			t *testing.T)
 	}{
 		{
@@ -80,7 +86,7 @@ func UserService(
 
 // CreateUser testing
 func CreateUser(
-	init func(UserFields, *testing.T) (platform.UserService, func()),
+	init func(UserFields, *testing.T) (UserServiceNBasicAuth, func()),
 	t *testing.T,
 ) {
 	type args struct {
@@ -208,7 +214,7 @@ func CreateUser(
 
 // FindUserByID testing
 func FindUserByID(
-	init func(UserFields, *testing.T) (platform.UserService, func()),
+	init func(UserFields, *testing.T) (UserServiceNBasicAuth, func()),
 	t *testing.T,
 ) {
 	type args struct {
@@ -277,7 +283,7 @@ func FindUserByID(
 
 // FindUsers testing
 func FindUsers(
-	init func(UserFields, *testing.T) (platform.UserService, func()),
+	init func(UserFields, *testing.T) (UserServiceNBasicAuth, func()),
 	t *testing.T,
 ) {
 	type args struct {
@@ -411,7 +417,7 @@ func FindUsers(
 
 // DeleteUser testing
 func DeleteUser(
-	init func(UserFields, *testing.T) (platform.UserService, func()),
+	init func(UserFields, *testing.T) (UserServiceNBasicAuth, func()),
 	t *testing.T,
 ) {
 	type args struct {
@@ -517,7 +523,7 @@ func DeleteUser(
 
 // FindUser testing
 func FindUser(
-	init func(UserFields, *testing.T) (platform.UserService, func()),
+	init func(UserFields, *testing.T) (UserServiceNBasicAuth, func()),
 	t *testing.T,
 ) {
 	type args struct {
@@ -591,7 +597,7 @@ func FindUser(
 
 // UpdateUser testing
 func UpdateUser(
-	init func(UserFields, *testing.T) (platform.UserService, func()),
+	init func(UserFields, *testing.T) (UserServiceNBasicAuth, func()),
 	t *testing.T,
 ) {
 	type args struct {

@@ -5,12 +5,11 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/influxdata/platform"
 	"github.com/influxdata/platform/inmem"
 	platformtesting "github.com/influxdata/platform/testing"
 )
 
-func initUserService(f platformtesting.UserFields, t *testing.T) (platform.UserService, func()) {
+func initUserService(f platformtesting.UserFields, t *testing.T) (platformtesting.UserServiceNBasicAuth, func()) {
 	t.Helper()
 	svc := inmem.NewService()
 	svc.IDGenerator = f.IDGenerator
@@ -25,9 +24,15 @@ func initUserService(f platformtesting.UserFields, t *testing.T) (platform.UserS
 	handler := NewUserHandler()
 	handler.UserService = svc
 	server := httptest.NewServer(handler)
-	client := UserService{
-		Addr: server.URL,
+	client := struct {
+		UserService
+		SetupService
+	}{
+		UserService: UserService{
+			Addr: server.URL,
+		},
 	}
+
 	done := server.Close
 
 	return &client, done

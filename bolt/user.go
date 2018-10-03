@@ -326,6 +326,7 @@ func (c *Client) SetPassword(ctx context.Context, name string, password string) 
 	})
 }
 
+// HashCost currently using the default cost of bcrypt
 var HashCost = bcrypt.DefaultCost
 
 func (c *Client) setPassword(ctx context.Context, tx *bolt.Tx, name string, password string) error {
