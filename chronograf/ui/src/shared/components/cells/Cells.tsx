@@ -73,7 +73,7 @@ class Cells extends Component<Props & WithRouterProps, State> {
         containerPadding={[0, 0]}
         margin={[LAYOUT_MARGIN, LAYOUT_MARGIN]}
         onLayoutChange={this.handleLayoutChange}
-        draggableHandle={'.dash-graph--draggable'}
+        draggableHandle={'.cell--draggable'}
         isDraggable={this.isDashboard}
         isResizable={this.isDashboard}
       >

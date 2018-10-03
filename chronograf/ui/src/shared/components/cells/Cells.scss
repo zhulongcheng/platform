@@ -1,7 +1,30 @@
 /*
-  Variables
-  ---------------------------------------------
+  Cell Styles
+  ------------------------------------------------------------------------------
 */
+
+.cell {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.cell--header {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  background-color: #f00;
+  height: 30px;
+  z-index: 3;
+}
+
+.cell--view {
+  border-radius: $radius;
+  flex: 1 0 100%;
+}
+
 $graph-heading-height: 44px;
 $graph-gutter: 16px;
 

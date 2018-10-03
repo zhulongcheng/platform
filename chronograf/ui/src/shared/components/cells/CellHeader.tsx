@@ -1,4 +1,5 @@
 import React, {SFC} from 'react'
+import classnames from 'classnames'
 import {isCellUntitled} from 'src/dashboards/utils/cellGetters'
 
 interface Props {
@@ -7,21 +8,17 @@ interface Props {
 }
 
 const LayoutCellHeader: SFC<Props> = ({isEditable, cellName}) => {
-  const headingClass = `dash-graph--heading ${
-    isEditable ? 'dash-graph--draggable dash-graph--heading-draggable' : ''
-  }`
+  const headerClass = classnames('cell--header', {
+    'cell--draggable cell--header-draggable': isEditable,
+  })
+
+  const nameClass = classnames('cell--name', {
+    'cell--name__default': isCellUntitled(cellName),
+  })
 
   return (
-    <div className={headingClass}>
-      <span
-        className={
-          isCellUntitled(cellName)
-            ? 'dash-graph--name dash-graph--name__default'
-            : 'dash-graph--name'
-        }
-      >
-        {cellName}
-      </span>
+    <div className={headerClass}>
+      <span className={nameClass}>{cellName}</span>
     </div>
   )
 }

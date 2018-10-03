@@ -6,6 +6,7 @@ import _ from 'lodash'
 import CellMenu from 'src/shared/components/cells/CellMenu'
 import CellHeader from 'src/shared/components/cells/CellHeader'
 import ViewComponent from 'src/shared/components/cells/View'
+import GradientBorder from 'src/shared/components/cells/GradientBorder'
 
 // APIs
 import {getView} from 'src/dashboards/apis/v2/view'
@@ -53,20 +54,23 @@ export default class CellComponent extends Component<Props, State> {
     const {cell, isEditable, onDeleteCell, onCloneCell} = this.props
 
     return (
-      <div className="dash-graph">
-        <CellMenu
-          cell={cell}
-          dataExists={false}
-          queries={this.queries}
-          isEditable={isEditable}
-          onDelete={onDeleteCell}
-          onClone={onCloneCell}
-          onEdit={this.handleSummonOverlay}
-          onCSVDownload={this.handleCSVDownload}
-        />
-        <CellHeader cellName="" isEditable={isEditable} />
-        <div className="dash-graph--container">{this.view}</div>
-      </div>
+      <>
+        <GradientBorder />
+        <div className="cell">
+          <CellMenu
+            cell={cell}
+            dataExists={false}
+            queries={this.queries}
+            isEditable={isEditable}
+            onDelete={onDeleteCell}
+            onClone={onCloneCell}
+            onEdit={this.handleSummonOverlay}
+            onCSVDownload={this.handleCSVDownload}
+          />
+          <CellHeader cellName="" isEditable={isEditable} />
+          <div className="cell--view">{this.view}</div>
+        </div>
+      </>
     )
   }
 

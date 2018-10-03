@@ -46,7 +46,7 @@ class CellMenu extends PureComponent<Props, State> {
 
     if (isEditable) {
       return (
-        <div className="dash-graph-context--buttons">
+        <div className="cell--menu">
           {this.pencilMenu}
           <MenuTooltipButton
             icon="duplicate"
