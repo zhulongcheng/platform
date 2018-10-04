@@ -7,6 +7,7 @@ import ProfilePage from 'src/shared/components/profile_page/ProfilePage'
 import UserSettings from 'src/user/components/UserSettings'
 import TokenManager from 'src/user/components/TokenManager'
 import Resources from 'src/user/components/Resources'
+import Header from 'src/user/components/UserPageHeader'
 
 // Types
 import {Organization, Dashboard} from 'src/types'
@@ -52,12 +53,7 @@ export class UserPage extends PureComponent<Props> {
 
     return (
       <Page>
-        <Page.Header fullWidth={false}>
-          <Page.Header.Left>
-            <Page.Title title="My Profile" />
-          </Page.Header.Left>
-          <Page.Header.Right />
-        </Page.Header>
+        <Header title={`Howdy, ${user.name}!`} />
         <Page.Contents fullWidth={false} scrollable={true}>
           <div className="col-xs-7">
             <ProfilePage

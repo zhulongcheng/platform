@@ -1,6 +1,8 @@
 // Libraries
 import React, {PureComponent} from 'react'
-import {Link} from 'react-router'
+
+// Components
+import OrgsList from 'src/user/components/OrgsList'
 
 // APIs
 import {getOrgs} from 'src/organizations/apis'
@@ -17,7 +19,7 @@ interface State {
   loading: RemoteDataState
 }
 
-export default class OrganizationList extends PureComponent<Props, State> {
+export default class Orgs extends PureComponent<Props, State> {
   constructor(props) {
     super(props)
     this.state = {
@@ -38,22 +40,7 @@ export default class OrganizationList extends PureComponent<Props, State> {
       return <div> Loading...</div>
     }
 
-    if (this.isEmpty) {
-      return <div>Looks like you dont have any organizations</div>
-    }
-
-    return (
-      <>
-        <h4>Organizations</h4>
-        <ul>
-          {orgs.map(o => (
-            <li>
-              <Link to={`organization/${o.id}`}>{o.name}</Link>
-            </li>
-          ))}
-        </ul>
-      </>
-    )
+    return <OrgsList orgs={orgs} />
   }
 
   get isEmpty() {

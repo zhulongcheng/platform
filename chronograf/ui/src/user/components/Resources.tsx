@@ -8,6 +8,7 @@ import {LinksContainer} from 'src/LinksContainer'
 // Components
 import Orgs from 'src/user/components/Orgs'
 import Dashboards from 'src/user/components/Dashboards'
+import Support from 'src/user/components/Support'
 import {Panel} from 'src/clockface'
 
 // Types
@@ -24,13 +25,23 @@ class ResourceLists extends PureComponent<ConnectedProps> {
     return (
       <>
         <Panel>
+          <Panel.Header title="Organizations">
+            <button>Create</button>
+          </Panel.Header>
           <Panel.Body>
             <Orgs orgsLink={links.orgs} />
           </Panel.Body>
         </Panel>
         <Panel>
+          <Panel.Header title="Dashboards">
+            <button>Create</button>
+          </Panel.Header>
           <Panel.Body>
             <Dashboards dashboardsLink={links.dashboards} />
+          </Panel.Body>
+          <Panel.Header title="Useful Links" />
+          <Panel.Body>
+            <Support />
           </Panel.Body>
         </Panel>
       </>

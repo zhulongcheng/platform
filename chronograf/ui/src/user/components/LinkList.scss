@@ -1,0 +1,15 @@
+/*
+   Link Lists
+   -----------------------------------------------------------------------------
+*/
+
+ul.link-list,
+ol.link-list {
+  padding-left: 0;
+  margin-top: 0;
+
+  li {
+    list-style-type: none;
+    padding-left: 0;
+  }
+}
