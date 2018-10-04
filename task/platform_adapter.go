@@ -11,13 +11,22 @@ import (
 	"github.com/influxdata/platform/task/options"
 )
 
+type StoreRunController interface {
+	backend.Store
+	RunController
+}
+type RunController interface {
+	CancelRun(ctx context.Context, taskID, runID platform.ID) error
+	//TODO: add retry run to this.
+}
+
 // PlatformAdapter wraps a task.Store into the platform.TaskService interface.
-func PlatformAdapter(s backend.Store, r backend.LogReader) platform.TaskService {
+func PlatformAdapter(s StoreRunController, r backend.LogReader) platform.TaskService {
 	return pAdapter{s: s, r: r}
 }
 
 type pAdapter struct {
-	s backend.Store
+	s StoreRunController
 	r backend.LogReader
 }
 
@@ -159,6 +168,10 @@ func (p pAdapter) FindRunByID(ctx context.Context, orgID, id platform.ID) (*plat
 
 func (p pAdapter) RetryRun(ctx context.Context, id platform.ID) (*platform.Run, error) {
 	return nil, errors.New("not yet implemented")
+}
+
+func (p pAdapter) CancelRun(ctx context.Context, taskID, runID platform.ID) error {
+	return p.s.CancelRun(ctx, taskID, runID)
 }
 
 func toPlatformTask(t backend.StoreTask, m *backend.StoreTaskMeta) (*platform.Task, error) {

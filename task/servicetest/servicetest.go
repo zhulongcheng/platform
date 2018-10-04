@@ -34,6 +34,15 @@ func init() {
 // If creating the System fails, the implementer should call t.Fatal.
 type BackendComponentFactory func(t *testing.T) (*System, context.CancelFunc)
 
+type naieveStoreRunController struct {
+	backend.Store
+	backend.Scheduler
+}
+
+func (n naieveStoreRunController) CancelRun(_ context.Context, taskID, runID platform.ID) error {
+	return n.Scheduler.CancelRun(taskID, runID)
+}
+
 // TestTaskService should be called by consumers of the servicetest package.
 // This will call fn once to create a single platform.TaskService
 // used across all subtests in TestTaskService.
@@ -41,7 +50,7 @@ func TestTaskService(t *testing.T, fn BackendComponentFactory) {
 	sys, cancel := fn(t)
 	defer cancel()
 	if sys.TaskServiceFunc == nil {
-		sys.ts = task.PlatformAdapter(sys.S, sys.LR)
+		sys.ts = task.PlatformAdapter(naieveStoreRunController{Store: sys.S, Scheduler: sys.SC}, sys.LR)
 	} else {
 		sys.ts = sys.TaskServiceFunc()
 	}
@@ -76,6 +85,7 @@ type System struct {
 	S  backend.Store
 	LR backend.LogReader
 	LW backend.LogWriter
+	SC backend.Scheduler
 
 	// Set this context, to be used in tests, so that any spawned goroutines watching Ctx.Done()
 	// will clean up after themselves.

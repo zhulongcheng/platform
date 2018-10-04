@@ -66,6 +66,7 @@ func NewTaskHandler(logger *zap.Logger) *TaskHandler {
 	h.HandlerFunc("GET", tasksIDRunsPath, h.handleGetRuns)
 	h.HandlerFunc("GET", tasksIDRunsIDPath, h.handleGetRun)
 	h.HandlerFunc("POST", tasksIDRunsIDRetryPath, h.handleRetryRun)
+	h.HandlerFunc("DELETE", tasksIDRunsIDPath, h.handleCancelRun)
 
 	return h
 }
@@ -469,16 +470,13 @@ func (h *TaskHandler) handleGetRun(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	tok, err := GetToken(r)
-	if err != nil {
-		EncodeError(ctx, err, w)
-		return
-	}
 
 	auth, err := h.AuthorizationService.FindAuthorizationByToken(ctx, tok)
 	if err != nil {
 		EncodeError(ctx, kerrors.Wrap(err, "invalid token", kerrors.InvalidData), w)
 		return
 	}
+
 	ctx = pcontext.SetAuthorization(ctx, auth)
 
 	req, err := decodeGetRunRequest(ctx, r, h.OrganizationService)
@@ -531,6 +529,54 @@ func decodeGetRunRequest(ctx context.Context, r *http.Request, orgs platform.Org
 		RunID: i,
 		OrgID: orgID,
 	}, nil
+}
+
+type cancelRunRequest struct {
+	RunID  platform.ID
+	TaskID platform.ID
+}
+
+func decodeCancelRunRequest(ctx context.Context, r *http.Request) (*cancelRunRequest, error) {
+	params := httprouter.ParamsFromContext(ctx)
+	rid := params.ByName("rid")
+	if rid == "" {
+		return nil, kerrors.InvalidDataf("you must provide a run ID")
+	}
+	tid := params.ByName("tid")
+	if rid == "" {
+		return nil, kerrors.InvalidDataf("you must provide a task ID")
+	}
+
+	var i platform.ID
+	if err := i.DecodeFromString(rid); err != nil {
+		return nil, err
+	}
+	var t platform.ID
+	if err := t.DecodeFromString(tid); err != nil {
+		return nil, err
+	}
+
+	return &cancelRunRequest{
+		RunID:  i,
+		TaskID: t,
+	}, nil
+
+}
+
+func (h *TaskHandler) handleCancelRun(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	req, err := decodeCancelRunRequest(ctx, r)
+	if err != nil {
+		EncodeError(ctx, err, w)
+		return
+	}
+
+	err = h.TaskService.CancelRun(ctx, req.TaskID, req.RunID)
+	if err != nil {
+		EncodeError(ctx, err, w)
+		return
+	}
 }
 
 func (h *TaskHandler) handleRetryRun(w http.ResponseWriter, r *http.Request) {

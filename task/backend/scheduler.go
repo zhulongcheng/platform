@@ -103,6 +103,9 @@ type Scheduler interface {
 	// ReleaseTask immediately cancels any in-progress runs for the given task ID,
 	// and releases any resources related to management of that task.
 	ReleaseTask(taskID platform.ID) error
+
+	// Cancel cacels a running run, it errors if there is no run with that ID.
+	CancelRun(taskID, runID platform.ID) error
 }
 
 // TickSchedulerOption is a option you can use to modify the schedulers behavior.
@@ -170,6 +173,19 @@ type TickScheduler struct {
 
 	schedulerMu    sync.Mutex                // Protects access and modification of taskSchedulers map.
 	taskSchedulers map[string]*taskScheduler // Stringified task ID -> task scheduler.
+}
+
+func (s *TickScheduler) CancelRun(taskID, runID platform.ID) error {
+	s.schedulerMu.Lock()
+	defer s.schedulerMu.Unlock()
+	ts := s.taskSchedulers[string(taskID)]
+	ts.runningMu.Lock()
+	defer ts.runningMu.Unlock()
+	cancel := ts.running[string(runID)].CancelFunc
+	if cancel != nil {
+		cancel()
+	}
+	return nil
 }
 
 // Tick updates the time of the scheduler.
@@ -319,6 +335,11 @@ func (s *TickScheduler) PrometheusCollectors() []prometheus.Collector {
 	return s.metrics.PrometheusCollectors()
 }
 
+type runCtx struct {
+	context.Context
+	context.CancelFunc
+}
+
 // taskScheduler is a lightweight wrapper around a collection of runners.
 type taskScheduler struct {
 	// Reference to outerScheduler.now. Must be accessed atomically.
@@ -332,7 +353,9 @@ type taskScheduler struct {
 	wg     *sync.WaitGroup
 
 	// Fixed-length slice of runners.
-	runners []*runner
+	runners   []*runner
+	running   map[string]runCtx
+	runningMu sync.Locker
 
 	logger *zap.Logger
 
@@ -364,6 +387,7 @@ func newTaskScheduler(
 		cancel:        cancel,
 		wg:            wg,
 		runners:       make([]*runner, meta.MaxConcurrency),
+		running:       make(map[string]runCtx, meta.MaxConcurrency),
 		logger:        s.logger.With(zap.String("task_id", task.ID.String())),
 		metrics:       s.metrics,
 		nextDue:       firstDue,
@@ -516,7 +540,11 @@ func (r *runner) RestartRun(qr QueuedRun) bool {
 	runLogger := r.logger.With(zap.String("run_id", qr.RunID.String()), zap.Int64("now", qr.Now))
 
 	r.wg.Add(1)
-	go r.executeAndWait(qr, runLogger)
+	var ctx context.Context
+	r.ts.runningMu.Lock()
+	ctx = r.ts.running[qr.RunID.String()].Context
+	r.ts.runningMu.Unlock()
+	go r.executeAndWait(ctx, qr, runLogger)
 
 	r.updateRunState(qr, RunStarted, runLogger)
 	return true
@@ -530,29 +558,40 @@ func (r *runner) startFromWorking(now int64) {
 		atomic.StoreUint32(r.state, runnerIdle)
 		return
 	}
-
-	rc, err := r.desiredState.CreateNextRun(r.ctx, r.task.ID, now)
+	r.ts.runningMu.Lock()
+	ctx, cancel := context.WithCancel(r.ctx)
+	rc, err := r.desiredState.CreateNextRun(ctx, r.task.ID, now)
 	if err != nil {
 		r.logger.Info("Failed to create run", zap.Error(err))
 		atomic.StoreUint32(r.state, runnerIdle)
+		cancel() // cancel to prevent context leak
 		return
 	}
 	qr := rc.Created
+	runIDStr := qr.RunID.String()
+	r.ts.running[runIDStr] = runCtx{Context: ctx, CancelFunc: cancel}
+	r.ts.runningMu.Unlock()
 	r.ts.SetNextDue(rc.NextDue, rc.HasQueue, qr.Now)
 
 	// Create a new child logger for the individual run.
 	// We can't do r.logger = r.logger.With(zap.String("run_id", qr.RunID.String()) because zap doesn't deduplicate fields,
 	// and we'll quickly end up with many run_ids associated with the log.
-	runLogger := r.logger.With(zap.String("run_id", qr.RunID.String()), zap.Int64("now", qr.Now))
+	runLogger := r.logger.With(zap.String("run_id", runIDStr), zap.Int64("now", qr.Now))
 
 	runLogger.Info("Created run; beginning execution")
 	r.wg.Add(1)
-	go r.executeAndWait(qr, runLogger)
+	go r.executeAndWait(ctx, qr, runLogger)
 
 	r.updateRunState(qr, RunStarted, runLogger)
 }
 
-func (r *runner) executeAndWait(qr QueuedRun, runLogger *zap.Logger) {
+func (r *runner) clearRunning(id platform.ID) {
+	r.ts.runningMu.Lock()
+	delete(r.ts.running, id.String())
+	r.ts.runningMu.Unlock()
+}
+
+func (r *runner) executeAndWait(ctx context.Context, qr QueuedRun, runLogger *zap.Logger) {
 	defer r.wg.Done()
 	rp, err := r.executor.Execute(r.ctx, qr)
 	if err != nil {
@@ -566,11 +605,16 @@ func (r *runner) executeAndWait(qr QueuedRun, runLogger *zap.Logger) {
 	go func() {
 		// If the runner's context is canceled, cancel the RunPromise.
 		select {
+		case <-ctx.Done():
+			r.clearRunning(qr.RunID)
+			rp.Cancel()
 		// Canceled context.
 		case <-r.ctx.Done():
+			r.clearRunning(qr.RunID)
 			rp.Cancel()
 		// Wait finished.
 		case <-ready:
+			r.clearRunning(qr.RunID)
 		}
 	}()
 

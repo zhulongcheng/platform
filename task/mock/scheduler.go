@@ -155,6 +155,10 @@ func (s *Scheduler) ReleaseError(err error) {
 	s.releaseError = err
 }
 
+func (s *Scheduler) CancelRun(taskID, runID platform.ID) error {
+	return nil
+}
+
 // DesiredState is a mock implementation of DesiredState (used by NewScheduler).
 type DesiredState struct {
 	mu sync.Mutex
@@ -269,7 +273,8 @@ func (d *DesiredState) PollForNumberCreated(taskID platform.ID, count int) ([]sc
 }
 
 type Executor struct {
-	mu sync.Mutex
+	mu         sync.Mutex
+	hangingFor time.Duration
 
 	// Map of stringified, concatenated task and run ID, to runs that have begun execution but have not finished.
 	running map[string]*RunPromise
@@ -287,7 +292,7 @@ func NewExecutor() *Executor {
 	}
 }
 
-func (e *Executor) Execute(_ context.Context, run backend.QueuedRun) (backend.RunPromise, error) {
+func (e *Executor) Execute(ctx context.Context, run backend.QueuedRun) (backend.RunPromise, error) {
 	rp := NewRunPromise(run)
 
 	id := run.TaskID.String() + run.RunID.String()
@@ -295,6 +300,10 @@ func (e *Executor) Execute(_ context.Context, run backend.QueuedRun) (backend.Ru
 	e.running[id] = rp
 	e.mu.Unlock()
 	go func() {
+		select {
+		case <-ctx.Done():
+		case <-time.After(e.hangingFor):
+		}
 		res, _ := rp.Wait()
 		e.mu.Lock()
 		delete(e.running, id)
@@ -305,6 +314,10 @@ func (e *Executor) Execute(_ context.Context, run backend.QueuedRun) (backend.Ru
 }
 
 func (e *Executor) WithLogger(l *zap.Logger) {}
+
+func (e *Executor) WithHanging(dt time.Duration) {
+	e.hangingFor = dt
+}
 
 // RunningFor returns the run promises for the given task.
 func (e *Executor) RunningFor(taskID platform.ID) []*RunPromise {
