@@ -1,6 +1,6 @@
 // Libraries
 import React, {PureComponent, ReactChildren} from 'react'
-import {Provider, Subscribe} from 'unstated'
+import {Subscribe} from 'unstated'
 
 import Nav from 'src/page_layout'
 import {LinksContainer} from 'src/LinksContainer'
@@ -8,10 +8,8 @@ import Notifications from 'src/shared/components/notifications/Notifications'
 
 import {RemoteDataState} from 'src/types'
 
-const links = new LinksContainer()
-
 interface Props {
-  linksContainer: LinksContainer
+  getLinks: LinksContainer['getLinks']
   children: ReactChildren
 }
 
@@ -25,12 +23,13 @@ class App extends PureComponent<Props, State> {
   }
 
   public async componentDidMount() {
-    await this.props.linksContainer.getLinks()
+    await this.props.getLinks()
     this.setState({loading: RemoteDataState.Done})
   }
 
   public render() {
     const {children} = this.props
+
     if (this.isLoading) {
       return (
         <div className="chronograf-root">
@@ -59,13 +58,11 @@ class App extends PureComponent<Props, State> {
 
 const ConnectedApp = (props: Props) => {
   return (
-    <Provider inject={[links]}>
-      <Subscribe to={[LinksContainer]}>
-        {(linksContainer: LinksContainer) => (
-          <App {...props} linksContainer={linksContainer} />
-        )}
-      </Subscribe>
-    </Provider>
+    <Subscribe to={[LinksContainer]}>
+      {(linksContainer: LinksContainer) => (
+        <App {...props} getLinks={linksContainer.getLinks} />
+      )}
+    </Subscribe>
   )
 }
 

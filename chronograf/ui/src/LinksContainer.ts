@@ -11,7 +11,7 @@ export class LinksContainer extends Container<LinkState> {
     links: null,
   }
 
-  public async getLinks() {
+  public getLinks = async () => {
     const links = await getLinks()
     this.setState({links})
   }

@@ -2,7 +2,8 @@ import 'babel-polyfill'
 
 import React, {PureComponent} from 'react'
 import {render} from 'react-dom'
-import {Provider} from 'react-redux'
+import {Provider as ReduxProvider} from 'react-redux'
+import {Provider as UnstatedProvider} from 'unstated'
 import {Router, Route, useRouterHistory} from 'react-router'
 import {createHistory} from 'history'
 import {syncHistoryWithStore} from 'react-router-redux'
@@ -99,34 +100,36 @@ class Root extends PureComponent<{}, State> {
 
   public render() {
     return this.state.ready ? (
-      <Provider store={store}>
-        <Router history={history}>
-          <Route component={Setup}>
-            <Route component={Signin}>
-              <Route component={App}>
-                <Route path="/" component={CheckSources}>
-                  <Route
-                    path="dashboards/:dashboardID"
-                    component={DashboardPage}
-                  />
-                  <Route path="sources/new" component={SourcePage} />
-                  <Route path="dashboards" component={DashboardsPage} />
-                  <Route path="manage-sources" component={ManageSources} />
-                  <Route path="manage-sources/new" component={SourcePage} />
-                  <Route
-                    path="manage-sources/:id/edit"
-                    component={SourcePage}
-                  />
-                  <Route path="delorean" component={FluxPage} />
-                  <Route path="user/:tab" component={UserPage} />
-                  <Route path="logs" component={LogsPage} />
+      <UnstatedProvider>
+        <ReduxProvider store={store}>
+          <Router history={history}>
+            <Route component={Setup}>
+              <Route component={Signin}>
+                <Route component={App}>
+                  <Route path="/" component={CheckSources}>
+                    <Route path="setup" component={OnboardingWizard} />
+                    <Route
+                      path="dashboards/:dashboardID"
+                      component={DashboardPage}
+                    />
+                    <Route path="sources/new" component={SourcePage} />
+                    <Route path="dashboards" component={DashboardsPage} />
+                    <Route path="manage-sources" component={ManageSources} />
+                    <Route path="manage-sources/new" component={SourcePage} />
+                    <Route
+                      path="manage-sources/:id/edit"
+                      component={SourcePage}
+                    />
+                    <Route path="delorean" component={FluxPage} />
+                    <Route path="user/:tab" component={UserPage} />
+                  </Route>
                 </Route>
               </Route>
             </Route>
-          </Route>
-          <Route path="*" component={NotFound} />
-        </Router>
-      </Provider>
+            <Route path="*" component={NotFound} />
+          </Router>
+        </ReduxProvider>
+      </UnstatedProvider>
     ) : (
       <div className="page-spinner" />
     )
