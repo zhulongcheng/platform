@@ -11,6 +11,18 @@ const LeroysTokens = [
   },
 ]
 
+export const Orgs = [
+  {id: '1', name: 'your moms house'},
+  {id: '2', name: 'radio lab'},
+  {id: '3', name: 'freakonomics'},
+]
+
+export const Dashboards = [
+  {id: '1', name: 'your moms house'},
+  {id: '2', name: 'radio lab'},
+  {id: '3', name: 'freakonomics'},
+]
+
 export const LeroyJenkins = {
   id: 'xLz04cqvQgszIbHVA7pE',
   name: 'Leroy Jenkins',

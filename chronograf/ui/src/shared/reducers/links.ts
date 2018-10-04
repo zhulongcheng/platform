@@ -30,7 +30,7 @@ const linksReducer = (state = initialState, action: Action): Links => {
   switch (action.type) {
     case ActionTypes.LinksGetCompleted: {
       const {links} = action.payload
-      return {...links, defaultDashboard: '/v2/dashboards/029d13fda9c5b000'}
+      return {...links}
     }
 
     case ActionTypes.SetDefaultDashboardLink: {

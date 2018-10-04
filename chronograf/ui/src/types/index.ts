@@ -1,6 +1,7 @@
 import {LayoutCell, LayoutQuery} from './layouts'
 import {Service, NewService} from './services'
 import {Cell, DashboardQuery, Legend, Axes, Dashboard} from './v2/dashboards'
+import {Organization} from 'src/types/organizations'
 import {
   GroupBy,
   Query,
@@ -40,6 +41,7 @@ import {AnnotationInterface} from './annotations'
 import {WriteDataMode} from './dataExplorer'
 
 export {
+  Organization,
   TemplateType,
   TemplateValue,
   TemplateValueType,

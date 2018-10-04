@@ -1,17 +1,21 @@
 // Libraries
 import React, {PureComponent} from 'react'
 
-/// Components
+// Components
 import {Page} from 'src/page_layout'
 import ProfilePage from 'src/shared/components/profile_page/ProfilePage'
 import UserSettings from 'src/user/components/UserSettings'
 import TokenManager from 'src/user/components/TokenManager'
+import Resources from 'src/user/components/Resources'
+
+// Types
+import {Organization, Dashboard} from 'src/types'
 
 // Decorators
 import {ErrorHandling} from 'src/shared/decorators/errors'
 
 // MOCK DATA
-import {LeroyJenkins} from 'src/user/mockUserData'
+import {LeroyJenkins, Orgs} from 'src/user/mockUserData'
 
 interface UserToken {
   id: string
@@ -23,12 +27,14 @@ interface User {
   id: string
   name: string
   email: string
-  tokens: UserToken[]
   avatar: string
+  tokens: UserToken[]
 }
 
 interface Props {
-  user?: User
+  user: User
+  organizations: Organization[]
+  dashboards: Array<Partial<Dashboard>>
   params: {
     tab: string
   }
@@ -38,6 +44,7 @@ interface Props {
 export class UserPage extends PureComponent<Props> {
   public static defaultProps: Partial<Props> = {
     user: LeroyJenkins,
+    organizations: Orgs,
   }
 
   public render() {
@@ -52,7 +59,7 @@ export class UserPage extends PureComponent<Props> {
           <Page.Header.Right />
         </Page.Header>
         <Page.Contents fullWidth={false} scrollable={true}>
-          <div className="col-xs-12">
+          <div className="col-xs-7">
             <ProfilePage
               name={user.name}
               avatar={user.avatar}
@@ -74,6 +81,9 @@ export class UserPage extends PureComponent<Props> {
                 <TokenManager token="Token Manager" />
               </ProfilePage.Section>
             </ProfilePage>
+          </div>
+          <div className="col-xs-5">
+            <Resources />
           </div>
         </Page.Contents>
       </Page>
