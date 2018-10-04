@@ -21,7 +21,7 @@ export default class UserDashboardList extends PureComponent<Props> {
       <ul className="link-list">
         {orgs.map(({id, name}) => (
           <li key={id}>
-            <Link to={`/dashboards/${id}`}>{name}</Link>
+            <Link to={`/orgs/${id}`}>{name}</Link>
           </li>
         ))}
       </ul>

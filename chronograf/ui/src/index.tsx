@@ -107,7 +107,6 @@ class Root extends PureComponent<{}, State> {
               <Route component={Signin}>
                 <Route component={App}>
                   <Route path="/" component={CheckSources}>
-                    <Route path="setup" component={OnboardingWizard} />
                     <Route
                       path="dashboards/:dashboardID"
                       component={DashboardPage}
@@ -121,7 +120,8 @@ class Root extends PureComponent<{}, State> {
                       component={SourcePage}
                     />
                     <Route path="delorean" component={FluxPage} />
-                    <Route path="user/:tab" component={UserPage} />
+                    <Route path="user" component={UserPage} />
+                    <Route path="logs" component={LogsPage} />
                   </Route>
                 </Route>
               </Route>
