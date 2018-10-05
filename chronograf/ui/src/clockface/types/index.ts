@@ -42,30 +42,6 @@ export enum ButtonShape {
   StretchToFit = 'stretch',
 }
 
-export enum Greys {
-  Obsidian = '#0f0e15',
-  Raven = '#1c1c21',
-  Kevlar = '#202028',
-  Castle = '#292933',
-  Onyx = '#31313d',
-  Pepper = '#383846',
-  Smoke = '#434453',
-  Graphite = '#545667',
-  Storm = '#676978',
-  Mountain = '#757888',
-  Wolf = '#8e91a1',
-  Sidewalk = '#999dab',
-  Forge = '#a4a8b6',
-  Mist = '#bec2cc',
-  Chromium = '#c6cad3',
-  Platinum = '#d4d7dd',
-  Pearl = '#e7e8eb',
-  Whisper = '#eeeff2',
-  Cloud = '#f6f6f8',
-  Ghost = '#fafafc',
-  White = '#ffffff',
-}
-
 export enum IconFont {
   AddCell = 'add-cell',
   AlertTriangle = 'alert-triangle',
@@ -160,3 +136,84 @@ export enum Alignment {
   Center = 'center',
   Right = 'right',
 }
+
+export enum Greys {
+  Obsidian = '#0f0e15',
+  Raven = '#1c1c21',
+  Kevlar = '#202028',
+  Castle = '#292933',
+  Onyx = '#31313d',
+  Pepper = '#383846',
+  Smoke = '#434453',
+  Graphite = '#545667',
+  Storm = '#676978',
+  Mountain = '#757888',
+  Wolf = '#8e91a1',
+  Sidewalk = '#999dab',
+  Forge = '#a4a8b6',
+  Mist = '#bec2cc',
+  Chromium = '#c6cad3',
+  Platinum = '#d4d7dd',
+  Pearl = '#e7e8eb',
+  Whisper = '#eeeff2',
+  Cloud = '#f6f6f8',
+  Ghost = '#fafafc',
+  White = '#ffffff',
+}
+
+export enum Blues {
+  Abyss = '#182838',
+  Sapphire = '#326BBA',
+  Ocean = '#4591ED',
+  Pool = '#22ADF6',
+  Laser = '#00C9FF',
+  Hydrogen = '#6BDFFF',
+  Neutrino = '#BEF0FF',
+  Yeti = '#F0FCFF',
+}
+
+export enum Purples {
+  Shadow = '#1F2039',
+  Void = '#311F94',
+  Amethyst = '#513CC6',
+  Star = '#7A65F2',
+  Comet = '#9394FF',
+  Potassium = '#B1B6FF',
+  Moonstone = '#C9D0FF',
+  Twilight = '#F2F4FF',
+}
+
+export enum Greens {
+  Gypsy = '#152B2D',
+  Emerald = '#108174',
+  Viridian = '#32B08C',
+  Rainforest = '#4ED8A0',
+  Honeydew = '#7CE490',
+  Krypton = '#A5F3B4',
+  Wasabi = '#C6FFD0',
+  Mint = '#F2FFF4',
+}
+
+export enum Reds {
+  Basalt = '#2F1F29',
+  Ruby = '#BF3D5E',
+  Fire = '#DC4E58',
+  Curacao = '#F95F53',
+  Dreamsicle = '#FF8564',
+  Tungsten = '#FFB6A0',
+  Marmelade = '#FFDCCF',
+  Flan = '#FFF7F4',
+}
+
+export enum Yellows {
+  Oak = '#3F241F',
+  Topaz = '#E85B1C',
+  Tiger = '#F48D38',
+  Pineapple = '#FFB94A',
+  Thunder = '#FFD255',
+  Sulfur = '#FFE480',
+  Daisy = '#FFF6B8',
+  Banana = '#FFFDDE',
+}
+
+export type ThemeColor = Greys | Blues | Purples | Greens | Reds | Yellows
