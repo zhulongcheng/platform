@@ -53,8 +53,8 @@ func UserResourceMappingService(
 		},
 		{
 			name: "FindDeepUserResourceMappings",
-			fn: FindDeepUserResourceMappings,
-		}
+			fn:   FindDeepUserResourceMappings,
+		},
 		{
 			name: "DeleteUserResourceMapping",
 			fn:   DeleteUserResourceMapping,
@@ -479,7 +479,6 @@ func FindUserResourceMappings(
 	}
 }
 
-
 func FindDeepUserResourceMappings(
 	init func(UserResourceFields, *testing.T) (platform.UserResourceMappingService, func()),
 	t *testing.T,
@@ -499,16 +498,16 @@ func FindDeepUserResourceMappings(
 		wants  wants
 	}{
 		{
-			name: "finds resources that belong to a user's organization",
+			name: "finds resources that belong to a user or their organizations",
 			fields: UserResourceFields{
 				UserResourceMappings: []*platform.UserResourceMapping{
 					{
-						{
-							ResourceID: idFromString(t, orgOneID)
-							UserID: idFromString(t, userOneID)
-							UserType: platform.Member,
-							ResourceType: platform.OrgResourceType,
-						},
+						ResourceID:   idFromString(t, orgOneID),
+						UserID:       idFromString(t, userOneID),
+						UserType:     platform.Member,
+						ResourceType: platform.OrgResourceType,
+					},
+					{
 						ResourceID:   idFromString(t, bucketOneID),
 						UserID:       idFromString(t, userOneID),
 						UserType:     platform.Member,
@@ -526,10 +525,19 @@ func FindDeepUserResourceMappings(
 						UserType:     platform.Member,
 						ResourceType: platform.BucketResourceType,
 					},
+					{
+						ResourceID:   idFromString(t, dashOneID),
+						UserID:       idFromString(t, orgOneID),
+						UserType:     platform.Member,
+						ResourceType: platform.DashboardResourceType,
+					},
 				},
 			},
 			args: args{
-				filter: platform.UserResourceMappingFilter{},
+				filter: platform.DeepUserResourceMappingFilter{
+					UserID:       idFromString(t, userOneID),
+					ResourceType: platform.BucketResourceType,
+				},
 			},
 			wants: wants{
 				mappings: []*platform.UserResourceMapping{
