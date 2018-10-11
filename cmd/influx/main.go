@@ -23,6 +23,7 @@ func init() {
 	influxCmd.AddCommand(bucketCmd)
 	influxCmd.AddCommand(replCmd)
 	influxCmd.AddCommand(queryCmd)
+	influxCmd.AddCommand(writeCmd)
 	influxCmd.AddCommand(organizationCmd)
 	influxCmd.AddCommand(userCmd)
 	influxCmd.AddCommand(setupCmd)
