@@ -2377,7 +2377,7 @@ paths:
           name: user
           schema:
             type: string
-          description: filter tasks to a specific user name
+          description: filter tasks to those a user has access to
         - in: query
           name: org
           schema:
@@ -3579,8 +3579,6 @@ components:
           enum:
             - active
             - inactive
-        owners:
-          $ref: "#/components/schemas/Owners"
         flux:
           description: The Flux script to run for this task.
           type: string

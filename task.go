@@ -4,14 +4,13 @@ import "context"
 
 // Task is a task. 🎊
 type Task struct {
-	ID           ID     `json:"id,omitempty"`
-	Organization ID     `json:"organizationId"`
-	Name         string `json:"name"`
-	Status       string `json:"status"`
-	Owner        User   `json:"owner"`
-	Flux         string `json:"flux"`
-	Every        string `json:"every,omitempty"`
-	Cron         string `json:"cron,omitempty"`
+	ID     ID     `json:"id,omitempty"`
+	Name   string `json:"name"`
+	Status string `json:"status"`
+	Owner  User   `json:"owner"`
+	Flux   string `json:"flux"`
+	Every  string `json:"every,omitempty"`
+	Cron   string `json:"cron,omitempty"`
 }
 
 // Run is a record created when a run of a task is scheduled.
@@ -68,9 +67,8 @@ type TaskUpdate struct {
 
 // TaskFilter represents a set of filters that restrict the returned results
 type TaskFilter struct {
-	After        *ID
-	Organization *ID
-	User         *ID
+	After *ID
+	User  *ID
 }
 
 // RunFilter represents a set of filters that restrict the returned results
