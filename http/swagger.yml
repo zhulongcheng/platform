@@ -2378,11 +2378,6 @@ paths:
           schema:
             type: string
           description: filter tasks to those a user has access to
-        - in: query
-          name: org
-          schema:
-            type: string
-          description: filter tasks to a specific organization name
       responses:
         '200':
           description: A list of tasks

@@ -52,6 +52,10 @@ func UserResourceMappingService(
 			fn:   FindUserResourceMappings,
 		},
 		{
+			name: "FindDeepUserResourceMappings",
+			fn: FindDeepUserResourceMappings,
+		}
+		{
 			name: "DeleteUserResourceMapping",
 			fn:   DeleteUserResourceMapping,
 		},
@@ -458,6 +462,100 @@ func FindUserResourceMappings(
 			defer done()
 			ctx := context.TODO()
 			mappings, _, err := s.FindUserResourceMappings(ctx, tt.args.filter)
+			if (err != nil) != (tt.wants.err != nil) {
+				t.Fatalf("expected error '%v' got '%v'", tt.wants.err, err)
+			}
+
+			if err != nil && tt.wants.err != nil {
+				if err.Error() != tt.wants.err.Error() {
+					t.Fatalf("expected error messages to match '%v' got '%v'", tt.wants.err, err.Error())
+				}
+			}
+
+			if diff := cmp.Diff(mappings, tt.wants.mappings, mappingCmpOptions...); diff != "" {
+				t.Errorf("mappings are different -got/+want\ndiff %s", diff)
+			}
+		})
+	}
+}
+
+
+func FindDeepUserResourceMappings(
+	init func(UserResourceFields, *testing.T) (platform.UserResourceMappingService, func()),
+	t *testing.T,
+) {
+	type args struct {
+		filter platform.DeepUserResourceMappingFilter
+	}
+	type wants struct {
+		err      error
+		mappings []*platform.UserResourceMapping
+	}
+
+	tests := []struct {
+		name   string
+		fields UserResourceFields
+		args   args
+		wants  wants
+	}{
+		{
+			name: "finds resources that belong to a user's organization",
+			fields: UserResourceFields{
+				UserResourceMappings: []*platform.UserResourceMapping{
+					{
+						{
+							ResourceID: idFromString(t, orgOneID)
+							UserID: idFromString(t, userOneID)
+							UserType: platform.Member,
+							ResourceType: platform.OrgResourceType,
+						},
+						ResourceID:   idFromString(t, bucketOneID),
+						UserID:       idFromString(t, userOneID),
+						UserType:     platform.Member,
+						ResourceType: platform.BucketResourceType,
+					},
+					{
+						ResourceID:   idFromString(t, bucketTwoID),
+						UserID:       idFromString(t, orgOneID),
+						UserType:     platform.Member,
+						ResourceType: platform.BucketResourceType,
+					},
+					{
+						ResourceID:   idFromString(t, bucketThreeID),
+						UserID:       idFromString(t, orgTwoID),
+						UserType:     platform.Member,
+						ResourceType: platform.BucketResourceType,
+					},
+				},
+			},
+			args: args{
+				filter: platform.UserResourceMappingFilter{},
+			},
+			wants: wants{
+				mappings: []*platform.UserResourceMapping{
+					{
+						ResourceID:   idFromString(t, bucketOneID),
+						UserID:       idFromString(t, userOneID),
+						UserType:     platform.Member,
+						ResourceType: platform.BucketResourceType,
+					},
+					{
+						ResourceID:   idFromString(t, bucketTwoID),
+						UserID:       idFromString(t, orgOneID),
+						UserType:     platform.Member,
+						ResourceType: platform.BucketResourceType,
+					},
+				},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			s, done := init(tt.fields, t)
+			defer done()
+			ctx := context.TODO()
+			mappings, _, err := s.FindDeepUserResourceMappings(ctx, tt.args.filter)
 			if (err != nil) != (tt.wants.err != nil) {
 				t.Fatalf("expected error '%v' got '%v'", tt.wants.err, err)
 			}

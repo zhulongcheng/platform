@@ -24,6 +24,9 @@ type UserResourceMappingService interface {
 	// FindUserResourceMappings returns a list of UserResourceMappings that match filter and the total count of matching mappings.
 	FindUserResourceMappings(ctx context.Context, filter UserResourceMappingFilter, opt ...FindOptions) ([]*UserResourceMapping, int, error)
 
+	// FindDeepUserResourceMappings returns a list of UserResourceMappings that belong to a user or to orgs that the user belongs to.
+	FindDeepUserResourceMappings(ctx context.Context, filter DeepUserResourceMappingFilter) ([]*UserResourceMapping, int, error)
+
 	// CreateUserResourceMapping creates a user resource mapping
 	CreateUserResourceMapping(ctx context.Context, m *UserResourceMapping) error
 
@@ -64,4 +67,10 @@ type UserResourceMappingFilter struct {
 	ResourceType ResourceType
 	UserID       ID
 	UserType     UserType
+}
+
+// DeepUserResourceMappingFilter is a set of filters for returning nested ownership mappings.
+type DeepUserResourceMappingFilter struct {
+	UserID       ID
+	ResourceType ResourceType
 }

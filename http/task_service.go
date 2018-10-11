@@ -79,6 +79,22 @@ func (h *TaskHandler) handleGetTasks(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if req.userID != nil {
+		// get a user's organizations, then get all resources of that type that belong to them or to their organizations
+
+		filter := platform.UserResourceMappingFilter{
+			UserID:       *req.userID,
+			UserType:     platform.Owner,
+			ResourceType: platform.TaskResourceType,
+		}
+
+		mappings, _, err := h.UserResourceMappingService.FindUserResourceMappings(ctx, filter)
+		if err != nil {
+			EncodeError(ctx, errors.InternalErrorf("Error loading dashboard owners: %v", err), w)
+			return
+		}
+	}
+
 	tasks, _, err := h.TaskService.FindTasks(ctx, req.filter)
 	if err != nil {
 		EncodeError(ctx, err, w)
@@ -93,6 +109,7 @@ func (h *TaskHandler) handleGetTasks(w http.ResponseWriter, r *http.Request) {
 
 type getTasksRequest struct {
 	filter platform.TaskFilter
+	userID *platform.ID
 }
 
 func decodeGetTasksRequest(ctx context.Context, r *http.Request) (*getTasksRequest, error) {
@@ -107,20 +124,11 @@ func decodeGetTasksRequest(ctx context.Context, r *http.Request) (*getTasksReque
 		req.filter.After = id
 	}
 
-	if orgID := qp.Get("organization"); orgID != "" {
-		id, err := platform.IDFromString(orgID)
-		if err != nil {
+	if userID := qp.Get("user"); id != "" {
+		req.userID = &platform.ID{}
+		if err := req.userID.DecodeFromString(userID); err != nil {
 			return nil, err
 		}
-		req.filter.Organization = id
-	}
-
-	if userID := qp.Get("user"); userID != "" {
-		id, err := platform.IDFromString(userID)
-		if err != nil {
-			return nil, err
-		}
-		req.filter.User = id
 	}
 
 	return req, nil

@@ -68,7 +68,7 @@ type TaskUpdate struct {
 // TaskFilter represents a set of filters that restrict the returned results
 type TaskFilter struct {
 	After *ID
-	User  *ID
+	IDs   []*ID
 }
 
 // RunFilter represents a set of filters that restrict the returned results
