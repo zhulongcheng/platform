@@ -34,6 +34,10 @@ func TestUserResourceMappingService_FindUserResourceMappings(t *testing.T) {
 	platformtesting.FindUserResourceMappings(initUserResourceMappingService, t)
 }
 
+func TestUserResourceMappingService_FindDeepUserResourceMappings(t *testing.T) {
+	platformtesting.FindDeepUserResourceMappings(initUserResourceMappingService, t)
+}
+
 func TestUserResourceMappingService_CreateUserResourceMapping(t *testing.T) {
 	platformtesting.CreateUserResourceMapping(initUserResourceMappingService, t)
 }

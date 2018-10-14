@@ -87,6 +87,57 @@ func (c *Client) findUserResourceMapping(ctx context.Context, tx *bolt.Tx, resou
 	return &m, nil
 }
 
+func (c *Client) FindDeepUserResourceMappings(ctx context.Context, tx *bolt.Tx, filter platform.DeepUserResourceMappingFilter) ([]*platform.UserResourceMapping, int, error) {
+	ms := []*platform.UserResourceMapping{}
+	err := c.db.View(func(tx *bolt.Tx) error {
+		// get resources that belong to user
+		userMappingFilter := platform.UserResourceMappingFilter{
+			ResourceType: filter.ResourceType,
+			UserID:       filter.UserID,
+		}
+
+		userMappings, err := c.findUserResourceMappings(ctx, tx, userMappingFilter)
+		if err != nil {
+			return err
+		}
+
+		// TODO (jm): memoize mapping results
+		ms = userMappings
+
+		// get resources that belong to user's orgs
+		orgMappingFilter := platform.UserResourceMappingFilter{
+			ResourceType: platform.OrgResourceType,
+			UserID:       filter.UserID,
+		}
+
+		orgMappings, err := c.findUserResourceMappings(ctx, tx, orgMappingFilter)
+		if err != nil {
+			return err
+		}
+
+		for _, m := range orgMappings {
+			f := platform.UserResourceMappingFilter{
+				ResourceType: filter.ResourceType,
+				UserID:       m.ResourceID, // the user's organization
+			}
+
+			mappings, err := c.findUserResourceMappings(ctx, tx, f)
+			if err != nil {
+				return err
+			}
+			ms = append(ms, mappings)
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		return nil, 0, err
+	}
+
+	return ms, len(ms), nil
+}
+
 func (c *Client) CreateUserResourceMapping(ctx context.Context, m *platform.UserResourceMapping) error {
 	return c.db.Update(func(tx *bolt.Tx) error {
 		unique := c.uniqueUserResourceMapping(ctx, tx, m)
