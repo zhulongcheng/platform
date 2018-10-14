@@ -87,7 +87,7 @@ func (c *Client) findUserResourceMapping(ctx context.Context, tx *bolt.Tx, resou
 	return &m, nil
 }
 
-func (c *Client) FindDeepUserResourceMappings(ctx context.Context, tx *bolt.Tx, filter platform.DeepUserResourceMappingFilter) ([]*platform.UserResourceMapping, int, error) {
+func (c *Client) FindDeepUserResourceMappings(ctx context.Context, filter platform.DeepUserResourceMappingFilter) ([]*platform.UserResourceMapping, int, error) {
 	ms := []*platform.UserResourceMapping{}
 	err := c.db.View(func(tx *bolt.Tx) error {
 		// get resources that belong to user
@@ -125,7 +125,7 @@ func (c *Client) FindDeepUserResourceMappings(ctx context.Context, tx *bolt.Tx, 
 			if err != nil {
 				return err
 			}
-			ms = append(ms, mappings)
+			ms = append(ms, mappings...)
 		}
 
 		return nil
