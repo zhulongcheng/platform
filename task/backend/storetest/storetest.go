@@ -102,8 +102,6 @@ from(bucket:"test") |> range(start:-1h)`
 	} {
 		t.Run(args.caseName, func(t *testing.T) {
 			req := backend.CreateTaskRequest{
-				Org:    args.org,
-				User:   args.user,
 				Script: args.script,
 				Status: args.status,
 			}
@@ -147,7 +145,7 @@ from(bucket:"y") |> range(start:-1h)`
 		s := create(t)
 		defer destroy(t, s)
 
-		id, err := s.CreateTask(context.Background(), backend.CreateTaskRequest{Org: 1, User: 2, Script: script})
+		id, err := s.CreateTask(context.Background(), backend.CreateTaskRequest{Script: script})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -189,11 +187,11 @@ from(bucket:"y") |> range(start:-1h)`
 	t.Run("name repetition", func(t *testing.T) {
 		s := create(t)
 		defer destroy(t, s)
-		id1, err := s.CreateTask(context.Background(), backend.CreateTaskRequest{Org: 1, User: 2, Script: script})
+		id1, err := s.CreateTask(context.Background(), backend.CreateTaskRequest{Script: script})
 		if err != nil {
 			t.Fatal(err)
 		}
-		_, err = s.CreateTask(context.Background(), backend.CreateTaskRequest{Org: 1, User: 2, Script: script2})
+		_, err = s.CreateTask(context.Background(), backend.CreateTaskRequest{Script: script2})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -217,7 +215,7 @@ from(bucket:"test") |> range(start:-1h)`
 		orgID := platform.ID(1)
 		userID := platform.ID(2)
 
-		id, err := s.CreateTask(context.Background(), backend.CreateTaskRequest{Org: orgID, User: userID, Script: fmt.Sprintf(scriptFmt, 0)})
+		id, err := s.CreateTask(context.Background(), backend.CreateTaskRequest{Script: fmt.Sprintf(scriptFmt, 0)})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -241,7 +239,7 @@ from(bucket:"test") |> range(start:-1h)`
 			t.Fatalf("expected no results for bad user ID, got %d result(s)", len(ts))
 		}
 
-		newID, err := s.CreateTask(context.Background(), backend.CreateTaskRequest{Org: orgID, User: userID, Script: fmt.Sprintf(scriptFmt, 1)})
+		newID, err := s.CreateTask(context.Background(), backend.CreateTaskRequest{Script: fmt.Sprintf(scriptFmt, 1)})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -287,7 +285,7 @@ from(bucket:"test") |> range(start:-1h)`
 			tasks[i].name = fmt.Sprintf("my_bucket_%d", i)
 			tasks[i].script = fmt.Sprintf(script, i, i)
 
-			id, err := s.CreateTask(context.Background(), backend.CreateTaskRequest{Org: orgID, User: userID, Script: tasks[i].script})
+			id, err := s.CreateTask(context.Background(), backend.CreateTaskRequest{Script: tasks[i].script})
 			if err != nil {
 				t.Fatalf("failed to create task %d: %v", i, err)
 			}
@@ -365,7 +363,7 @@ from(bucket:"test") |> range(start:-1h)`
 		org := platform.ID(1)
 		user := platform.ID(2)
 
-		id, err := s.CreateTask(context.Background(), backend.CreateTaskRequest{Org: org, User: user, Script: script})
+		id, err := s.CreateTask(context.Background(), backend.CreateTaskRequest{Script: script})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -420,7 +418,7 @@ from(bucket:"test") |> range(start:-1h)`
 		org := platform.ID(1)
 		user := platform.ID(2)
 
-		id, err := s.CreateTask(context.Background(), backend.CreateTaskRequest{Org: org, User: user, Script: script, ScheduleAfter: 6000})
+		id, err := s.CreateTask(context.Background(), backend.CreateTaskRequest{Script: script, ScheduleAfter: 6000})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -526,7 +524,7 @@ from(bucket:"test") |> range(start:-1h)`
 	org := platform.ID(1)
 	user := platform.ID(2)
 
-	id, err := s.CreateTask(context.Background(), backend.CreateTaskRequest{Org: org, User: user, Script: script, ScheduleAfter: 6000})
+	id, err := s.CreateTask(context.Background(), backend.CreateTaskRequest{Script: script, ScheduleAfter: 6000})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -690,11 +688,6 @@ from(bucket:"test") |> range(start:-1h)`
 		}
 		if _, err := s.DeleteTask(context.Background(), id); err != nil {
 			t.Fatal(err)
-		}
-
-		// Reuse the same name, for the original user but a new org.
-		if _, err = s.CreateTask(context.Background(), backend.CreateTaskRequest{Org: idGen.ID(), User: user, Script: script}); err != nil {
-			t.Fatalf("Error when reusing task name that was previously deleted: %v", err)
 		}
 	})
 }

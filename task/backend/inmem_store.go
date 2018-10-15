@@ -46,9 +46,6 @@ func (s *inmem) CreateTask(_ context.Context, req CreateTaskRequest) (platform.I
 	task := StoreTask{
 		ID: id,
 
-		Org:  req.Org,
-		User: req.User,
-
 		Name: o.Name,
 
 		Script: req.Script,

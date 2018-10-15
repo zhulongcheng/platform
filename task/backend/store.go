@@ -272,13 +272,6 @@ func (StoreValidation) CreateArgs(req CreateTaskRequest) (options.Options, error
 		}
 	}
 
-	if !req.Org.Valid() {
-		missing = append(missing, "organization ID")
-	}
-	if !req.User.Valid() {
-		missing = append(missing, "user ID")
-	}
-
 	if len(missing) > 0 {
 		return o, fmt.Errorf("missing required fields to create task: %s", strings.Join(missing, ", "))
 	}
