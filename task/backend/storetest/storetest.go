@@ -212,15 +212,19 @@ from(bucket:"test") |> range(start:-1h)`
 		s := create(t)
 		defer destroy(t, s)
 
+<<<<<<< HEAD
 		orgID := platform.ID(1)
 		userID := platform.ID(2)
 
 		id, err := s.CreateTask(context.Background(), backend.CreateTaskRequest{Script: fmt.Sprintf(scriptFmt, 0)})
+=======
+		id, err := s.CreateTask(context.Background(), fmt.Sprintf(scriptFmt, 0), 0)
+>>>>>>> fix storetest
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		ts, err := s.ListTasks(context.Background(), backend.TaskSearchParams{User: userID})
+		ts, err := s.ListTasks(context.Background(), backend.TaskSearchParams{})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -229,14 +233,6 @@ from(bucket:"test") |> range(start:-1h)`
 		}
 		if ts[0].ID != id {
 			t.Fatalf("got task ID %v, exp %v", ts[0].ID, id)
-		}
-
-		ts, err = s.ListTasks(context.Background(), backend.TaskSearchParams{User: platform.ID(123)})
-		if err != nil {
-			t.Fatal(err)
-		}
-		if len(ts) > 0 {
-			t.Fatalf("expected no results for bad user ID, got %d result(s)", len(ts))
 		}
 
 		newID, err := s.CreateTask(context.Background(), backend.CreateTaskRequest{Script: fmt.Sprintf(scriptFmt, 1)})
@@ -293,7 +289,7 @@ from(bucket:"test") |> range(start:-1h)`
 		}
 
 		for _, p := range []backend.TaskSearchParams{
-			{User: userID, PageSize: 100},
+			{PageSize: 100},
 		} {
 			got, err := s.ListTasks(context.Background(), p)
 			if err != nil {
@@ -587,10 +583,7 @@ func testStoreTaskEnableDisable(t *testing.T, create CreateStoreFunc, destroy De
 	s := create(t)
 	defer destroy(t, s)
 
-	org := platform.ID(1)
-	user := platform.ID(2)
-
-	id, err := s.CreateTask(context.Background(), backend.CreateTaskRequest{Org: org, User: user, Script: script})
+	id, err := s.CreateTask(context.Background(), backend.CreateTaskRequest{Script: script})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -653,8 +646,7 @@ from(bucket:"test") |> range(start:-1h)`
 		s := create(t)
 		defer destroy(t, s)
 
-		org, user := idGen.ID(), idGen.ID()
-		id, err := s.CreateTask(context.Background(), backend.CreateTaskRequest{Org: org, User: user, Script: script})
+		id, err := s.CreateTask(context.Background(), backend.CreateTaskRequest{Script: script})
 		if err != nil {
 			t.Fatal(err)
 		}
