@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/influxdata/platform"
 	"github.com/influxdata/platform/mock"
 )
@@ -26,6 +27,7 @@ var dashboardCmpOptions = cmp.Options{
 	cmp.Comparer(func(x, y []byte) bool {
 		return bytes.Equal(x, y)
 	}),
+	cmpopts.IgnoreFields(platform.Dashboard{}, "CreatedAt", "UpdatedAt"),
 	cmp.Transformer("Sort", func(in []*platform.Dashboard) []*platform.Dashboard {
 		out := append([]*platform.Dashboard(nil), in...) // Copy input to avoid mutating it
 		sort.Slice(out, func(i, j int) bool {

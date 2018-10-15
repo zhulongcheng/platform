@@ -3,6 +3,7 @@ package platform
 import (
 	"context"
 	"fmt"
+	"time"
 )
 
 // ErrDashboardNotFound is the error for a missing dashboard.
@@ -45,9 +46,11 @@ type DashboardService interface {
 
 // Dashboard represents all visual and query data for a dashboard
 type Dashboard struct {
-	ID    ID      `json:"id,omitempty"`
-	Name  string  `json:"name"`
-	Cells []*Cell `json:"cells"`
+	ID        ID        `json:"id,omitempty"`
+	Name      string    `json:"name"`
+	Cells     []*Cell   `json:"cells"`
+	CreatedAt time.Time `json:"createdAt,omitempty"`
+	UpdatedAt time.Time `json:"updatedAt,omitempty"`
 }
 
 // Cell holds positional information about a cell on dashboard and a reference to a cell.

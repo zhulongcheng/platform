@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"sync"
+	"time"
 
 	bolt "github.com/coreos/bbolt"
 	"github.com/influxdata/platform"
@@ -165,6 +166,8 @@ func (c *Client) CreateDashboard(ctx context.Context, d *platform.Dashboard) err
 			}
 		}
 
+		d.CreatedAt = time.Now().UTC()
+
 		return c.putDashboard(ctx, tx, d)
 	})
 }
@@ -324,6 +327,7 @@ func (c *Client) PutDashboard(ctx context.Context, d *platform.Dashboard) error 
 }
 
 func (c *Client) putDashboard(ctx context.Context, tx *bolt.Tx, d *platform.Dashboard) error {
+	d.UpdatedAt = time.Now().UTC()
 	v, err := json.Marshal(d)
 	if err != nil {
 		return err
