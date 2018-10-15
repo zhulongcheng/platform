@@ -89,8 +89,6 @@ from(bucket:"test") |> range(start:-1h)`
 		noerr        bool
 	}{
 		{caseName: "happy path", org: platform.ID(1), user: platform.ID(2), script: script, noerr: true},
-		{caseName: "missing org", org: platform.ID(0), user: platform.ID(2), script: script},
-		{caseName: "missing user", org: platform.ID(1), user: platform.ID(0), script: script},
 		{caseName: "missing name", org: platform.ID(1), user: platform.ID(2), script: scriptNoName},
 		{caseName: "missing script", org: platform.ID(1), user: platform.ID(2), script: ""},
 		{caseName: "repeated name and org", org: platform.ID(1), user: platform.ID(3), script: script, noerr: true},
@@ -212,14 +210,10 @@ from(bucket:"test") |> range(start:-1h)`
 		s := create(t)
 		defer destroy(t, s)
 
-<<<<<<< HEAD
 		orgID := platform.ID(1)
 		userID := platform.ID(2)
 
 		id, err := s.CreateTask(context.Background(), backend.CreateTaskRequest{Script: fmt.Sprintf(scriptFmt, 0)})
-=======
-		id, err := s.CreateTask(context.Background(), fmt.Sprintf(scriptFmt, 0), 0)
->>>>>>> fix storetest
 		if err != nil {
 			t.Fatal(err)
 		}
