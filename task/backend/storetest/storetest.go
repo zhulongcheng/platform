@@ -222,7 +222,7 @@ from(bucket:"test") |> range(start:-1h)`
 			t.Fatal(err)
 		}
 
-		ts, err := s.ListTasks(context.Background(), backend.TaskSearchParams{Org: orgID})
+		ts, err := s.ListTasks(context.Background(), backend.TaskSearchParams{User: userID})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -231,25 +231,6 @@ from(bucket:"test") |> range(start:-1h)`
 		}
 		if ts[0].ID != id {
 			t.Fatalf("got task ID %v, exp %v", ts[0].ID, id)
-		}
-
-		ts, err = s.ListTasks(context.Background(), backend.TaskSearchParams{User: userID})
-		if err != nil {
-			t.Fatal(err)
-		}
-		if len(ts) != 1 {
-			t.Fatalf("expected 1 result, got %d", len(ts))
-		}
-		if ts[0].ID != id {
-			t.Fatalf("got task ID %v, exp %v", ts[0].ID, id)
-		}
-
-		ts, err = s.ListTasks(context.Background(), backend.TaskSearchParams{Org: platform.ID(123)})
-		if err != nil {
-			t.Fatal(err)
-		}
-		if len(ts) > 0 {
-			t.Fatalf("expected no results for bad org ID, got %d result(s)", len(ts))
 		}
 
 		ts, err = s.ListTasks(context.Background(), backend.TaskSearchParams{User: platform.ID(123)})
@@ -314,7 +295,6 @@ from(bucket:"test") |> range(start:-1h)`
 		}
 
 		for _, p := range []backend.TaskSearchParams{
-			{Org: orgID, PageSize: 100},
 			{User: userID, PageSize: 100},
 		} {
 			got, err := s.ListTasks(context.Background(), p)
@@ -354,6 +334,8 @@ from(bucket:"test") |> range(start:-1h)`
 		s := create(t)
 		defer destroy(t, s)
 
+		ids := make([]*platform.ID, 0)
+
 		if _, err := s.ListTasks(context.Background(), backend.TaskSearchParams{PageSize: -1}); err == nil {
 			t.Fatal("expected error for negative page size but got nil")
 		}
@@ -362,8 +344,8 @@ from(bucket:"test") |> range(start:-1h)`
 			t.Fatal("expected error for huge page size but got nil")
 		}
 
-		if _, err := s.ListTasks(context.Background(), backend.TaskSearchParams{Org: platform.ID(1), User: platform.ID(2)}); err == nil {
-			t.Fatal("expected error when specifying both org and user, but got nil")
+		if _, err := s.ListTasks(context.Background(), backend.TaskSearchParams{After: platform.ID(1), IDs: ids}); err == nil {
+			t.Fatal("expected error when specifying both after and ids, but got nil")
 		}
 	})
 }
