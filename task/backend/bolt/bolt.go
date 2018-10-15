@@ -224,8 +224,8 @@ func (s *Store) ModifyTask(ctx context.Context, id platform.ID, newScript string
 
 // ListTasks lists the tasks based on a filter.
 func (s *Store) ListTasks(ctx context.Context, params backend.TaskSearchParams) ([]backend.StoreTask, error) {
-	if params.Org.Valid() && params.User.Valid() {
-		return nil, errors.New("ListTasks: org and user filters are mutually exclusive")
+	if len(params.IDs) > 0 && params.After.Valid() {
+		return nil, errors.New("ListTasks: ID and After filters are mutually exclusive")
 	}
 
 	const (
@@ -248,17 +248,7 @@ func (s *Store) ListTasks(ctx context.Context, params backend.TaskSearchParams) 
 	if err := s.db.View(func(tx *bolt.Tx) error {
 		var c *bolt.Cursor
 		b := tx.Bucket(s.bucket)
-		if params.Org.Valid() {
-			encodedOrg, err := params.Org.Encode()
-			if err != nil {
-				return err
-			}
-			orgB := b.Bucket(orgsPath).Bucket(encodedOrg)
-			if orgB == nil {
-				return ErrNotFound
-			}
-			c = orgB.Cursor()
-		} else if params.User.Valid() {
+		if params.User.Valid() {
 			encodedUser, err := params.User.Encode()
 			if err != nil {
 				return err
@@ -310,26 +300,6 @@ func (s *Store) ListTasks(ctx context.Context, params backend.TaskSearchParams) 
 				tasks[i].Script = string(b.Bucket(tasksPath).Get(encodedID))
 				tasks[i].Name = string(b.Bucket(nameByTaskID).Get(encodedID))
 			}
-		}
-		if params.Org.Valid() {
-			for i := range taskIDs {
-				select {
-				case <-ctx.Done():
-					return ctx.Err()
-				default:
-					encodedID, err := taskIDs[i].Encode()
-					if err != nil {
-						return err
-					}
-					tasks[i].Org = params.Org
-					var userID platform.ID
-					if err := userID.Decode(b.Bucket(userByTaskID).Get(encodedID)); err != nil {
-						return err
-					}
-					tasks[i].User = userID
-				}
-			}
-			return nil
 		}
 		if params.User.Valid() {
 			for i := range taskIDs {
