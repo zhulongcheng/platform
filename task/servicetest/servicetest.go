@@ -89,9 +89,6 @@ type System struct {
 }
 
 func testTaskCRUD(t *testing.T, sys *System) {
-	orgID := idGen.ID()
-	userID := idGen.ID()
-
 	// Create a task.
 	task := &platform.Task{Flux: fmt.Sprintf(scriptFmt, 0)}
 	if err := sys.ts.CreateTask(sys.Ctx, task); err != nil {
@@ -112,32 +109,19 @@ func testTaskCRUD(t *testing.T, sys *System) {
 	}
 	found["FindTaskByID"] = f
 
-	fs, _, err := sys.ts.FindTasks(sys.Ctx, platform.TaskFilter{Organization: &orgID})
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(fs) != 1 {
-		t.Fatalf("expected 1 task returned, got %d: %#v", len(fs), fs)
-	}
-	found["FindTasks with Organization filter"] = fs[0]
+	ids := make([]*platform.ID, 1)
+	ids = append(ids, &task.ID)
 
-	fs, _, err = sys.ts.FindTasks(sys.Ctx, platform.TaskFilter{User: &userID})
+	fs, _, err := sys.ts.FindTasks(sys.Ctx, platform.TaskFilter{IDs: ids})
 	if err != nil {
 		t.Fatal(err)
 	}
 	if len(fs) != 1 {
 		t.Fatalf("expected 1 task returned, got %d: %#v", len(fs), fs)
 	}
-	found["FindTasks with User filter"] = fs[0]
+	found["FindTasks with IDs filter"] = fs[0]
 
 	for fn, f := range found {
-		if f.Organization != orgID {
-			t.Fatalf("%s: wrong organization returned; want %s, got %s", fn, orgID.String(), f.Organization.String())
-		}
-		if f.Owner.ID != userID {
-			t.Fatalf("%s: wrong user returned; want %s, got %s", fn, userID.String(), f.Owner.ID.String())
-		}
-
 		if f.Name != "task #0" {
 			t.Fatalf(`%s: wrong name returned; want "task #0", got %q`, fn, f.Name)
 		}
@@ -182,10 +166,7 @@ func testTaskCRUD(t *testing.T, sys *System) {
 }
 
 func testTaskRuns(t *testing.T, sys *System) {
-	orgID := idGen.ID()
-	userID := idGen.ID()
-
-	task := &platform.Task{Organization: orgID, Owner: platform.User{ID: userID}, Flux: fmt.Sprintf(scriptFmt, 0)}
+	task := &platform.Task{Flux: fmt.Sprintf(scriptFmt, 0)}
 	if err := sys.ts.CreateTask(sys.Ctx, task); err != nil {
 		t.Fatal(err)
 	}
@@ -221,7 +202,7 @@ func testTaskRuns(t *testing.T, sys *System) {
 	}
 
 	// Find runs, to see the started run.
-	runs, n, err := sys.ts.FindRuns(sys.Ctx, platform.RunFilter{Org: &orgID, Task: &task.ID})
+	runs, n, err := sys.ts.FindRuns(sys.Ctx, platform.RunFilter{Task: &task.ID})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -255,9 +236,6 @@ func testTaskRuns(t *testing.T, sys *System) {
 }
 
 func testTaskConcurrency(t *testing.T, sys *System) {
-	orgID := idGen.ID()
-	userID := idGen.ID()
-
 	const numTasks = 300
 	taskCh := make(chan *platform.Task, numTasks)
 
@@ -300,7 +278,7 @@ func testTaskConcurrency(t *testing.T, sys *System) {
 			}
 
 			// Get all the tasks.
-			tasks, _, err := sys.ts.FindTasks(sys.Ctx, platform.TaskFilter{Organization: &orgID})
+			tasks, _, err := sys.ts.FindTasks(sys.Ctx, platform.TaskFilter{})
 			if err != nil {
 				t.Errorf("error finding tasks: %v", err)
 				return
@@ -345,7 +323,7 @@ func testTaskConcurrency(t *testing.T, sys *System) {
 			}
 
 			// Get all the tasks.
-			tasks, _, err := sys.ts.FindTasks(sys.Ctx, platform.TaskFilter{Organization: &orgID})
+			tasks, _, err := sys.ts.FindTasks(sys.Ctx, platform.TaskFilter{})
 			if err != nil {
 				t.Errorf("error finding tasks: %v", err)
 				return
@@ -384,9 +362,7 @@ func testTaskConcurrency(t *testing.T, sys *System) {
 	// Start adding tasks.
 	for i := 0; i < numTasks; i++ {
 		taskCh <- &platform.Task{
-			Organization: orgID,
-			Owner:        platform.User{ID: userID},
-			Flux:         fmt.Sprintf(scriptFmt, i),
+			Flux: fmt.Sprintf(scriptFmt, i),
 		}
 	}
 
