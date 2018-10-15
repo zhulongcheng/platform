@@ -223,11 +223,8 @@ func (NopLogReader) ListLogs(ctx context.Context, logFilter platform.LogFilter) 
 
 // TaskSearchParams is used when searching or listing tasks.
 type TaskSearchParams struct {
-	// Return tasks belonging to this exact organization ID. May be nil.
-	Org platform.ID
-
-	// Return tasks belonging to this exact user ID. May be nil.
-	User platform.ID
+	// Return tasks that match these IDs
+	IDs []*platform.ID
 
 	// Return tasks starting after this ID.
 	After platform.ID

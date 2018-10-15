@@ -98,8 +98,8 @@ func (s *inmem) ModifyTask(_ context.Context, id platform.ID, script string) err
 }
 
 func (s *inmem) ListTasks(_ context.Context, params TaskSearchParams) ([]StoreTask, error) {
-	if params.Org.Valid() && params.User.Valid() {
-		return nil, errors.New("ListTasks: org and user filters are mutually exclusive")
+	if len(params.IDs) > 0 && params.After.Valid() {
+		return nil, errors.New("ListTasks: ID and After filters are mutually exclusive")
 	}
 
 	const (
@@ -121,8 +121,7 @@ func (s *inmem) ListTasks(_ context.Context, params TaskSearchParams) ([]StoreTa
 
 	out := make([]StoreTask, 0, lim)
 
-	org := params.Org
-	user := params.User
+	ids := params.IDs
 
 	var after platform.ID
 	if !params.After.Valid() {
@@ -134,15 +133,21 @@ func (s *inmem) ListTasks(_ context.Context, params TaskSearchParams) ([]StoreTa
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
+	var sm sync.Map
+	for _, id := range ids {
+		sm.Store(id.String(), true)
+	}
+
 	for _, t := range s.tasks {
 		if after >= t.ID {
 			continue
 		}
-		if org.Valid() && org != t.Org {
-			continue
-		}
-		if user.Valid() && user != t.User {
-			continue
+
+		if len(ids) > 0 {
+			_, ok := sm.Load(t.ID.String())
+			if !ok {
+				continue
+			}
 		}
 
 		out = append(out, t)

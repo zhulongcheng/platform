@@ -41,11 +41,8 @@ func (p pAdapter) FindTasks(ctx context.Context, filter platform.TaskFilter) ([]
 	const pageSize = 100 // According to the platform.TaskService.FindTasks API.
 
 	params := backend.TaskSearchParams{PageSize: pageSize}
-	if filter.Organization != nil {
-		params.Org = *filter.Organization
-	}
-	if filter.User != nil {
-		params.User = *filter.User
+	if filter.IDs != nil {
+		params.IDs = *filter.IDs
 	}
 	if filter.After != nil {
 		params.After = *filter.After
