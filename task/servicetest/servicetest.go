@@ -93,7 +93,7 @@ func testTaskCRUD(t *testing.T, sys *System) {
 	userID := idGen.ID()
 
 	// Create a task.
-	task := &platform.Task{Organization: orgID, Owner: platform.User{ID: userID}, Flux: fmt.Sprintf(scriptFmt, 0)}
+	task := &platform.Task{Flux: fmt.Sprintf(scriptFmt, 0)}
 	if err := sys.ts.CreateTask(sys.Ctx, task); err != nil {
 		t.Fatal(err)
 	}

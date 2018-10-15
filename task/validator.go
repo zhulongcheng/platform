@@ -31,13 +31,13 @@ func NewValidator(ts platform.TaskService) platform.TaskService {
 	}
 }
 
-func (ts *taskServiceValidator) CreateTask(ctx context.Context, t *platform.Task) error {
-	if err := validatePermission(ctx, platform.Permission{Action: platform.CreateAction, Resource: platform.TaskResource(t.Organization)}); err != nil {
-		return err
-	}
-
-	return ts.TaskService.CreateTask(ctx, t)
-}
+// func (ts *taskServiceValidator) CreateTask(ctx context.Context, t *platform.Task) error {
+// 	if err := validatePermission(ctx, platform.Permission{Action: platform.CreateAction, Resource: platform.TaskResource(t.Organization)}); err != nil {
+// 		return err
+// 	}
+//
+// 	return ts.TaskService.CreateTask(ctx, t)
+// }
 
 // TODO(lh): add permission checking for the all the platform.TaskService functions.
 

@@ -42,7 +42,7 @@ func (p pAdapter) FindTasks(ctx context.Context, filter platform.TaskFilter) ([]
 
 	params := backend.TaskSearchParams{PageSize: pageSize}
 	if filter.IDs != nil {
-		params.IDs = *filter.IDs
+		params.IDs = filter.IDs
 	}
 	if filter.After != nil {
 		params.After = *filter.After
@@ -72,7 +72,7 @@ func (p pAdapter) CreateTask(ctx context.Context, t *platform.Task) error {
 
 	// TODO(mr): decide whether we allow user to configure scheduleAfter. https://github.com/influxdata/platform/issues/595
 	scheduleAfter := time.Now().Unix()
-	req := backend.CreateTaskRequest{Org: t.Organization, User: t.Owner.ID, Script: t.Flux, ScheduleAfter: scheduleAfter}
+	req := backend.CreateTaskRequest{Script: t.Flux, ScheduleAfter: scheduleAfter}
 	id, err := p.s.CreateTask(ctx, req)
 	if err != nil {
 		return err
@@ -165,13 +165,8 @@ func toPlatformTask(t backend.StoreTask, m *backend.StoreTaskMeta) (*platform.Ta
 	}
 
 	pt := &platform.Task{
-		ID:           t.ID,
-		Organization: t.Org,
-		Name:         t.Name,
-		Owner: platform.User{
-			ID:   t.User,
-			Name: "", // TODO(mr): how to get owner name?
-		},
+		ID:   t.ID,
+		Name: t.Name,
 		Flux: t.Script,
 		Cron: opts.Cron,
 	}
