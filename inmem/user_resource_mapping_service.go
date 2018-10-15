@@ -114,7 +114,7 @@ func (s *Service) FindManyUserResourceMappings(ctx context.Context, filter platf
 func (s *Service) CreateUserResourceMapping(ctx context.Context, m *platform.UserResourceMapping) error {
 	mapping, _ := s.FindUserResourceBy(ctx, m.ResourceID, m.UserID)
 	if mapping != nil {
-		return fmt.Errorf("mapping for user %s already exists", m.UserID)
+		return fmt.Errorf("mapping %s:%s already exists", m.UserID.String(), m.ResourceID.String())
 	}
 
 	s.userResourceMappingKV.Store(encodeUserResourceMappingKey(m.ResourceID, m.UserID), *m)

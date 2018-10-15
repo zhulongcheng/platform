@@ -143,7 +143,7 @@ func (c *Client) CreateUserResourceMapping(ctx context.Context, m *platform.User
 		unique := c.uniqueUserResourceMapping(ctx, tx, m)
 
 		if !unique {
-			return fmt.Errorf("mapping for user %s already exists", m.UserID.String())
+			return fmt.Errorf("mapping %s:%s already exists", m.UserID.String(), m.ResourceID.String())
 		}
 
 		v, err := json.Marshal(m)

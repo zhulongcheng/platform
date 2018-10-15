@@ -13,8 +13,8 @@ import (
 )
 
 const (
-	orgOneID = "020f755c3c082000"
-	orgTwoID = "020f755c3c082001"
+	orgOneID = "020f755c3c085000"
+	orgTwoID = "020f755c3c085001"
 )
 
 var organizationCmpOptions = cmp.Options{

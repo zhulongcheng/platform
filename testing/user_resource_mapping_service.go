@@ -158,7 +158,7 @@ func CreateUserResourceMapping(
 						UserType:   platform.Member,
 					},
 				},
-				err: fmt.Errorf("mapping for user %s already exists", userOneID),
+				err: fmt.Errorf("mapping %s:%s already exists", userOneID, bucketOneID),
 			},
 		},
 	}
@@ -517,30 +517,30 @@ func FindDeepUserResourceMappings(
 						UserType:     platform.Member,
 						ResourceType: platform.OrgResourceType,
 					},
-					// {
-					// 	ResourceID:   idFromString(t, bucketOneID),
-					// 	UserID:       idFromString(t, userOneID),
-					// 	UserType:     platform.Member,
-					// 	ResourceType: platform.BucketResourceType,
-					// },
-					// {
-					// 	ResourceID:   idFromString(t, bucketTwoID),
-					// 	UserID:       idFromString(t, orgOneID),
-					// 	UserType:     platform.Member,
-					// 	ResourceType: platform.BucketResourceType,
-					// },
-					// {
-					// 	ResourceID:   idFromString(t, bucketThreeID),
-					// 	UserID:       idFromString(t, orgTwoID),
-					// 	UserType:     platform.Member,
-					// 	ResourceType: platform.BucketResourceType,
-					// },
-					// {
-					// 	ResourceID:   idFromString(t, dashOneID),
-					// 	UserID:       idFromString(t, orgOneID),
-					// 	UserType:     platform.Member,
-					// 	ResourceType: platform.DashboardResourceType,
-					// },
+					{
+						ResourceID:   idFromString(t, bucketOneID),
+						UserID:       idFromString(t, userOneID),
+						UserType:     platform.Member,
+						ResourceType: platform.BucketResourceType,
+					},
+					{
+						ResourceID:   idFromString(t, bucketTwoID),
+						UserID:       idFromString(t, orgOneID),
+						UserType:     platform.Member,
+						ResourceType: platform.BucketResourceType,
+					},
+					{
+						ResourceID:   idFromString(t, bucketThreeID),
+						UserID:       idFromString(t, orgTwoID),
+						UserType:     platform.Member,
+						ResourceType: platform.BucketResourceType,
+					},
+					{
+						ResourceID:   idFromString(t, dashOneID),
+						UserID:       idFromString(t, orgOneID),
+						UserType:     platform.Member,
+						ResourceType: platform.DashboardResourceType,
+					},
 				},
 			},
 			args: args{
