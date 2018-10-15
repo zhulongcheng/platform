@@ -38,8 +38,13 @@ func New(scheduler backend.Scheduler, st backend.Store, opts ...Option) backend.
 	return c
 }
 
+<<<<<<< HEAD
 func (c *Coordinator) CreateTask(ctx context.Context, req backend.CreateTaskRequest) (platform.ID, error) {
 	id, err := c.Store.CreateTask(ctx, req)
+=======
+func (c *Coordinator) CreateTask(ctx context.Context, script string, scheduleAfter int64) (platform.ID, error) {
+	id, err := c.Store.CreateTask(ctx, script, scheduleAfter)
+>>>>>>> remove user/org references from coordinator
 	if err != nil {
 		return id, err
 	}
@@ -110,36 +115,4 @@ func (c *Coordinator) DeleteTask(ctx context.Context, id platform.ID) (deleted b
 	return c.Store.DeleteTask(ctx, id)
 }
 
-func (c *Coordinator) DeleteOrg(ctx context.Context, orgID platform.ID) error {
-	orgTasks, err := c.Store.ListTasks(ctx, backend.TaskSearchParams{
-		Org: orgID,
-	})
-	if err != nil {
-		return err
-	}
-
-	for _, orgTask := range orgTasks {
-		if err := c.sch.ReleaseTask(orgTask.ID); err != nil {
-			return err
-		}
-	}
-
-	return c.Store.DeleteOrg(ctx, orgID)
-}
-
-func (c *Coordinator) DeleteUser(ctx context.Context, userID platform.ID) error {
-	userTasks, err := c.Store.ListTasks(ctx, backend.TaskSearchParams{
-		User: userID,
-	})
-	if err != nil {
-		return err
-	}
-
-	for _, userTask := range userTasks {
-		if err := c.sch.ReleaseTask(userTask.ID); err != nil {
-			return err
-		}
-	}
-
-	return c.Store.DeleteUser(ctx, userID)
-}
+// TODO (jm): add DeleteTasks fn that takes a slice of IDs?

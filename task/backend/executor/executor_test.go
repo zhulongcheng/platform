@@ -255,7 +255,11 @@ func testExecutorQuerySuccess(t *testing.T, fn createSysFn) {
 	var userID = platformtesting.MustIDBase16("baaaaaaaaaaaaaab")
 	sys := fn()
 	t.Run(sys.name+"/QuerySuccess", func(t *testing.T) {
+<<<<<<< HEAD
 		tid, err := sys.st.CreateTask(context.Background(), backend.CreateTaskRequest{Org: orgID, User: userID, Script: testScript})
+=======
+		tid, err := sys.st.CreateTask(context.Background(), testScript, 0)
+>>>>>>> remove user/org references from coordinator
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -307,7 +311,11 @@ func testExecutorQueryFailure(t *testing.T, fn createSysFn) {
 	var userID = platformtesting.MustIDBase16("baaaaaaaaaaaaaab")
 	sys := fn()
 	t.Run(sys.name+"/QueryFail", func(t *testing.T) {
+<<<<<<< HEAD
 		tid, err := sys.st.CreateTask(context.Background(), backend.CreateTaskRequest{Org: orgID, User: userID, Script: testScript})
+=======
+		tid, err := sys.st.CreateTask(context.Background(), testScript, 0)
+>>>>>>> remove user/org references from coordinator
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -335,7 +343,11 @@ func testExecutorPromiseCancel(t *testing.T, fn createSysFn) {
 	var userID = platformtesting.MustIDBase16("baaaaaaaaaaaaaab")
 	sys := fn()
 	t.Run(sys.name+"/PromiseCancel", func(t *testing.T) {
+<<<<<<< HEAD
 		tid, err := sys.st.CreateTask(context.Background(), backend.CreateTaskRequest{Org: orgID, User: userID, Script: testScript})
+=======
+		tid, err := sys.st.CreateTask(context.Background(), testScript, 0)
+>>>>>>> remove user/org references from coordinator
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -362,7 +374,11 @@ func testExecutorServiceError(t *testing.T, fn createSysFn) {
 	var userID = platformtesting.MustIDBase16("baaaaaaaaaaaaaab")
 	sys := fn()
 	t.Run(sys.name+"/ServiceError", func(t *testing.T) {
+<<<<<<< HEAD
 		tid, err := sys.st.CreateTask(context.Background(), backend.CreateTaskRequest{Org: orgID, User: userID, Script: testScript})
+=======
+		tid, err := sys.st.CreateTask(context.Background(), testScript, 0)
+>>>>>>> remove user/org references from coordinator
 		if err != nil {
 			t.Fatal(err)
 		}
