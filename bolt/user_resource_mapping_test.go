@@ -16,7 +16,7 @@ func initUserResourceMappingService(f platformtesting.UserResourceFields, t *tes
 	ctx := context.Background()
 	for _, m := range f.UserResourceMappings {
 		if err := c.CreateUserResourceMapping(ctx, m); err != nil {
-			t.Fatalf("failed to populate mappings")
+			t.Fatalf("failed to populate mappings: %v", err)
 		}
 	}
 

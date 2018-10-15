@@ -131,6 +131,11 @@ func CreateUserResourceMapping(
 						UserID:     MustIDBase16(userOneID),
 						UserType:   platform.Member,
 					},
+					{
+						ResourceID: idFromString(t, bucketTwoID),
+						UserID:     idFromString(t, userOneID),
+						UserType:   platform.Member,
+					},
 				},
 			},
 			args: args{
@@ -145,6 +150,11 @@ func CreateUserResourceMapping(
 					{
 						ResourceID: MustIDBase16(bucketOneID),
 						UserID:     MustIDBase16(userOneID),
+						UserType:   platform.Member,
+					},
+					{
+						ResourceID: idFromString(t, bucketTwoID),
+						UserID:     idFromString(t, userOneID),
 						UserType:   platform.Member,
 					},
 				},
@@ -507,30 +517,30 @@ func FindDeepUserResourceMappings(
 						UserType:     platform.Member,
 						ResourceType: platform.OrgResourceType,
 					},
-					{
-						ResourceID:   idFromString(t, bucketOneID),
-						UserID:       idFromString(t, userOneID),
-						UserType:     platform.Member,
-						ResourceType: platform.BucketResourceType,
-					},
-					{
-						ResourceID:   idFromString(t, bucketTwoID),
-						UserID:       idFromString(t, orgOneID),
-						UserType:     platform.Member,
-						ResourceType: platform.BucketResourceType,
-					},
-					{
-						ResourceID:   idFromString(t, bucketThreeID),
-						UserID:       idFromString(t, orgTwoID),
-						UserType:     platform.Member,
-						ResourceType: platform.BucketResourceType,
-					},
-					{
-						ResourceID:   idFromString(t, dashOneID),
-						UserID:       idFromString(t, orgOneID),
-						UserType:     platform.Member,
-						ResourceType: platform.DashboardResourceType,
-					},
+					// {
+					// 	ResourceID:   idFromString(t, bucketOneID),
+					// 	UserID:       idFromString(t, userOneID),
+					// 	UserType:     platform.Member,
+					// 	ResourceType: platform.BucketResourceType,
+					// },
+					// {
+					// 	ResourceID:   idFromString(t, bucketTwoID),
+					// 	UserID:       idFromString(t, orgOneID),
+					// 	UserType:     platform.Member,
+					// 	ResourceType: platform.BucketResourceType,
+					// },
+					// {
+					// 	ResourceID:   idFromString(t, bucketThreeID),
+					// 	UserID:       idFromString(t, orgTwoID),
+					// 	UserType:     platform.Member,
+					// 	ResourceType: platform.BucketResourceType,
+					// },
+					// {
+					// 	ResourceID:   idFromString(t, dashOneID),
+					// 	UserID:       idFromString(t, orgOneID),
+					// 	UserType:     platform.Member,
+					// 	ResourceType: platform.DashboardResourceType,
+					// },
 				},
 			},
 			args: args{
