@@ -107,7 +107,7 @@ func filterDashboardsFn(filter platform.DashboardFilter) func(d *platform.Dashbo
 }
 
 // FindDashboards retrives all dashboards that match an arbitrary dashboard filter.
-func (c *Client) FindDashboards(ctx context.Context, filter platform.DashboardFilter) ([]*platform.Dashboard, int, error) {
+func (c *Client) FindDashboards(ctx context.Context, filter platform.DashboardFilter, opts platform.FindOptions) ([]*platform.Dashboard, int, error) {
 	if len(filter.IDs) == 1 {
 		d, err := c.FindDashboardByID(ctx, *filter.IDs[0])
 		if err != nil {
@@ -130,6 +130,8 @@ func (c *Client) FindDashboards(ctx context.Context, filter platform.DashboardFi
 	if err != nil {
 		return nil, 0, err
 	}
+
+	platform.SortDashboards(opts.SortBy, ds)
 
 	return ds, len(ds), nil
 }
