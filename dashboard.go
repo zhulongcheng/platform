@@ -3,6 +3,7 @@ package platform
 import (
 	"context"
 	"fmt"
+	"sort"
 	"time"
 )
 
@@ -19,7 +20,7 @@ type DashboardService interface {
 
 	// FindDashboards returns a list of dashboards that match filter and the total count of matching dashboards.
 	// Additional options provide pagination & sorting.
-	FindDashboards(ctx context.Context, filter DashboardFilter) ([]*Dashboard, int, error)
+	FindDashboards(ctx context.Context, filter DashboardFilter, opts FindOptions) ([]*Dashboard, int, error)
 
 	// CreateDashboard creates a new dashboard and sets b.ID with the new identifier.
 	CreateDashboard(ctx context.Context, b *Dashboard) error
@@ -56,6 +57,36 @@ type Dashboard struct {
 type DashboardMeta struct {
 	CreatedAt time.Time `json:"createdAt"`
 	UpdatedAt time.Time `json:"updatedAt"`
+}
+
+// DefaultDashboardFindOptions are the default find options for dashboards
+var DefaultDashboardFindOptions = FindOptions{
+	SortBy: "ID",
+}
+
+// SortDashboards sorts a slice of dashboards by a field.
+func SortDashboards(by string, ds []*Dashboard) {
+	var sorter func(i, j int) bool
+	switch by {
+	case "CreatedAt":
+		sorter = func(i, j int) bool {
+			return ds[j].Meta.CreatedAt.After(ds[i].Meta.CreatedAt)
+		}
+	case "UpdatedAt":
+		sorter = func(i, j int) bool {
+			return ds[j].Meta.UpdatedAt.After(ds[i].Meta.UpdatedAt)
+		}
+	case "Name":
+		sorter = func(i, j int) bool {
+			return ds[i].Name < ds[j].Name
+		}
+	default:
+		sorter = func(i, j int) bool {
+			return ds[i].ID < ds[j].ID
+		}
+	}
+
+	sort.Slice(ds, sorter)
 }
 
 // Cell holds positional information about a cell on dashboard and a reference to a cell.
