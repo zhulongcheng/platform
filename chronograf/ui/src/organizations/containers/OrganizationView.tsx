@@ -7,6 +7,8 @@ import _ from 'lodash'
 // Components
 // import OrganizationViewContents from 'src/organizations/components/OrganizationViewContents'
 import {Page} from 'src/pageLayout'
+import ProfilePage from 'src/shared/components/profile_page/ProfilePage'
+import Members from 'src/organizations/components/Members'
 
 // Types
 import {Organization, AppState} from 'src/types/v2'
@@ -23,21 +25,53 @@ type Props = StateProps & WithRouterProps
 @ErrorHandling
 class OrganizationView extends PureComponent<Props> {
   public render() {
-    const {org} = this.props
+    const {org, params} = this.props
 
     return (
       <Page>
         <Page.Header fullWidth={false}>
           <Page.Header.Left>
-            <Page.Title title={org.name} />
+            <Page.Title title="Organization" />
           </Page.Header.Left>
           <Page.Header.Right />
         </Page.Header>
         <Page.Contents fullWidth={false} scrollable={true}>
-          {/* <OrganizationViewContents
-            org={org}
-            onDeleteOrg={this.handleDeleteOrg}
-          /> */}
+          <div className="col-xs-12">
+            <ProfilePage
+              name={org.name}
+              parentUrl="/organizations"
+              activeTabUrl={params.tab}
+            >
+              <ProfilePage.Section
+                id="org-view-tab--members"
+                url="members"
+                title="Members"
+              >
+                <Members />
+              </ProfilePage.Section>
+              <ProfilePage.Section
+                id="org-view-tab--buckets"
+                url="buckets"
+                title="Buckets"
+              >
+                <div>Render bucket memes here</div>
+              </ProfilePage.Section>
+              <ProfilePage.Section
+                id="org-view-tab--dashboards"
+                url="dashboards"
+                title="Dashboards"
+              >
+                <div>Render dashboard memes here</div>
+              </ProfilePage.Section>
+              <ProfilePage.Section
+                id="org-view-tab--tasks"
+                url="tasks"
+                title="Tasks"
+              >
+                <div>Render dashboard memes here</div>
+              </ProfilePage.Section>
+            </ProfilePage>
+          </div>
         </Page.Contents>
       </Page>
     )

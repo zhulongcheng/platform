@@ -92,7 +92,7 @@ class Root extends PureComponent {
                             component={OrganizationsIndex}
                           />
                           <Route
-                            path="organizations/:orgID"
+                            path="organizations/:orgID/:tab"
                             component={OrganizationView}
                           />
                           <Route path="tasks/new" component={TaskPage} />
