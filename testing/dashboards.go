@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"sort"
 	"testing"
 	"time"
 
@@ -29,13 +28,6 @@ var dashboardCmpOptions = cmp.Options{
 		return bytes.Equal(x, y)
 	}),
 	cmpopts.EquateEmpty(),
-	cmp.Transformer("Sort", func(in []*platform.Dashboard) []*platform.Dashboard {
-		out := append([]*platform.Dashboard(nil), in...) // Copy input to avoid mutating it
-		sort.Slice(out, func(i, j int) bool {
-			return out[i].ID.String() > out[j].ID.String()
-		})
-		return out
-	}),
 }
 
 // DashboardFields will include the IDGenerator, and dashboards
@@ -210,7 +202,7 @@ func CreateDashboard(
 			}
 			defer s.DeleteDashboard(ctx, tt.args.dashboard.ID)
 
-			dashboards, _, err := s.FindDashboards(ctx, platform.DashboardFilter{})
+			dashboards, _, err := s.FindDashboards(ctx, platform.DashboardFilter{}, platform.DefaultDashboardFindOptions)
 			if err != nil {
 				t.Fatalf("failed to retrieve dashboards: %v", err)
 			}
@@ -355,7 +347,7 @@ func AddDashboardCell(
 			}
 			defer s.DeleteDashboard(ctx, tt.args.dashboardID)
 
-			dashboards, _, err := s.FindDashboards(ctx, platform.DashboardFilter{})
+			dashboards, _, err := s.FindDashboards(ctx, platform.DashboardFilter{}, platform.DefaultDashboardFindOptions)
 			if err != nil {
 				t.Fatalf("failed to retrieve dashboards: %v", err)
 			}
@@ -441,8 +433,9 @@ func FindDashboards(
 	t *testing.T,
 ) {
 	type args struct {
-		IDs  []*platform.ID
-		name string
+		IDs         []*platform.ID
+		name        string
+		findOptions platform.FindOptions
 	}
 
 	type wants struct {
@@ -469,7 +462,9 @@ func FindDashboards(
 					},
 				},
 			},
-			args: args{},
+			args: args{
+				findOptions: platform.DefaultDashboardFindOptions,
+			},
 			wants: wants{
 				dashboards: []*platform.Dashboard{
 					{
@@ -478,6 +473,94 @@ func FindDashboards(
 					},
 					{
 						ID:   MustIDBase16(dashTwoID),
+						Name: "xyz",
+					},
+				},
+			},
+		},
+		{
+			name: "find all dashboards sorted by created at",
+			fields: DashboardFields{
+				Dashboards: []*platform.Dashboard{
+					{
+						ID: MustIDBase16(dashOneID),
+						Meta: platform.DashboardMeta{
+							CreatedAt: time.Date(2009, time.November, 10, 24, 0, 0, 0, time.UTC),
+						},
+						Name: "abc",
+					},
+					{
+						ID: MustIDBase16(dashTwoID),
+						Meta: platform.DashboardMeta{
+							CreatedAt: time.Date(2004, time.November, 10, 24, 0, 0, 0, time.UTC),
+						},
+						Name: "xyz",
+					},
+				},
+			},
+			args: args{
+				findOptions: platform.FindOptions{
+					SortBy: "CreatedAt",
+				},
+			},
+			wants: wants{
+				dashboards: []*platform.Dashboard{
+					{
+						ID:   MustIDBase16(dashTwoID),
+						Name: "xyz",
+						Meta: platform.DashboardMeta{
+							CreatedAt: time.Date(2004, time.November, 10, 24, 0, 0, 0, time.UTC),
+						},
+					},
+					{
+						ID:   MustIDBase16(dashOneID),
+						Name: "abc",
+						Meta: platform.DashboardMeta{
+							CreatedAt: time.Date(2009, time.November, 10, 24, 0, 0, 0, time.UTC),
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "find all dashboards sorted by updated at",
+			fields: DashboardFields{
+				Dashboards: []*platform.Dashboard{
+					{
+						ID: MustIDBase16(dashOneID),
+						Meta: platform.DashboardMeta{
+							UpdatedAt: time.Date(2009, time.November, 10, 24, 0, 0, 0, time.UTC),
+						},
+						Name: "abc",
+					},
+					{
+						ID: MustIDBase16(dashTwoID),
+						Meta: platform.DashboardMeta{
+							UpdatedAt: time.Date(2010, time.November, 10, 24, 0, 0, 0, time.UTC),
+						},
+						Name: "xyz",
+					},
+				},
+			},
+			args: args{
+				findOptions: platform.FindOptions{
+					SortBy: "UpdatedAt",
+				},
+			},
+			wants: wants{
+				dashboards: []*platform.Dashboard{
+					{
+						ID: MustIDBase16(dashOneID),
+						Meta: platform.DashboardMeta{
+							UpdatedAt: time.Date(2009, time.November, 10, 24, 0, 0, 0, time.UTC),
+						},
+						Name: "abc",
+					},
+					{
+						ID: MustIDBase16(dashTwoID),
+						Meta: platform.DashboardMeta{
+							UpdatedAt: time.Date(2010, time.November, 10, 24, 0, 0, 0, time.UTC),
+						},
 						Name: "xyz",
 					},
 				},
@@ -501,6 +584,7 @@ func FindDashboards(
 				IDs: []*platform.ID{
 					idPtr(MustIDBase16(dashTwoID)),
 				},
+				findOptions: platform.DefaultDashboardFindOptions,
 			},
 			wants: wants{
 				dashboards: []*platform.Dashboard{
@@ -530,6 +614,7 @@ func FindDashboards(
 					idPtr(MustIDBase16(dashOneID)),
 					idPtr(MustIDBase16(dashTwoID)),
 				},
+				findOptions: platform.DefaultDashboardFindOptions,
 			},
 			wants: wants{
 				dashboards: []*platform.Dashboard{
@@ -557,7 +642,7 @@ func FindDashboards(
 				filter.IDs = tt.args.IDs
 			}
 
-			dashboards, _, err := s.FindDashboards(ctx, filter)
+			dashboards, _, err := s.FindDashboards(ctx, filter, tt.args.findOptions)
 			if (err != nil) != (tt.wants.err != nil) {
 				t.Fatalf("expected errors to be equal '%v' got '%v'", tt.wants.err, err)
 			}
@@ -670,7 +755,7 @@ func DeleteDashboard(
 			}
 
 			filter := platform.DashboardFilter{}
-			dashboards, _, err := s.FindDashboards(ctx, filter)
+			dashboards, _, err := s.FindDashboards(ctx, filter, platform.DefaultDashboardFindOptions)
 			if err != nil {
 				t.Fatalf("failed to retrieve dashboards: %v", err)
 			}
@@ -856,7 +941,7 @@ func RemoveDashboardCell(
 			}
 			defer s.DeleteDashboard(ctx, tt.args.dashboardID)
 
-			dashboards, _, err := s.FindDashboards(ctx, platform.DashboardFilter{})
+			dashboards, _, err := s.FindDashboards(ctx, platform.DashboardFilter{}, platform.DefaultDashboardFindOptions)
 			if err != nil {
 				t.Fatalf("failed to retrieve dashboards: %v", err)
 			}
@@ -964,7 +1049,7 @@ func UpdateDashboardCell(
 			}
 			defer s.DeleteDashboard(ctx, tt.args.dashboardID)
 
-			dashboards, _, err := s.FindDashboards(ctx, platform.DashboardFilter{})
+			dashboards, _, err := s.FindDashboards(ctx, platform.DashboardFilter{}, platform.DefaultDashboardFindOptions)
 			if err != nil {
 				t.Fatalf("failed to retrieve dashboards: %v", err)
 			}
@@ -1211,7 +1296,7 @@ func ReplaceDashboardCells(
 			}
 			defer s.DeleteDashboard(ctx, tt.args.dashboardID)
 
-			dashboards, _, err := s.FindDashboards(ctx, platform.DashboardFilter{})
+			dashboards, _, err := s.FindDashboards(ctx, platform.DashboardFilter{}, platform.DefaultDashboardFindOptions)
 			if err != nil {
 				t.Fatalf("failed to retrieve dashboards: %v", err)
 			}
