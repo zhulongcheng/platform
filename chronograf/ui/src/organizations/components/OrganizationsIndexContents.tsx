@@ -76,7 +76,9 @@ class OrganizationsPageContents extends Component<Props> {
       columns: [
         {
           key: 'organization--name',
-          contents: <Link to={`/organizations/${o.id}/members`}>{o.name}</Link>,
+          contents: (
+            <Link to={`/organizations/${o.id}/members_tab`}>{o.name}</Link>
+          ),
         },
         {
           key: 'organization--membership',

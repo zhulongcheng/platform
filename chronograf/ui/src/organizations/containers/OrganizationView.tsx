@@ -4,14 +4,19 @@ import {WithRouterProps} from 'react-router'
 import {connect} from 'react-redux'
 import _ from 'lodash'
 
+// APIs
+import {getBuckets, getDashboards, getMembers} from 'src/organizations/apis'
+
 // Components
-// import OrganizationViewContents from 'src/organizations/components/OrganizationViewContents'
 import {Page} from 'src/pageLayout'
 import ProfilePage from 'src/shared/components/profile_page/ProfilePage'
 import Members from 'src/organizations/components/Members'
+import Buckets from 'src/organizations/components/Buckets'
+import Dashboards from 'src/organizations/components/Dashboards'
+import GetOrgResources from 'src/organizations/components/GetOrgResources'
 
 // Types
-import {Organization, AppState} from 'src/types/v2'
+import {Organization, AppState, Bucket, Dashboard, Member} from 'src/types/v2'
 
 // Decorators
 import {ErrorHandling} from 'src/shared/decorators/errors'
@@ -39,36 +44,42 @@ class OrganizationView extends PureComponent<Props> {
           <div className="col-xs-12">
             <ProfilePage
               name={org.name}
-              parentUrl="/organizations"
+              parentUrl={`/organizations/${org.id}`}
               activeTabUrl={params.tab}
             >
               <ProfilePage.Section
                 id="org-view-tab--members"
-                url="members"
+                url="members_tab"
                 title="Members"
               >
-                <Members />
+                <GetOrgResources<Member[]> link={org.links.members} fetcher={getMembers}>
+                  {(members) => <Members members={members} />}
+                </GetOrgResources>
               </ProfilePage.Section>
               <ProfilePage.Section
                 id="org-view-tab--buckets"
-                url="buckets"
+                url="buckets_tab"
                 title="Buckets"
               >
-                <div>Render bucket memes here</div>
+                <GetOrgResources<Bucket[]> link={org.links.buckets} fetcher={getBuckets}>
+                  {(buckets) => <Buckets buckets={buckets} />}
+                </GetOrgResources>
               </ProfilePage.Section>
               <ProfilePage.Section
                 id="org-view-tab--dashboards"
-                url="dashboards"
+                url="dashboards_tab"
                 title="Dashboards"
               >
-                <div>Render dashboard memes here</div>
+                <GetOrgResources<Dashboard[]> link={org.links.dashboards} fetcher={getDashboards}>
+                  {(dashboards) => <Dashboards dashboards={dashboards} />}
+                </GetOrgResources>
               </ProfilePage.Section>
               <ProfilePage.Section
                 id="org-view-tab--tasks"
-                url="tasks"
+                url="tasks_tab"
                 title="Tasks"
               >
-                <div>Render dashboard memes here</div>
+                <div>Render tasks memes here</div>
               </ProfilePage.Section>
             </ProfilePage>
           </div>

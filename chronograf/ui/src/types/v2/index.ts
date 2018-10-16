@@ -13,6 +13,7 @@ import {
   ViewParams,
   DashboardQuery,
 } from 'src/types/v2/dashboards'
+import {Member} from 'src/types/v2/members'
 import {Organization} from 'src/types/v2/orgs'
 import {Links} from 'src/types/v2/links'
 import {Notification} from 'src/types'
@@ -47,6 +48,7 @@ export interface AppState {
 
 export {
   Source,
+  Member,
   Bucket,
   Dashboard,
   Links,
