@@ -82,7 +82,7 @@ paths:
             description: specifies the organization of the resource
             required: true
             schema:
-              type: string  
+              type: string
       responses:
         '200':
           description: a list of telegraf configs
@@ -95,7 +95,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Error"  
+                $ref: "#/components/schemas/Error"
     post:
       tags:
         - Telegrafs
@@ -126,7 +126,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Error" 
+                $ref: "#/components/schemas/Error"
   '/telegrafs/{telegrafID}':
     get:
       tags:
@@ -1014,6 +1014,15 @@ paths:
             description: specifies the owner id to return resources for
             schema:
               type: string
+          - in: query
+            name: sortBy
+            description: specifies the owner id to return resources for
+            schema:
+              type: string
+              enum:
+                - "ID"
+                - "CreatedAt"
+                - "UpdatedAt"
           - in: query
             name: id
             description: ID list of dashboards to return. If both this and owner are specified, only ids is used.
@@ -4394,6 +4403,15 @@ components:
           type: string
         name:
           type: string
+        meta:
+          type: object
+          properties:
+            createdAt:
+              type: string
+              format: date
+            updatedAt:
+              type: string
+              format: date
         cells:
             $ref: "#/components/schemas/Cells"
     Dashboards:
@@ -4487,7 +4505,7 @@ components:
               type:
                 type: string
                 enum: [input, output, processor, aggregator]
-              comment: 
+              comment:
                 type: string
               configs:
                 oneOf:
@@ -4543,7 +4561,7 @@ components:
         files:
           type: array
           items:
-            type: string   
+            type: string
     TelegrafPluginInputKubernetes:
       type: object
       properties:
@@ -4555,14 +4573,14 @@ components:
         files:
           type: array
           items:
-            type: string   
+            type: string
     TelegrafPluginInputNginx:
       type: object
       properties:
         urls:
           type: array
           items:
-            type: string   
+            type: string
     TelegrafPluginInputProcstat:
       type: object
       properties:
@@ -4574,7 +4592,7 @@ components:
         urls:
           type: array
           items:
-            type: string   
+            type: string
     TelegrafPluginInputRedis:
       type: object
       properties:
@@ -4583,12 +4601,12 @@ components:
           items:
             type: string
         password:
-          type: string     
+          type: string
     TelegrafPluginInputSyslog:
       type: object
       properties:
         server:
-          type: string     
+          type: string
     TelegrafPluginOutputFile:
       type: object
       required:
@@ -4596,7 +4614,7 @@ components:
       properties:
         files:
           type: array
-          items: 
+          items:
             type: object
             properties:
               type:
@@ -4621,7 +4639,7 @@ components:
         organization:
           type: string
         bucket:
-          type: string           
+          type: string
     IsOnboarding:
       type: object
       properties:
