@@ -355,12 +355,6 @@ from(bucket:"test") |> range(start:-1h)`
 		if task.ID != id {
 			t.Fatalf("unexpected ID: got %v, exp %v", task.ID, id)
 		}
-		if task.Org != org {
-			t.Fatalf("unexpected org: got %v, exp %v", task.Org, org)
-		}
-		if task.User != user {
-			t.Fatalf("unexpected user: got %v, exp %v", task.User, user)
-		}
 		if task.Name != "a task" {
 			t.Fatalf("unexpected name %q", task.Name)
 		}
@@ -515,12 +509,6 @@ from(bucket:"test") |> range(start:-1h)`
 
 	if task.ID != id {
 		t.Fatalf("unexpected ID: got %v, exp %v", task.ID, id)
-	}
-	if task.Org != org {
-		t.Fatalf("unexpected org: got %v, exp %v", task.Org, org)
-	}
-	if task.User != user {
-		t.Fatalf("unexpected user: got %v, exp %v", task.User, user)
 	}
 	if task.Name != "a task" {
 		t.Fatalf("unexpected name %q", task.Name)
