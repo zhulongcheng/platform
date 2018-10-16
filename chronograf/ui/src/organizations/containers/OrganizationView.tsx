@@ -5,18 +5,20 @@ import {connect} from 'react-redux'
 import _ from 'lodash'
 
 // APIs
-import {getBuckets, getDashboards, getMembers} from 'src/organizations/apis'
+import {getBuckets, getDashboards, getMembers, getTasks} from 'src/organizations/apis'
 
 // Components
 import {Page} from 'src/pageLayout'
+import {Spinner} from 'src/clockface'
 import ProfilePage from 'src/shared/components/profile_page/ProfilePage'
 import Members from 'src/organizations/components/Members'
 import Buckets from 'src/organizations/components/Buckets'
 import Dashboards from 'src/organizations/components/Dashboards'
+import Tasks from 'src/organizations/components/Tasks'
 import GetOrgResources from 'src/organizations/components/GetOrgResources'
 
 // Types
-import {Organization, AppState, Bucket, Dashboard, Member} from 'src/types/v2'
+import {Organization, AppState, Bucket, Dashboard, Member, Task} from 'src/types/v2'
 
 // Decorators
 import {ErrorHandling} from 'src/shared/decorators/errors'
@@ -62,7 +64,7 @@ class OrganizationView extends PureComponent<Props> {
                 title="Buckets"
               >
                 <GetOrgResources<Bucket[]> link={org.links.buckets} fetcher={getBuckets}>
-                  {(buckets) => <Buckets buckets={buckets} />}
+                  {(buckets, loading) => <Spinner loading={loading}><Buckets buckets={buckets} /></Spinner>}
                 </GetOrgResources>
               </ProfilePage.Section>
               <ProfilePage.Section
@@ -71,7 +73,7 @@ class OrganizationView extends PureComponent<Props> {
                 title="Dashboards"
               >
                 <GetOrgResources<Dashboard[]> link={org.links.dashboards} fetcher={getDashboards}>
-                  {(dashboards) => <Dashboards dashboards={dashboards} />}
+                  {(dashboards, loading) => <Spinner loading={loading}><Dashboards dashboards={dashboards} /></Spinner>}
                 </GetOrgResources>
               </ProfilePage.Section>
               <ProfilePage.Section
@@ -79,7 +81,9 @@ class OrganizationView extends PureComponent<Props> {
                 url="tasks_tab"
                 title="Tasks"
               >
-                <div>Render tasks memes here</div>
+                <GetOrgResources<Task[]> link={org.links.tasks} fetcher={getTasks}>
+                  {(tasks, loading) => <Spinner loading={loading}><Tasks tasks={tasks} /></Spinner>}
+                </GetOrgResources>
               </ProfilePage.Section>
             </ProfilePage>
           </div>

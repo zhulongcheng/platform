@@ -13,6 +13,7 @@ import {
   ViewParams,
   DashboardQuery,
 } from 'src/types/v2/dashboards'
+import {Task} from 'src/types/v2/tasks'
 import {Member} from 'src/types/v2/members'
 import {Organization} from 'src/types/v2/orgs'
 import {Links} from 'src/types/v2/links'
@@ -61,4 +62,5 @@ export {
   TimeRange,
   DashboardSwitcherLinks,
   Organization,
+  Task,
 }
