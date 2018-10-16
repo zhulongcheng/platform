@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"sort"
 	"testing"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/influxdata/platform"
@@ -38,6 +39,7 @@ var dashboardCmpOptions = cmp.Options{
 // DashboardFields will include the IDGenerator, and dashboards
 type DashboardFields struct {
 	IDGenerator platform.IDGenerator
+	NowFn       func() time.Time
 	Dashboards  []*platform.Dashboard
 	Views       []*platform.View
 }
@@ -118,6 +120,7 @@ func CreateDashboard(
 						return MustIDBase16(dashTwoID)
 					},
 				},
+				NowFn: func() time.Time { return time.Date(2009, time.November, 10, 24, 0, 0, 0, time.UTC) },
 				Dashboards: []*platform.Dashboard{
 					{
 						ID:   MustIDBase16(dashOneID),
@@ -140,6 +143,10 @@ func CreateDashboard(
 					{
 						ID:   MustIDBase16(dashTwoID),
 						Name: "dashboard2",
+						Meta: platform.DashboardMeta{
+							CreatedAt: time.Date(2009, time.November, 10, 24, 0, 0, 0, time.UTC),
+							UpdatedAt: time.Date(2009, time.November, 10, 24, 0, 0, 0, time.UTC),
+						},
 					},
 				},
 			},
@@ -152,6 +159,7 @@ func CreateDashboard(
 						return MustIDBase16(dashTwoID)
 					},
 				},
+				NowFn: func() time.Time { return time.Date(2009, time.November, 10, 24, 0, 0, 0, time.UTC) },
 				Dashboards: []*platform.Dashboard{
 					{
 						ID:   MustIDBase16(dashOneID),
@@ -173,6 +181,10 @@ func CreateDashboard(
 					{
 						ID:   MustIDBase16(dashTwoID),
 						Name: "dashboard2",
+						Meta: platform.DashboardMeta{
+							CreatedAt: time.Date(2009, time.November, 10, 24, 0, 0, 0, time.UTC),
+							UpdatedAt: time.Date(2009, time.November, 10, 24, 0, 0, 0, time.UTC),
+						},
 					},
 				},
 			},
@@ -235,6 +247,7 @@ func AddDashboardCell(
 						return MustIDBase16(dashTwoID)
 					},
 				},
+				NowFn: func() time.Time { return time.Date(2009, time.November, 10, 24, 0, 0, 0, time.UTC) },
 				Dashboards: []*platform.Dashboard{
 					{
 						ID:   MustIDBase16(dashOneID),
@@ -259,7 +272,10 @@ func AddDashboardCell(
 			wants: wants{
 				dashboards: []*platform.Dashboard{
 					{
-						ID:   MustIDBase16(dashOneID),
+						ID: MustIDBase16(dashOneID),
+						Meta: platform.DashboardMeta{
+							UpdatedAt: time.Date(2009, time.November, 10, 24, 0, 0, 0, time.UTC),
+						},
 						Name: "dashboard1",
 						Cells: []*platform.Cell{
 							{
@@ -274,6 +290,7 @@ func AddDashboardCell(
 		{
 			name: "add cell with no id",
 			fields: DashboardFields{
+				NowFn: func() time.Time { return time.Date(2009, time.November, 10, 24, 0, 0, 0, time.UTC) },
 				IDGenerator: &mock.IDGenerator{
 					IDFn: func() platform.ID {
 						return MustIDBase16(dashTwoID)
@@ -302,7 +319,10 @@ func AddDashboardCell(
 			wants: wants{
 				dashboards: []*platform.Dashboard{
 					{
-						ID:   MustIDBase16(dashOneID),
+						ID: MustIDBase16(dashOneID),
+						Meta: platform.DashboardMeta{
+							UpdatedAt: time.Date(2009, time.November, 10, 24, 0, 0, 0, time.UTC),
+						},
 						Name: "dashboard1",
 						Cells: []*platform.Cell{
 							{
@@ -683,6 +703,7 @@ func UpdateDashboard(
 		{
 			name: "update name",
 			fields: DashboardFields{
+				NowFn: func() time.Time { return time.Date(2009, time.November, 10, 24, 0, 0, 0, time.UTC) },
 				Dashboards: []*platform.Dashboard{
 					{
 						ID:   MustIDBase16(dashOneID),
@@ -700,7 +721,10 @@ func UpdateDashboard(
 			},
 			wants: wants{
 				dashboard: &platform.Dashboard{
-					ID:   MustIDBase16(dashOneID),
+					ID: MustIDBase16(dashOneID),
+					Meta: platform.DashboardMeta{
+						UpdatedAt: time.Date(2009, time.November, 10, 24, 0, 0, 0, time.UTC),
+					},
 					Name: "changed",
 				},
 			},
@@ -759,6 +783,7 @@ func RemoveDashboardCell(
 		{
 			name: "basic remove cell",
 			fields: DashboardFields{
+				NowFn: func() time.Time { return time.Date(2009, time.November, 10, 24, 0, 0, 0, time.UTC) },
 				IDGenerator: &mock.IDGenerator{
 					IDFn: func() platform.ID {
 						return MustIDBase16(dashTwoID)
@@ -795,7 +820,10 @@ func RemoveDashboardCell(
 			wants: wants{
 				dashboards: []*platform.Dashboard{
 					{
-						ID:   MustIDBase16(dashOneID),
+						ID: MustIDBase16(dashOneID),
+						Meta: platform.DashboardMeta{
+							UpdatedAt: time.Date(2009, time.November, 10, 24, 0, 0, 0, time.UTC),
+						},
 						Name: "dashboard1",
 						Cells: []*platform.Cell{
 							{
@@ -861,6 +889,7 @@ func UpdateDashboardCell(
 		{
 			name: "basic remove cell",
 			fields: DashboardFields{
+				NowFn: func() time.Time { return time.Date(2009, time.November, 10, 24, 0, 0, 0, time.UTC) },
 				IDGenerator: &mock.IDGenerator{
 					IDFn: func() platform.ID {
 						return MustIDBase16(dashTwoID)
@@ -894,7 +923,10 @@ func UpdateDashboardCell(
 			wants: wants{
 				dashboards: []*platform.Dashboard{
 					{
-						ID:   MustIDBase16(dashOneID),
+						ID: MustIDBase16(dashOneID),
+						Meta: platform.DashboardMeta{
+							UpdatedAt: time.Date(2009, time.November, 10, 24, 0, 0, 0, time.UTC),
+						},
 						Name: "dashboard1",
 						Cells: []*platform.Cell{
 							{
@@ -964,6 +996,7 @@ func ReplaceDashboardCells(
 		{
 			name: "basic replace cells",
 			fields: DashboardFields{
+				NowFn: func() time.Time { return time.Date(2009, time.November, 10, 24, 0, 0, 0, time.UTC) },
 				IDGenerator: &mock.IDGenerator{
 					IDFn: func() platform.ID {
 						return MustIDBase16(dashTwoID)
@@ -1018,6 +1051,9 @@ func ReplaceDashboardCells(
 					{
 						ID:   MustIDBase16(dashOneID),
 						Name: "dashboard1",
+						Meta: platform.DashboardMeta{
+							UpdatedAt: time.Date(2009, time.November, 10, 24, 0, 0, 0, time.UTC),
+						},
 						Cells: []*platform.Cell{
 							{
 								ID:     MustIDBase16(dashTwoID),
@@ -1037,6 +1073,7 @@ func ReplaceDashboardCells(
 		{
 			name: "try to add a cell that didn't previously exist",
 			fields: DashboardFields{
+				NowFn: func() time.Time { return time.Date(2009, time.November, 10, 24, 0, 0, 0, time.UTC) },
 				IDGenerator: &mock.IDGenerator{
 					IDFn: func() platform.ID {
 						return MustIDBase16(dashTwoID)
@@ -1096,6 +1133,7 @@ func ReplaceDashboardCells(
 		{
 			name: "try to update a view during a replace",
 			fields: DashboardFields{
+				NowFn: func() time.Time { return time.Date(2009, time.November, 10, 24, 0, 0, 0, time.UTC) },
 				IDGenerator: &mock.IDGenerator{
 					IDFn: func() platform.ID {
 						return MustIDBase16(dashTwoID)
