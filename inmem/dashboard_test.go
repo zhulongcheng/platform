@@ -11,6 +11,7 @@ import (
 func initDashboardService(f platformtesting.DashboardFields, t *testing.T) (platform.DashboardService, func()) {
 	s := NewService()
 	s.IDGenerator = f.IDGenerator
+	s.WithTime(f.NowFn)
 	ctx := context.TODO()
 	for _, b := range f.Dashboards {
 		if err := s.PutDashboard(ctx, b); err != nil {

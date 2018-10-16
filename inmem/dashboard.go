@@ -72,13 +72,20 @@ func (s *Service) FindDashboards(ctx context.Context, filter platform.DashboardF
 // CreateDashboard implements platform.DashboardService interface.
 func (s *Service) CreateDashboard(ctx context.Context, d *platform.Dashboard) error {
 	d.ID = s.IDGenerator.ID()
-	return s.PutDashboard(ctx, d)
+	d.Meta.CreatedAt = s.time()
+	return s.PutDashboardWithMeta(ctx, d)
 }
 
 // PutDashboard implements platform.DashboardService interface.
 func (s *Service) PutDashboard(ctx context.Context, o *platform.Dashboard) error {
 	s.dashboardKV.Store(o.ID.String(), o)
 	return nil
+}
+
+// PutDashboardWithMeta sets a dashboard while updating the meta field of a dashboard.
+func (s *Service) PutDashboardWithMeta(ctx context.Context, d *platform.Dashboard) error {
+	d.Meta.UpdatedAt = s.time()
+	return s.PutDashboard(ctx, d)
 }
 
 // UpdateDashboard implements platform.DashboardService interface.
@@ -88,11 +95,14 @@ func (s *Service) UpdateDashboard(ctx context.Context, id platform.ID, upd platf
 		return nil, err
 	}
 
-	if upd.Name != nil {
-		o.Name = *upd.Name
+	if err := upd.Apply(o); err != nil {
+		return nil, err
 	}
 
-	s.dashboardKV.Store(o.ID.String(), o)
+	if err := s.PutDashboardWithMeta(ctx, o); err != nil {
+		return nil, err
+	}
+
 	return o, nil
 }
 
@@ -116,7 +126,7 @@ func (s *Service) AddDashboardCell(ctx context.Context, id platform.ID, cell *pl
 	}
 
 	d.Cells = append(d.Cells, cell)
-	return s.PutDashboard(ctx, d)
+	return s.PutDashboardWithMeta(ctx, d)
 }
 
 func (s *Service) PutDashboardCell(ctx context.Context, id platform.ID, cell *platform.Cell) error {
@@ -156,7 +166,7 @@ func (s *Service) RemoveDashboardCell(ctx context.Context, dashboardID platform.
 	}
 
 	d.Cells = append(d.Cells[:idx], d.Cells[idx+1:]...)
-	return s.PutDashboard(ctx, d)
+	return s.PutDashboardWithMeta(ctx, d)
 
 }
 
@@ -183,7 +193,7 @@ func (s *Service) UpdateDashboardCell(ctx context.Context, dashboardID platform.
 
 	cell := d.Cells[idx]
 
-	if err := s.PutDashboard(ctx, d); err != nil {
+	if err := s.PutDashboardWithMeta(ctx, d); err != nil {
 		return nil, err
 	}
 
@@ -218,5 +228,5 @@ func (s *Service) ReplaceDashboardCells(ctx context.Context, id platform.ID, cs 
 
 	d.Cells = cs
 
-	return s.PutDashboard(ctx, d)
+	return s.PutDashboardWithMeta(ctx, d)
 }
