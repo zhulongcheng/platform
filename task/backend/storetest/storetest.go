@@ -256,9 +256,6 @@ from(bucket:"test") |> range(start:-1h)`
 		s := create(t)
 		defer destroy(t, s)
 
-		orgID := platform.ID(1)
-		userID := platform.ID(2)
-
 		type createdTask struct {
 			id           platform.ID
 			name, script string
@@ -297,14 +294,6 @@ from(bucket:"test") |> range(start:-1h)`
 			for i, g := range got {
 				if tasks[i].id != g.ID {
 					t.Fatalf("task ID mismatch at index %d: got %x, expected %x", i, g.ID, tasks[i].id)
-				}
-
-				if orgID != g.Org {
-					t.Fatalf("task org mismatch at index %d: got %x, expected %x", i, g.Org, orgID)
-				}
-
-				if userID != g.User {
-					t.Fatalf("task user mismatch at index %d: got %x, expected %x", i, g.User, userID)
 				}
 
 				if tasks[i].name != g.Name {
