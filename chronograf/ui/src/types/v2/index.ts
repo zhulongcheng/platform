@@ -13,6 +13,7 @@ import {
   ViewParams,
   DashboardQuery,
 } from 'src/types/v2/dashboards'
+import {Organization} from 'src/types/v2/orgs'
 import {Links} from 'src/types/v2/links'
 import {Notification} from 'src/types'
 import {TimeRange} from 'src/types/queries'
@@ -23,11 +24,6 @@ import {State as TaskState} from 'src/tasks/reducers/v2'
 import {RouterState} from 'react-router-redux'
 import {MeState} from 'src/shared/reducers/v2/me'
 import {SourceState} from 'src/shared/reducers/v2/source'
-
-interface Organization {
-  id: string
-  name: string
-}
 
 export interface AppState {
   VERSION: string
@@ -62,4 +58,5 @@ export {
   ViewParams,
   TimeRange,
   DashboardSwitcherLinks,
+  Organization,
 }
