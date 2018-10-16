@@ -1,6 +1,7 @@
-import {AppState} from 'src/types/v2'
 import {getOrganizations as getOrganizationsAPI} from 'src/shared/apis/v2/organization'
-import {Organization} from 'src/shared/apis/v2/organization'
+
+// Types
+import {AppState, Organization} from 'src/types/v2'
 
 type GetStateFunc = () => Promise<AppState>
 
