@@ -470,6 +470,10 @@ func (h *TaskHandler) handleGetRun(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	tok, err := GetToken(r)
+	if err != nil {
+		EncodeError(ctx, err, w)
+		return
+	}
 
 	auth, err := h.AuthorizationService.FindAuthorizationByToken(ctx, tok)
 	if err != nil {
@@ -560,7 +564,6 @@ func decodeCancelRunRequest(ctx context.Context, r *http.Request) (*cancelRunReq
 		RunID:  i,
 		TaskID: t,
 	}, nil
-
 }
 
 func (h *TaskHandler) handleCancelRun(w http.ResponseWriter, r *http.Request) {

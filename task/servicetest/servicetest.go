@@ -34,12 +34,12 @@ func init() {
 // If creating the System fails, the implementer should call t.Fatal.
 type BackendComponentFactory func(t *testing.T) (*System, context.CancelFunc)
 
-type naieveStoreRunController struct {
+type naiveStoreRunController struct {
 	backend.Store
 	backend.Scheduler
 }
 
-func (n naieveStoreRunController) CancelRun(_ context.Context, taskID, runID platform.ID) error {
+func (n naiveStoreRunController) CancelRun(_ context.Context, taskID, runID platform.ID) error {
 	return n.Scheduler.CancelRun(taskID, runID)
 }
 
@@ -50,7 +50,7 @@ func TestTaskService(t *testing.T, fn BackendComponentFactory) {
 	sys, cancel := fn(t)
 	defer cancel()
 	if sys.TaskServiceFunc == nil {
-		sys.ts = task.PlatformAdapter(naieveStoreRunController{Store: sys.S, Scheduler: sys.SC}, sys.LR)
+		sys.ts = task.PlatformAdapter(naiveStoreRunController{Store: sys.S, Scheduler: sys.SC}, sys.LR)
 	} else {
 		sys.ts = sys.TaskServiceFunc()
 	}

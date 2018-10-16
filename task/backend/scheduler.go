@@ -16,6 +16,7 @@ import (
 
 var ErrRunCanceled = errors.New("run canceled")
 var ErrTaskNotClaimed = errors.New("task not claimed")
+var ErrRunNotRunning = errors.New("run is not running, this could because it was already finished or canceled")
 
 // DesiredState persists the desired state of a run.
 type DesiredState interface {
@@ -178,12 +179,19 @@ type TickScheduler struct {
 func (s *TickScheduler) CancelRun(taskID, runID platform.ID) error {
 	s.schedulerMu.Lock()
 	defer s.schedulerMu.Unlock()
-	ts := s.taskSchedulers[string(taskID)]
+	ts, ok := s.taskSchedulers[taskID.String()]
+	if !ok {
+		return ErrTaskNotFound
+	}
 	ts.runningMu.Lock()
-	defer ts.runningMu.Unlock()
-	cancel := ts.running[string(runID)].CancelFunc
-	if cancel != nil {
-		cancel()
+	c, ok := ts.running[runID.String()]
+	if !ok {
+		ts.runningMu.Unlock()
+		return ErrRunNotFound
+	}
+	ts.runningMu.Unlock()
+	if c.CancelFunc != nil {
+		c.CancelFunc()
 	}
 	return nil
 }
@@ -336,8 +344,8 @@ func (s *TickScheduler) PrometheusCollectors() []prometheus.Collector {
 }
 
 type runCtx struct {
-	context.Context
-	context.CancelFunc
+	Context    context.Context
+	CancelFunc context.CancelFunc
 }
 
 // taskScheduler is a lightweight wrapper around a collection of runners.
@@ -355,7 +363,7 @@ type taskScheduler struct {
 	// Fixed-length slice of runners.
 	runners   []*runner
 	running   map[string]runCtx
-	runningMu sync.Locker
+	runningMu sync.Mutex
 
 	logger *zap.Logger
 
@@ -535,16 +543,18 @@ func (r *runner) RestartRun(qr QueuedRun) bool {
 		// already working
 		return false
 	}
-
 	// create a QueuedRun because we cant stm.CreateNextRun
 	runLogger := r.logger.With(zap.String("run_id", qr.RunID.String()), zap.Int64("now", qr.Now))
-
 	r.wg.Add(1)
-	var ctx context.Context
 	r.ts.runningMu.Lock()
-	ctx = r.ts.running[qr.RunID.String()].Context
+	rCtx, ok := r.ts.running[qr.RunID.String()]
+	if !ok {
+		ctx, cancel := context.WithCancel(context.TODO())
+		rCtx = runCtx{Context: ctx, CancelFunc: cancel}
+		r.ts.running[qr.RunID.String()] = rCtx
+	}
 	r.ts.runningMu.Unlock()
-	go r.executeAndWait(ctx, qr, runLogger)
+	go r.executeAndWait(rCtx.Context, qr, runLogger)
 
 	r.updateRunState(qr, RunStarted, runLogger)
 	return true
@@ -558,7 +568,6 @@ func (r *runner) startFromWorking(now int64) {
 		atomic.StoreUint32(r.state, runnerIdle)
 		return
 	}
-	r.ts.runningMu.Lock()
 	ctx, cancel := context.WithCancel(r.ctx)
 	rc, err := r.desiredState.CreateNextRun(ctx, r.task.ID, now)
 	if err != nil {
@@ -569,6 +578,7 @@ func (r *runner) startFromWorking(now int64) {
 	}
 	qr := rc.Created
 	runIDStr := qr.RunID.String()
+	r.ts.runningMu.Lock()
 	r.ts.running[runIDStr] = runCtx{Context: ctx, CancelFunc: cancel}
 	r.ts.runningMu.Unlock()
 	r.ts.SetNextDue(rc.NextDue, rc.HasQueue, qr.Now)
@@ -594,6 +604,7 @@ func (r *runner) clearRunning(id platform.ID) {
 func (r *runner) executeAndWait(ctx context.Context, qr QueuedRun, runLogger *zap.Logger) {
 	defer r.wg.Done()
 	rp, err := r.executor.Execute(r.ctx, qr)
+
 	if err != nil {
 		// TODO(mr): retry? and log error.
 		atomic.StoreUint32(r.state, runnerIdle)

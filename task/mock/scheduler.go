@@ -294,16 +294,12 @@ func NewExecutor() *Executor {
 
 func (e *Executor) Execute(ctx context.Context, run backend.QueuedRun) (backend.RunPromise, error) {
 	rp := NewRunPromise(run)
-
+	rp.WithHanging(ctx, e.hangingFor)
 	id := run.TaskID.String() + run.RunID.String()
 	e.mu.Lock()
 	e.running[id] = rp
 	e.mu.Unlock()
 	go func() {
-		select {
-		case <-ctx.Done():
-		case <-time.After(e.hangingFor):
-		}
 		res, _ := rp.Wait()
 		e.mu.Lock()
 		delete(e.running, id)
@@ -358,10 +354,12 @@ type RunPromise struct {
 	qr backend.QueuedRun
 
 	setResultOnce sync.Once
-
-	mu  sync.Mutex
-	res backend.RunResult
-	err error
+	hangingFor    time.Duration
+	cancelFunc    context.CancelFunc
+	ctx           context.Context
+	mu            sync.Mutex
+	res           backend.RunResult
+	err           error
 }
 
 var _ backend.RunPromise = (*RunPromise)(nil)
@@ -374,17 +372,32 @@ func NewRunPromise(qr backend.QueuedRun) *RunPromise {
 	return p
 }
 
+func (p *RunPromise) WithHanging(ctx context.Context, hangingFor time.Duration) {
+	p.ctx, p.cancelFunc = context.WithCancel(ctx)
+	p.hangingFor = hangingFor
+}
+
 func (p *RunPromise) Run() backend.QueuedRun {
 	return p.qr
 }
 
 func (p *RunPromise) Wait() (backend.RunResult, error) {
 	p.mu.Lock()
+	// can't cancel if we haven't set it to hang.
+	if p.ctx != nil {
+		select {
+		case <-p.ctx.Done():
+		case <-time.After(p.hangingFor):
+		}
+		p.cancelFunc()
+	}
+
 	defer p.mu.Unlock()
 	return p.res, p.err
 }
 
 func (p *RunPromise) Cancel() {
+	p.cancelFunc()
 	p.Finish(nil, backend.ErrRunCanceled)
 }
 
