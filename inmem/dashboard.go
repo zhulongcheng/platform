@@ -42,7 +42,7 @@ func filterDashboardFn(filter platform.DashboardFilter) func(d *platform.Dashboa
 }
 
 // FindDashboards implements platform.DashboardService interface.
-func (s *Service) FindDashboards(ctx context.Context, filter platform.DashboardFilter) ([]*platform.Dashboard, int, error) {
+func (s *Service) FindDashboards(ctx context.Context, filter platform.DashboardFilter, opts platform.FindOptions) ([]*platform.Dashboard, int, error) {
 	if len(filter.IDs) == 1 {
 		d, err := s.FindDashboardByID(ctx, *filter.IDs[0])
 		if err != nil {
@@ -66,6 +66,9 @@ func (s *Service) FindDashboards(ctx context.Context, filter platform.DashboardF
 		}
 		return true
 	})
+
+	platform.SortDashboards(opts.SortBy, ds)
+
 	return ds, len(ds), err
 }
 
