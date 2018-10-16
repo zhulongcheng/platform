@@ -167,7 +167,7 @@ func (h *DashboardHandler) handleGetDashboards(w http.ResponseWriter, r *http.Re
 		}
 	}
 
-	dashboards, _, err := h.DashboardService.FindDashboards(ctx, req.filter)
+	dashboards, _, err := h.DashboardService.FindDashboards(ctx, req.filter, req.opts)
 	if err != nil {
 		EncodeError(ctx, errors.InternalErrorf("Error loading dashboards: %v", err), w)
 		return
@@ -181,6 +181,7 @@ func (h *DashboardHandler) handleGetDashboards(w http.ResponseWriter, r *http.Re
 
 type getDashboardsRequest struct {
 	filter  platform.DashboardFilter
+	opts    platform.FindOptions
 	ownerID *platform.ID
 }
 
@@ -203,6 +204,13 @@ func decodeGetDashboardsRequest(ctx context.Context, r *http.Request) (*getDashb
 			return nil, err
 		}
 	}
+
+	sortBy := qp.Get("sortBy")
+	if sortBy == "" {
+		sortBy = "ID"
+	}
+
+	req.opts.SortBy = sortBy
 
 	return req, nil
 }
@@ -678,13 +686,14 @@ func (s *DashboardService) FindDashboardByID(ctx context.Context, id platform.ID
 
 // FindDashboards returns a list of dashboards that match filter and the total count of matching dashboards.
 // Additional options provide pagination & sorting.
-func (s *DashboardService) FindDashboards(ctx context.Context, filter platform.DashboardFilter) ([]*platform.Dashboard, int, error) {
+func (s *DashboardService) FindDashboards(ctx context.Context, filter platform.DashboardFilter, opts platform.FindOptions) ([]*platform.Dashboard, int, error) {
 	url, err := newURL(s.Addr, dashboardsPath)
 	if err != nil {
 		return nil, 0, err
 	}
 
 	qp := url.Query()
+	qp.Add("sortBy", opts.SortBy)
 	for _, id := range filter.IDs {
 		qp.Add("id", id.String())
 	}

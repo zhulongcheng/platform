@@ -41,7 +41,7 @@ func TestService_handleGetDashboards(t *testing.T) {
 			name: "get all dashboards",
 			fields: fields{
 				&mock.DashboardService{
-					FindDashboardsF: func(ctx context.Context, filter platform.DashboardFilter) ([]*platform.Dashboard, int, error) {
+					FindDashboardsF: func(ctx context.Context, filter platform.DashboardFilter, opts platform.FindOptions) ([]*platform.Dashboard, int, error) {
 						return []*platform.Dashboard{
 							{
 								ID: platformtesting.MustIDBase16("da7aba5e5d81e550"),
@@ -131,7 +131,7 @@ func TestService_handleGetDashboards(t *testing.T) {
 			name: "get all dashboards when there are none",
 			fields: fields{
 				&mock.DashboardService{
-					FindDashboardsF: func(ctx context.Context, filter platform.DashboardFilter) ([]*platform.Dashboard, int, error) {
+					FindDashboardsF: func(ctx context.Context, filter platform.DashboardFilter, opts platform.FindOptions) ([]*platform.Dashboard, int, error) {
 						return []*platform.Dashboard{}, 0, nil
 					},
 				},
