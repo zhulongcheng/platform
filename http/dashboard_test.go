@@ -1058,11 +1058,11 @@ func initDashboardService(f platformtesting.DashboardFields, t *testing.T) (plat
 	t.Helper()
 	svc := inmem.NewService()
 	svc.IDGenerator = f.IDGenerator
-
+	svc.WithTime(f.NowFn)
 	ctx := context.Background()
-	for _, o := range f.Dashboards {
-		if err := svc.PutDashboard(ctx, o); err != nil {
-			t.Fatalf("failed to populate organizations")
+	for _, d := range f.Dashboards {
+		if err := svc.PutDashboard(ctx, d); err != nil {
+			t.Fatalf("failed to populate dashboard")
 		}
 	}
 	for _, b := range f.Views {

@@ -72,13 +72,6 @@ type dashboardResponse struct {
 }
 
 func (d dashboardResponse) toPlatform() *platform.Dashboard {
-	if len(d.Cells) == 0 {
-		return &platform.Dashboard{
-			ID:   d.ID,
-			Name: d.Name,
-		}
-	}
-
 	cells := make([]*platform.Cell, 0, len(d.Cells))
 	for i := range d.Cells {
 		cells = append(cells, d.Cells[i].toPlatform())
@@ -86,6 +79,7 @@ func (d dashboardResponse) toPlatform() *platform.Dashboard {
 	return &platform.Dashboard{
 		ID:    d.ID,
 		Name:  d.Name,
+		Meta:  d.Meta,
 		Cells: cells,
 	}
 }
@@ -753,7 +747,11 @@ func (s *DashboardService) CreateDashboard(ctx context.Context, d *platform.Dash
 		return err
 	}
 
-	return json.NewDecoder(resp.Body).Decode(d)
+	if err := json.NewDecoder(resp.Body).Decode(d); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // UpdateDashboard updates a single dashboard with changeset.
