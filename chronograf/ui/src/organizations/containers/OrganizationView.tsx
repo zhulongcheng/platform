@@ -20,6 +20,7 @@ import Members from 'src/organizations/components/Members'
 import Buckets from 'src/organizations/components/Buckets'
 import Dashboards from 'src/organizations/components/Dashboards'
 import Tasks from 'src/organizations/components/Tasks'
+import OrgOptions from 'src/organizations/components/OrgOptions'
 import GetOrgResources from 'src/organizations/components/GetOrgResources'
 
 // Types
@@ -120,6 +121,13 @@ class OrganizationView extends PureComponent<Props> {
                     </Spinner>
                   )}
                 </GetOrgResources>
+              </ProfilePage.Section>
+              <ProfilePage.Section
+                id="org-view-tab--options"
+                url="options_tab"
+                title="Options"
+              >
+                <OrgOptions org={org} />
               </ProfilePage.Section>
             </ProfilePage>
           </div>
