@@ -5,7 +5,12 @@ import {connect} from 'react-redux'
 import _ from 'lodash'
 
 // APIs
-import {getBuckets, getDashboards, getMembers, getTasks} from 'src/organizations/apis'
+import {
+  getBuckets,
+  getDashboards,
+  getMembers,
+  getTasks,
+} from 'src/organizations/apis'
 
 // Components
 import {Page} from 'src/pageLayout'
@@ -18,7 +23,14 @@ import Tasks from 'src/organizations/components/Tasks'
 import GetOrgResources from 'src/organizations/components/GetOrgResources'
 
 // Types
-import {Organization, AppState, Bucket, Dashboard, Member, Task} from 'src/types/v2'
+import {
+  Organization,
+  AppState,
+  Bucket,
+  Dashboard,
+  Member,
+  Task,
+} from 'src/types/v2'
 
 // Decorators
 import {ErrorHandling} from 'src/shared/decorators/errors'
@@ -54,8 +66,11 @@ class OrganizationView extends PureComponent<Props> {
                 url="members_tab"
                 title="Members"
               >
-                <GetOrgResources<Member[]> link={org.links.members} fetcher={getMembers}>
-                  {(members) => <Members members={members} />}
+                <GetOrgResources<Member[]>
+                  link={org.links.members}
+                  fetcher={getMembers}
+                >
+                  {members => <Members members={members} />}
                 </GetOrgResources>
               </ProfilePage.Section>
               <ProfilePage.Section
@@ -63,8 +78,11 @@ class OrganizationView extends PureComponent<Props> {
                 url="buckets_tab"
                 title="Buckets"
               >
-                <GetOrgResources<Bucket[]> link={org.links.buckets} fetcher={getBuckets}>
-                  {(buckets, loading) => <Spinner loading={loading}><Buckets buckets={buckets} /></Spinner>}
+                <GetOrgResources<Bucket[]>
+                  link={org.links.buckets}
+                  fetcher={getBuckets}
+                >
+                  {buckets => <Buckets buckets={buckets} />}
                 </GetOrgResources>
               </ProfilePage.Section>
               <ProfilePage.Section
@@ -72,8 +90,11 @@ class OrganizationView extends PureComponent<Props> {
                 url="dashboards_tab"
                 title="Dashboards"
               >
-                <GetOrgResources<Dashboard[]> link={org.links.dashboards} fetcher={getDashboards}>
-                  {(dashboards, loading) => <Spinner loading={loading}><Dashboards dashboards={dashboards} /></Spinner>}
+                <GetOrgResources<Dashboard[]>
+                  link={org.links.dashboards}
+                  fetcher={getDashboards}
+                >
+                  {dashboards => <Dashboards dashboards={dashboards} />}
                 </GetOrgResources>
               </ProfilePage.Section>
               <ProfilePage.Section
@@ -81,8 +102,15 @@ class OrganizationView extends PureComponent<Props> {
                 url="tasks_tab"
                 title="Tasks"
               >
-                <GetOrgResources<Task[]> link={org.links.tasks} fetcher={getTasks}>
-                  {(tasks, loading) => <Spinner loading={loading}><Tasks tasks={tasks} /></Spinner>}
+                <GetOrgResources<Task[]>
+                  link={org.links.tasks}
+                  fetcher={getTasks}
+                >
+                  {(tasks, loading) => (
+                    <Spinner loading={loading}>
+                      <Tasks tasks={tasks} />
+                    </Spinner>
+                  )}
                 </GetOrgResources>
               </ProfilePage.Section>
             </ProfilePage>
@@ -103,4 +131,7 @@ const mstp = (state: AppState, props: WithRouterProps) => {
   }
 }
 
-export default connect<StateProps, {}, {}>(mstp, null)(OrganizationView)
+export default connect<StateProps, {}, {}>(
+  mstp,
+  null
+)(OrganizationView)
