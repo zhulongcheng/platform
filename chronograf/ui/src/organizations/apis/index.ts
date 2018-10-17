@@ -1,6 +1,26 @@
 import AJAX from 'src/utils/ajax'
 
-import {Member, Bucket, Dashboard, Task} from 'src/types/v2'
+import {Member, Bucket, Dashboard, Task, Organization} from 'src/types/v2'
+
+export const createOrg = async (
+  name: string,
+  url: string
+): Promise<Organization> => {
+  try {
+    const {data} = await AJAX({
+      url,
+      method: 'POST',
+      data: {
+        name,
+      },
+    })
+
+    return data
+  } catch (error) {
+    console.error('Could not get members for org', error)
+    throw error
+  }
+}
 
 export const getMembers = async (url: string): Promise<Member[]> => {
   try {
