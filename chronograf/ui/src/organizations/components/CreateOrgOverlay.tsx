@@ -1,5 +1,8 @@
+// Libraries
 import React, {PureComponent, ChangeEvent} from 'react'
 import _ from 'lodash'
+
+// Components
 import {
   Form,
   OverlayBody,
@@ -11,13 +14,18 @@ import {
   ComponentStatus,
 } from 'src/clockface'
 
+// Types
+import {Organization} from 'src/types/v2'
+import {createOrg} from 'src/organizations/actions'
+
 interface Props {
   link: string
+  onCreateOrg: typeof createOrg
   onCloseModal: () => void
 }
 
 interface State {
-  name: string
+  org: Partial<Organization>
   nameInputStatus: ComponentStatus
   errorMessage: string
 }
@@ -26,7 +34,7 @@ export default class CreateOrgOverlay extends PureComponent<Props, State> {
   constructor(props) {
     super(props)
     this.state = {
-      name: '',
+      org: {},
       nameInputStatus: ComponentStatus.Default,
       errorMessage: '',
     }
@@ -34,7 +42,7 @@ export default class CreateOrgOverlay extends PureComponent<Props, State> {
 
   public render() {
     const {onCloseModal} = this.props
-    const {name, nameInputStatus, errorMessage} = this.state
+    const {org, nameInputStatus, errorMessage} = this.state
 
     return (
       <OverlayContainer>
@@ -47,8 +55,10 @@ export default class CreateOrgOverlay extends PureComponent<Props, State> {
             <Form.Element label="Name" errorMessage={errorMessage}>
               <Input
                 placeholder="Give your organization a name"
-                value={name}
-                onChange={this.handleChangeName}
+                name="name"
+                autoFocus={true}
+                value={org.name}
+                onChange={this.handleChangeInput}
                 status={nameInputStatus}
               />
             </Form.Element>
@@ -58,7 +68,11 @@ export default class CreateOrgOverlay extends PureComponent<Props, State> {
                 color={ComponentColor.Danger}
                 onClick={onCloseModal}
               />
-              <Button text="Create" color={ComponentColor.Primary} />
+              <Button
+                text="Create"
+                color={ComponentColor.Primary}
+                onClick={this.handleCreateOrg}
+              />
             </Form.Footer>
           </Form>
         </OverlayBody>
@@ -66,19 +80,28 @@ export default class CreateOrgOverlay extends PureComponent<Props, State> {
     )
   }
 
-  private handleChangeName = (e: ChangeEvent<HTMLInputElement>) => {
-    const name = e.target.value
+  private handleCreateOrg = async () => {
+    const {org} = this.state
+    const {link, onCreateOrg, onCloseModal} = this.props
+    await onCreateOrg(link, org)
+    onCloseModal()
+  }
 
-    if (_.isEmpty(name)) {
+  private handleChangeInput = (e: ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value
+    const key = e.target.name
+    const org = {...this.state.org, [key]: value}
+
+    if (_.isEmpty(value)) {
       return this.setState({
-        name,
+        org,
         nameInputStatus: ComponentStatus.Error,
-        errorMessage: 'Organization names cannot be empty',
+        errorMessage: `Organization ${key} cannot be empty`,
       })
     }
 
     this.setState({
-      name,
+      org,
       nameInputStatus: ComponentStatus.Valid,
       errorMessage: '',
     })

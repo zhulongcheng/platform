@@ -3,7 +3,7 @@ import {connect} from 'react-redux'
 
 import {RemoteDataState} from 'src/types'
 
-import {getOrganizations} from 'src/organizations/actions/orgs'
+import {getOrganizations} from 'src/organizations/actions'
 import {ErrorHandling} from 'src/shared/decorators/errors'
 
 interface PassedInProps {

@@ -1,18 +1,29 @@
+// Libraries
 import AJAX from 'src/utils/ajax'
+import _ from 'lodash'
 
+// Types
 import {Member, Bucket, Dashboard, Task, Organization} from 'src/types/v2'
 
-export const createOrg = async (
-  name: string,
+export const getOrganizations = async (
   url: string
+): Promise<Organization[]> => {
+  const {data} = await AJAX({
+    url,
+  })
+
+  return _.get(data, 'orgs', [])
+}
+
+export const createOrg = async (
+  url: string,
+  org: Partial<Organization>
 ): Promise<Organization> => {
   try {
     const {data} = await AJAX({
       url,
       method: 'POST',
-      data: {
-        name,
-      },
+      data: org,
     })
 
     return data
