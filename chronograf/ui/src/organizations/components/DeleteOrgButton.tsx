@@ -9,7 +9,7 @@ import {Organization} from 'src/types/v2'
 
 interface Props {
   org: Organization
-  onDeleteOrg: (org: Organization) => void
+  onDeleteOrg: (link: string) => void
 }
 
 class DeleteOrgButton extends Component<Props> {
@@ -24,10 +24,9 @@ class DeleteOrgButton extends Component<Props> {
     )
   }
 
-  private handleDeleteOrg = (): void => {
-    const {onDeleteOrg, org} = this.props
-
-    onDeleteOrg(org)
+  private handleDeleteOrg = () => {
+    const {org, onDeleteOrg} = this.props
+    onDeleteOrg(org.links.self)
   }
 }
 

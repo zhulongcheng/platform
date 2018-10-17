@@ -5,6 +5,7 @@ import {Dispatch} from 'redux'
 import {
   getOrganizations as getOrganizationsAPI,
   createOrg as createOrgAPI,
+  deleteOrg as deleteOrgAPI,
 } from 'src/organizations/apis'
 
 // Types
@@ -13,24 +14,23 @@ import {AppState, Organization} from 'src/types/v2'
 type GetStateFunc = () => Promise<AppState>
 
 export enum ActionTypes {
-  SetOrganizations = 'SET_ORGANIZATIONS',
+  SetOrgs = 'SET_ORGS',
   AddOrg = 'ADD_ORG',
+  RemoveOrg = 'REMOVE_ORG',
 }
 
 export interface SetOrganizations {
-  type: ActionTypes.SetOrganizations
+  type: ActionTypes.SetOrgs
   payload: {
     organizations: Organization[]
   }
 }
 
-export type Actions = SetOrganizations | AddOrg
+export type Actions = SetOrganizations | AddOrg | RemoveOrg
 
-export const setOrganizations = (
-  organizations: Organization[]
-): SetOrganizations => {
+export const setOrgs = (organizations: Organization[]): SetOrganizations => {
   return {
-    type: ActionTypes.SetOrganizations,
+    type: ActionTypes.SetOrgs,
     payload: {organizations},
   }
 }
@@ -47,6 +47,18 @@ export const addOrg = (org: Organization): AddOrg => ({
   payload: {org},
 })
 
+export interface RemoveOrg {
+  type: ActionTypes.RemoveOrg
+  payload: {
+    link: string
+  }
+}
+
+export const removeOrg = (link: string): RemoveOrg => ({
+  type: ActionTypes.RemoveOrg,
+  payload: {link},
+})
+
 // Async Actions
 
 export const getOrganizations = () => async (
@@ -58,7 +70,7 @@ export const getOrganizations = () => async (
       links: {orgs},
     } = await getState()
     const organizations = await getOrganizationsAPI(orgs)
-    dispatch(setOrganizations(organizations))
+    dispatch(setOrgs(organizations))
   } catch (e) {
     console.error(e)
   }
@@ -70,6 +82,17 @@ export const createOrg = (link: string, org: Partial<Organization>) => async (
   try {
     const createdOrg = await createOrgAPI(link, org)
     dispatch(addOrg(createdOrg))
+  } catch (e) {
+    console.error(e)
+  }
+}
+
+export const deleteOrg = (link: string) => async (
+  dispatch: Dispatch<RemoveOrg>
+): Promise<void> => {
+  try {
+    await deleteOrgAPI(link)
+    dispatch(removeOrg(link))
   } catch (e) {
     console.error(e)
   }

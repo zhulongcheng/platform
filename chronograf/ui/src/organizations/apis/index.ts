@@ -5,6 +5,9 @@ import _ from 'lodash'
 // Types
 import {Member, Bucket, Dashboard, Task, Organization} from 'src/types/v2'
 
+// CRUD APIs for Organizations and Organization resources
+// i.e. Organization Members, Buckets, Dashboards etc
+
 export const getOrganizations = async (
   url: string
 ): Promise<Organization[]> => {
@@ -29,6 +32,18 @@ export const createOrg = async (
     return data
   } catch (error) {
     console.error('Could not get members for org', error)
+    throw error
+  }
+}
+
+export const deleteOrg = async (url: string): Promise<void> => {
+  try {
+    await AJAX({
+      url,
+      method: 'DELETE',
+    })
+  } catch (error) {
+    console.error('Could not delete org', error)
     throw error
   }
 }

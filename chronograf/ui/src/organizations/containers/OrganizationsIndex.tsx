@@ -16,7 +16,7 @@ import {
 } from 'src/clockface'
 
 // Actions
-import {createOrg} from 'src/organizations/actions'
+import {createOrg, deleteOrg} from 'src/organizations/actions'
 
 // Types
 import {Organization, Links} from 'src/types/v2'
@@ -31,6 +31,7 @@ interface StateProps {
 
 interface DispatchProps {
   onCreateOrg: typeof createOrg
+  onDeleteOrg: typeof deleteOrg
 }
 
 interface State {
@@ -53,7 +54,7 @@ class OrganizationsIndex extends PureComponent<Props, State> {
     }
   }
   public render() {
-    const {orgs, links, onCreateOrg} = this.props
+    const {orgs, links, onCreateOrg, onDeleteOrg} = this.props
     const {modalState} = this.state
 
     return (
@@ -74,10 +75,7 @@ class OrganizationsIndex extends PureComponent<Props, State> {
             </Page.Header.Right>
           </Page.Header>
           <Page.Contents fullWidth={false} scrollable={true}>
-            <OrganizationsIndexContents
-              orgs={orgs}
-              onDeleteOrg={this.handleDeleteOrg}
-            />
+            <OrganizationsIndexContents orgs={orgs} onDeleteOrg={onDeleteOrg} />
           </Page.Contents>
         </Page>
         <OverlayTechnology visible={modalState === ModalState.Open}>
@@ -98,10 +96,6 @@ class OrganizationsIndex extends PureComponent<Props, State> {
   private handleCloseModal = (): void => {
     this.setState({modalState: ModalState.Closed})
   }
-
-  private handleDeleteOrg = (org: Organization): void => {
-    console.log('delete organization with id ', org.id)
-  }
 }
 
 const mstp = (state): StateProps => {
@@ -115,6 +109,7 @@ const mstp = (state): StateProps => {
 
 const mdtp: DispatchProps = {
   onCreateOrg: createOrg,
+  onDeleteOrg: deleteOrg,
 }
 
 export default connect<StateProps, DispatchProps>(

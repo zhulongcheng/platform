@@ -18,6 +18,7 @@ import {ErrorHandling} from 'src/shared/decorators/errors'
 
 // Types
 import {Organization} from 'src/types/v2'
+import {deleteOrg} from 'src/organizations/actions'
 import {
   IndexListColumn,
   IndexListRow,
@@ -25,7 +26,7 @@ import {
 
 interface Props {
   orgs: Organization[]
-  onDeleteOrg: (org: Organization) => void
+  onDeleteOrg: typeof deleteOrg
 }
 
 @ErrorHandling
