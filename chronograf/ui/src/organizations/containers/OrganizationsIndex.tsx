@@ -7,6 +7,8 @@ import _ from 'lodash'
 // Components
 import OrganizationsIndexContents from 'src/organizations/components/OrganizationsIndexContents'
 import {Page} from 'src/pageLayout'
+import {OverlayTechnology} from 'src/clockface'
+import CreateOrgOverlay from 'src/organizations/components/CreateOrgOverlay'
 import {Button, ComponentColor, IconFont} from 'src/clockface'
 
 // Types
@@ -21,39 +23,67 @@ interface Props {
   orgs: Organization[]
 }
 
+interface State {
+  modalState: ModalState
+}
+
+enum ModalState {
+  Open = 'open',
+  Closed = 'closed',
+}
+
 @ErrorHandling
-class OrganizationsIndex extends PureComponent<Props> {
+class OrganizationsIndex extends PureComponent<Props, State> {
+  constructor(props) {
+    super(props)
+    this.state = {
+      modalState: ModalState.Closed,
+    }
+  }
   public render() {
-    const {orgs} = this.props
+    const {orgs, links} = this.props
+    const {modalState} = this.state
 
     return (
-      <Page>
-        <Page.Header fullWidth={false}>
-          <Page.Header.Left>
-            <Page.Title title="Organizations" />
-          </Page.Header.Left>
-          <Page.Header.Right>
-            <Button
-              color={ComponentColor.Primary}
-              onClick={this.handleCreateOrg}
-              icon={IconFont.Plus}
-              text="Create Organization"
-              titleText="Create a new Organization"
+      <>
+        <Page>
+          <Page.Header fullWidth={false}>
+            <Page.Header.Left>
+              <Page.Title title="Organizations" />
+            </Page.Header.Left>
+            <Page.Header.Right>
+              <Button
+                color={ComponentColor.Primary}
+                onClick={this.handleOpenModal}
+                icon={IconFont.Plus}
+                text="Create Organization"
+                titleText="Create a new Organization"
+              />
+            </Page.Header.Right>
+          </Page.Header>
+          <Page.Contents fullWidth={false} scrollable={true}>
+            <OrganizationsIndexContents
+              orgs={orgs}
+              onDeleteOrg={this.handleDeleteOrg}
             />
-          </Page.Header.Right>
-        </Page.Header>
-        <Page.Contents fullWidth={false} scrollable={true}>
-          <OrganizationsIndexContents
-            orgs={orgs}
-            onDeleteOrg={this.handleDeleteOrg}
+          </Page.Contents>
+        </Page>
+        <OverlayTechnology visible={modalState === ModalState.Open}>
+          <CreateOrgOverlay
+            link={links.orgs}
+            onCloseModal={this.handleCloseModal}
           />
-        </Page.Contents>
-      </Page>
+        </OverlayTechnology>
+      </>
     )
   }
 
-  private handleCreateOrg = (): void => {
-    console.log('make a new org')
+  private handleOpenModal = (): void => {
+    this.setState({modalState: ModalState.Open})
+  }
+
+  private handleCloseModal = (): void => {
+    this.setState({modalState: ModalState.Closed})
   }
 
   private handleDeleteOrg = (org: Organization): void => {
