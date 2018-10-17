@@ -144,3 +144,105 @@ func TestTelegrafConfigJSON(t *testing.T) {
 		}
 	}
 }
+
+func TestTOML(t *testing.T) {
+	id1, _ := IDFromString("020f755c3c082000")
+	id2, _ := IDFromString("020f755c3c082001")
+
+	tc := &TelegrafConfig{
+		ID:        *id1,
+		Name:      "n1",
+		LastModBy: *id2,
+		Agent: TelegrafAgentConfig{
+			Interval: 4000,
+		},
+		Plugins: []TelegrafPlugin{
+			{
+				Comment: "comment1",
+				Config: &inputs.File{
+					Files: []string{"f1", "f2"},
+				},
+			},
+			{
+				Comment: "comment2",
+				Config:  &inputs.CPUStats{},
+			},
+			{
+				Comment: "comment3",
+				Config: &outputs.File{Files: []outputs.FileConfig{
+					{Typ: "stdout"},
+				}},
+			},
+		},
+	}
+	want := `# Configuration for telegraf agent
+[agent]
+  ## Default data collection interval for all inputs
+  interval = "4s"
+  ## Rounds collection interval to 'interval'
+  ## ie, if interval="10s" then always collect on :00, :10, :20, etc.
+  round_interval = true
+
+  ## Telegraf will send metrics to outputs in batches of at most
+  ## metric_batch_size metrics.
+  ## This controls the size of writes that Telegraf sends to output plugins.
+  metric_batch_size = 1000
+
+  ## For failed writes, telegraf will cache metric_buffer_limit metrics for each
+  ## output, and will flush this buffer on a successful write. Oldest metrics
+  ## are dropped first when this buffer fills.
+  ## This buffer only fills when writes fail to output plugin(s).
+  metric_buffer_limit = 10000
+
+  ## Collection jitter is used to jitter the collection by a random amount.
+  ## Each plugin will sleep for a random time within jitter before collecting.
+  ## This can be used to avoid many plugins querying things like sysfs at the
+  ## same time, which can have a measurable effect on the system.
+  collection_jitter = "0s"
+
+  ## Default flushing interval for all outputs. Maximum flush_interval will be
+  ## flush_interval + flush_jitter
+  flush_interval = "10s"
+  ## Jitter the flush interval by a random amount. This is primarily to avoid
+  ## large write spikes for users running a large number of telegraf instances.
+  ## ie, a jitter of 5s and interval 10s means flushes will happen every 10-15s
+  flush_jitter = "0s"
+
+  ## By default or when set to "0s", precision will be set to the same
+  ## timestamp order as the collection interval, with the maximum being 1s.
+  ##   ie, when interval = "10s", precision will be "1s"
+  ##       when interval = "250ms", precision will be "1ms"
+  ## Precision will NOT be used for service inputs. It is up to each individual
+  ## service input to set the timestamp at the appropriate precision.
+  ## Valid time units are "ns", "us" (or "µs"), "ms", "s".
+  precision = ""
+
+  ## Logging configuration:
+  ## Run telegraf with debug log messages.
+  debug = false
+  ## Run telegraf in quiet mode (error log messages only).
+  quiet = false
+  ## Specify the log file name. The empty string means to log to stderr.
+  logfile = ""
+
+  ## Override default hostname, if empty use os.Hostname()
+  hostname = ""
+  ## If set to true, do no set the "host" tag in the telegraf agent.
+  omit_hostname = false
+[[inputs.file]]	
+  ## Files to parse each interval.
+  ## These accept standard unix glob matching rules, but with the addition of
+  ## ** as a "super asterisk". ie:
+  ##   /var/log/**.log     -> recursively find all .log files in /var/log
+  ##   /var/log/*/*.log    -> find all .log files with a parent dir in /var/log
+  ##   /var/log/apache.log -> only read the apache log file
+  files = ["f1", "f2"]
+[[inputs.cpu]]
+[[outputs.file]]
+  ## Files to write to, "stdout" is a specially handled file.
+  files = ["stdout"]
+`
+	if result := tc.TOML(); result != want {
+		t.Fatalf("telegraf config's toml is incorrect, got %s", result)
+	}
+}
