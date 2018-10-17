@@ -82,7 +82,11 @@ class OrganizationView extends PureComponent<Props> {
                   link={org.links.buckets}
                   fetcher={getBuckets}
                 >
-                  {buckets => <Buckets buckets={buckets} />}
+                  {(buckets, loading) => (
+                    <Spinner loading={loading}>
+                      <Buckets buckets={buckets} />
+                    </Spinner>
+                  )}
                 </GetOrgResources>
               </ProfilePage.Section>
               <ProfilePage.Section
@@ -94,7 +98,11 @@ class OrganizationView extends PureComponent<Props> {
                   link={org.links.dashboards}
                   fetcher={getDashboards}
                 >
-                  {dashboards => <Dashboards dashboards={dashboards} />}
+                  {(dashboards, loading) => (
+                    <Spinner loading={loading}>
+                      <Dashboards dashboards={dashboards} />
+                    </Spinner>
+                  )}
                 </GetOrgResources>
               </ProfilePage.Section>
               <ProfilePage.Section
@@ -120,17 +128,13 @@ class OrganizationView extends PureComponent<Props> {
     )
   }
 }
-
 const mstp = (state: AppState, props: WithRouterProps) => {
   const {orgs} = state
-
   const org = orgs.find(o => o.id === props.params.orgID)
-
   return {
     org,
   }
 }
-
 export default connect<StateProps, {}, {}>(
   mstp,
   null
