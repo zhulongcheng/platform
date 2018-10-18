@@ -80,19 +80,22 @@ func (h *TaskHandler) handleGetTasks(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if req.userID != nil {
-		// get a user's organizations, then get all resources of that type that belong to them or to their organizations
-
-		filter := platform.UserResourceMappingFilter{
+		filter := platform.DeepUserResourceMappingFilter{
 			UserID:       *req.userID,
-			UserType:     platform.Owner,
 			ResourceType: platform.TaskResourceType,
 		}
 
-		mappings, _, err := h.UserResourceMappingService.FindUserResourceMappings(ctx, filter)
+		mappings, _, err := h.UserResourceMappingService.FindDeepUserResourceMappings(ctx, filter)
 		if err != nil {
 			EncodeError(ctx, kerrors.InternalErrorf("Error loading dashboard owners: %v", err), w)
 			return
 		}
+
+		ids := []*platform.ID{}
+		for _, m := range mappings {
+			ids = append(ids, &m.ResourceID)
+		}
+		req.filter.IDs = ids
 	}
 
 	tasks, _, err := h.TaskService.FindTasks(ctx, req.filter)
