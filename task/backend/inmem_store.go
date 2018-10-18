@@ -118,14 +118,14 @@ func (s *inmem) ListTasks(_ context.Context, params TaskSearchParams) ([]StoreTa
 
 	out := make([]StoreTask, 0, lim)
 
-	ids := params.IDs
-
 	var after platform.ID
 	if !params.After.Valid() {
 		after = platform.ID(1)
 	} else {
 		after = params.After
 	}
+
+	ids := params.IDs
 
 	s.mu.RLock()
 	defer s.mu.RUnlock()

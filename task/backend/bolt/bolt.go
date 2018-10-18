@@ -126,26 +126,26 @@ func (s *Store) CreateTask(ctx context.Context, req backend.CreateTaskRequest) (
 		}
 
 		// Encoded user ID
-		encodedUser, err := req.User.Encode()
-		if err != nil {
-			return err
-		}
+		// encodedUser, err := req.User.Encode()
+		// if err != nil {
+		// 	return err
+		// }
 
 		// user
-		userB, err := b.Bucket(usersPath).CreateBucketIfNotExists(encodedUser)
-		if err != nil {
-			return err
-		}
+		// userB, err := b.Bucket(usersPath).CreateBucketIfNotExists(encodedUser)
+		// if err != nil {
+		// 	return err
+		// }
 
-		err = userB.Put(encodedID, nil)
-		if err != nil {
-			return err
-		}
+		// err = userB.Put(encodedID, nil)
+		// if err != nil {
+		// 	return err
+		// }
 
-		err = b.Bucket(userByTaskID).Put(encodedID, encodedUser)
-		if err != nil {
-			return err
-		}
+		// err = b.Bucket(userByTaskID).Put(encodedID, encodedUser)
+		// if err != nil {
+		// 	return err
+		// }
 
 		stm := backend.StoreTaskMeta{
 			MaxConcurrency:  int32(o.Concurrency),
@@ -226,19 +226,19 @@ func (s *Store) ListTasks(ctx context.Context, params backend.TaskSearchParams) 
 	if err := s.db.View(func(tx *bolt.Tx) error {
 		var c *bolt.Cursor
 		b := tx.Bucket(s.bucket)
-		if params.User.Valid() {
-			encodedUser, err := params.User.Encode()
-			if err != nil {
-				return err
-			}
-			userB := b.Bucket(usersPath).Bucket(encodedUser)
-			if userB == nil {
-				return ErrNotFound
-			}
-			c = userB.Cursor()
-		} else {
-			c = b.Bucket(tasksPath).Cursor()
-		}
+		// if params.User.Valid() {
+		// 	encodedUser, err := params.User.Encode()
+		// 	if err != nil {
+		// 		return err
+		// 	}
+		// 	userB := b.Bucket(usersPath).Bucket(encodedUser)
+		// 	if userB == nil {
+		// 		return ErrNotFound
+		// 	}
+		// 	c = userB.Cursor()
+		// } else {
+		// 	c = b.Bucket(tasksPath).Cursor()
+		// }
 		if params.After.Valid() {
 			encodedAfter, err := params.After.Encode()
 			if err != nil {
@@ -279,26 +279,26 @@ func (s *Store) ListTasks(ctx context.Context, params backend.TaskSearchParams) 
 				tasks[i].Name = string(b.Bucket(nameByTaskID).Get(encodedID))
 			}
 		}
-		if params.User.Valid() {
-			for i := range taskIDs {
-				select {
-				case <-ctx.Done():
-					return ctx.Err()
-				default:
-					encodedID, err := taskIDs[i].Encode()
-					if err != nil {
-						return err
-					}
-					tasks[i].User = params.User
-					var orgID platform.ID
-					if err := orgID.Decode(b.Bucket(orgByTaskID).Get(encodedID)); err != nil {
-						return err
-					}
-					tasks[i].Org = orgID
-				}
-			}
-			return nil
-		}
+		// if params.User.Valid() {
+		// 	for i := range taskIDs {
+		// 		select {
+		// 		case <-ctx.Done():
+		// 			return ctx.Err()
+		// 		default:
+		// 			encodedID, err := taskIDs[i].Encode()
+		// 			if err != nil {
+		// 				return err
+		// 			}
+		// 			tasks[i].User = params.User
+		// 			var orgID platform.ID
+		// 			if err := orgID.Decode(b.Bucket(orgByTaskID).Get(encodedID)); err != nil {
+		// 				return err
+		// 			}
+		// 			tasks[i].Org = orgID
+		// 		}
+		// 	}
+		// 	return nil
+		// }
 		for i := range taskIDs {
 			select {
 			case <-ctx.Done():

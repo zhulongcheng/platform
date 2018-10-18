@@ -307,6 +307,8 @@ from(bucket:"test") |> range(start:-1h)`
 		defer destroy(t, s)
 
 		ids := make([]*platform.ID, 0)
+		id := platform.ID(1)
+		ids = append(ids, &id)
 
 		if _, err := s.ListTasks(context.Background(), backend.TaskSearchParams{PageSize: -1}); err == nil {
 			t.Fatal("expected error for negative page size but got nil")

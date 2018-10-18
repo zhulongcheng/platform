@@ -98,6 +98,16 @@ func testTaskCRUD(t *testing.T, sys *System) {
 		t.Fatal("no task ID set")
 	}
 
+	// Create more tasks to test multiple ID filtering
+	task2 := &platform.Task{Flux: fmt.Sprintf(scriptFmt, 0)}
+	if err := sys.ts.CreateTask(sys.Ctx, task2); err != nil {
+		t.Fatal(err)
+	}
+	task3 := &platform.Task{Flux: fmt.Sprintf(scriptFmt, 0)}
+	if err := sys.ts.CreateTask(sys.Ctx, task3); err != nil {
+		t.Fatal(err)
+	}
+
 	// Look up a task the different ways we can.
 	// Map of method name to found task.
 	found := make(map[string]*platform.Task)
@@ -111,13 +121,14 @@ func testTaskCRUD(t *testing.T, sys *System) {
 
 	ids := make([]*platform.ID, 1)
 	ids = append(ids, &task.ID)
+	ids = append(ids, &task2.ID)
 
 	fs, _, err := sys.ts.FindTasks(sys.Ctx, platform.TaskFilter{IDs: ids})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(fs) != 1 {
-		t.Fatalf("expected 1 task returned, got %d: %#v", len(fs), fs)
+	if len(fs) != 2 {
+		t.Fatalf("expected 2 tasks returned, got %d: %#v", len(fs), fs)
 	}
 	found["FindTasks with IDs filter"] = fs[0]
 
