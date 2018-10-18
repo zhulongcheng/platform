@@ -1,6 +1,7 @@
 package http
 
 import (
+	"net/url"
 	"context"
 	"encoding/json"
 	"net/http"
@@ -573,4 +574,181 @@ func decodeRetryRunRequest(ctx context.Context, r *http.Request) (*retryRunReque
 	return &retryRunRequest{
 		RunID: i,
 	}, nil
+}
+
+type TaskService {
+	Addr               string
+	Token              string
+	InsecureSkipVerify bool
+}
+
+func (t TaskService) FindTaskByID(ctx context.Context, id platform.ID) (*platform.Task, error) {
+	u, err := newURL(s.Addr, taskIDPath(id))
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", u.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+	SetToken(s.Token, req)
+
+	hc := newClient(u.Scheme, s.InsecureSkipVerify)
+	resp, err := hc.Do(req)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := CheckError(resp); err != nil {
+		return nil, err
+	}
+
+	var task *platform.Task
+	if err := json.NewDecoder(resp.Body).Decode(tasks); err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	return task, nil
+}
+
+func (t TaskService) FindTasks(ctx context.Context, filter platform.TaskFilter) ([]*platform.Task, int, error) {
+	u, err := newURL(t.Addr, tasksPath)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	val := url.Values{}
+	if filter.After != nil {
+		val.Add("after", filter.After.String())
+	}
+	if filter.Organization != nil {
+		val.Add("organization", filter.Organization.String())
+	}
+	if filter.User != nil {
+		val.Add("user", filter.User.String())
+	}
+
+	u.Query = val.Encode()
+
+	req, err := http.NewRequest("GET", u.String(), nil)
+	if err != nil {
+		return nil, 0, err
+	}
+	SetToken(s.Token, req)
+
+	hc := newClient(u.Scheme, s.InsecureSkipVerify)
+	resp, err := hc.Do(req)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	if err := CheckError(resp); err != nil {
+		return nil, 0, err
+	}
+
+	var tasks []*platform.Task
+	if err := json.NewDecoder(resp.Body).Decode(&tasks); err != nil {
+		return nil, 0, err
+	}
+	defer resp.Body.Close()
+
+	return tasks, len(tasks), nil
+}
+
+func (t TaskService) CreateTask(ctx context.Context, t *Task) error {
+	u, err := newURL(t.Addr, tasksPath)
+	if err != nil {
+		return err
+	}
+
+	taskBytes, err := json.Marshal(t)
+	if err != nil {
+		return err
+	}
+
+	req, err := http.NewRequest("POST", u.String(), bytes.NewReader(taskBytes))
+	if err != nil {
+		return err
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+	SetToken(s.Token, req)
+
+	hc := newClient(u.Scheme, s.InsecureSkipVerify)
+
+	resp, err := hc.Do(req)
+	if err != nil {
+		return err
+	}
+
+	if err := CheckError(resp); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (t TaskService) UpdateTask(ctx context.Context, id platform.ID, upd platform.TaskUpdate) (*platform.Task, error) {
+	u, err := newURL(t.Addr, taskIDPath(id))
+	if err != nil {
+		return err
+	}
+
+	taskBytes, err := json.Marshal(upd)
+	if err != nil {
+		return err
+	}
+
+	req, err := http.NewRequest("PATCH", u.String(), bytes.NewReader(taskBytes))
+	if err != nil {
+		return err
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+	SetToken(s.Token, req)
+
+	hc := newClient(u.Scheme, s.InsecureSkipVerify)
+
+	resp, err := hc.Do(req)
+	if err != nil {
+		return err
+	}
+
+	if err := CheckError(resp); err != nil {
+		return err
+	}
+
+	var task *platform.Task
+	if err := json.NewDecoder(resp.Body).Decode(&task); err != nil {
+		return nil, 0, err
+	}
+	defer resp.Body.Close()
+
+	return task, nil
+}
+
+func (t TaskService) DeleteTask(ctx context.Context, id platform.ID) error {
+	return errors.New("not yet implemented")
+}
+
+func (t TaskService) FindLogs(ctx context.Context, filter platform.LogFilter) ([]*platform.Log, int, error) {
+	return nil, -1, errors.New("not yet implemented")
+}
+
+func (t TaskService) FindRuns(ctx context.Context, filter platform.RunFilter) ([]*platform.Run, int, error) {
+	return nil, -1, errors.New("not yet implemented")
+}
+
+func (t TaskService) FindRunByID(ctx context.Context, orgID, runID platform.ID) (*platform.Run, error) {
+	return nil, errors.New("not yet implemented")
+}
+
+func (t TaskService) RetryRun(ctx context.Context, id platform.ID) (*platform.Run, error) {
+	return nil, errors.New("not yet implemented")
+}
+
+func taskIDPath(id platform.ID) string {
+	return path.Join(tasksPath, id.String())
 }
