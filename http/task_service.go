@@ -607,13 +607,13 @@ func (t TaskService) FindTaskByID(ctx context.Context, id platform.ID) (*platfor
 		return nil, err
 	}
 
-	var task *platform.Task
-	if err := json.NewDecoder(resp.Body).Decode(task); err != nil {
+	var task platform.Task
+	if err := json.NewDecoder(resp.Body).Decode(&task); err != nil {
 		return nil, err
 	}
 	defer resp.Body.Close()
 
-	return task, nil
+	return &task, nil
 }
 
 func (t TaskService) FindTasks(ctx context.Context, filter platform.TaskFilter) ([]*platform.Task, int, error) {
@@ -690,6 +690,10 @@ func (t TaskService) CreateTask(ctx context.Context, tsk *platform.Task) error {
 		return err
 	}
 
+	if err := json.NewDecoder(resp.Body).Decode(tsk); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -718,6 +722,7 @@ func (t TaskService) UpdateTask(ctx context.Context, id platform.ID, upd platfor
 	if err != nil {
 		return nil, err
 	}
+	defer resp.Body.Close()
 
 	if err := CheckError(resp); err != nil {
 		return nil, err
@@ -727,7 +732,6 @@ func (t TaskService) UpdateTask(ctx context.Context, id platform.ID, upd platfor
 	if err := json.NewDecoder(resp.Body).Decode(&task); err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
 
 	return task, nil
 }
