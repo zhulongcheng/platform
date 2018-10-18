@@ -63,6 +63,7 @@ export const updateOrg = async (org: Organization): Promise<Organization> => {
   }
 }
 
+// Members
 export const getMembers = async (url: string): Promise<Member[]> => {
   try {
     const {data} = await AJAX({
@@ -76,6 +77,7 @@ export const getMembers = async (url: string): Promise<Member[]> => {
   }
 }
 
+// Buckets
 export const getBuckets = async (url: string): Promise<Bucket[]> => {
   try {
     const {data} = await AJAX({
@@ -83,6 +85,24 @@ export const getBuckets = async (url: string): Promise<Bucket[]> => {
     })
 
     return data.buckets
+  } catch (error) {
+    console.error('Could not get buckets for org', error)
+    throw error
+  }
+}
+
+export const createBucket = async (
+  url: string,
+  bucket: Partial<Bucket>
+): Promise<Bucket> => {
+  try {
+    const {data} = await AJAX({
+      method: 'POST',
+      url,
+      data: {bucket},
+    })
+
+    return data
   } catch (error) {
     console.error('Could not get buckets for org', error)
     throw error

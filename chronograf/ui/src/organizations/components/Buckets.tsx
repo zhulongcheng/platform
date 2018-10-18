@@ -12,22 +12,35 @@ import {
   Button,
   ComponentColor,
   IconFont,
+  OverlayTechnology,
 } from 'src/clockface'
 import ProfilePage from 'src/shared/components/profile_page/ProfilePage'
+import BucketOverlay from 'src/organizations/components/BucketOverlay'
+
+// APIs
+import {createBucket} from 'src/organizations/apis'
 
 // Types
-import {Bucket} from 'src/types/v2'
+import {Bucket, Organization} from 'src/types/v2'
 import {
   IndexListColumn,
   IndexListRow,
 } from 'src/shared/components/index_views/IndexListTypes'
 
 interface Props {
+  org: Organization
   buckets: Bucket[]
 }
 
 interface State {
+  buckets: Bucket[]
   filterTerm: string
+  modalState: ModalState
+}
+
+enum ModalState {
+  Open = 'open',
+  Closed = 'closed',
 }
 
 // Decorators
@@ -40,11 +53,15 @@ export default class Buckets extends PureComponent<Props, State> {
 
     this.state = {
       filterTerm: '',
+      buckets: this.props.buckets,
+      modalState: ModalState.Closed,
     }
   }
 
   public render() {
-    const {filterTerm} = this.state
+    const {org} = this.props
+    const {filterTerm, modalState} = this.state
+
     return (
       <>
         <ProfilePage.Header>
@@ -60,15 +77,49 @@ export default class Buckets extends PureComponent<Props, State> {
             text="Create Bucket"
             icon={IconFont.Plus}
             color={ComponentColor.Primary}
+            onClick={this.handleOpenModal}
           />
         </ProfilePage.Header>
         <IndexList
-          columns={this.columns}
           rows={this.rows}
+          columns={this.columns}
           emptyState={this.emptyState}
         />
+        <OverlayTechnology visible={modalState === ModalState.Open}>
+          <BucketOverlay
+            link={org.links.buckets}
+            onCloseModal={this.handleCloseModal}
+            onCreateBucket={this.handleCreateBucket}
+          />
+        </OverlayTechnology>
       </>
     )
+  }
+
+  private handleCreateBucket = async (
+    link: string,
+    bucket: Partial<Bucket>
+  ): Promise<void> => {
+    const {buckets} = this.state
+    const b = await createBucket(link, bucket)
+    this.setState({buckets: [b, ...buckets]})
+    this.handleCloseModal()
+  }
+
+  private handleOpenModal = (): void => {
+    this.setState({modalState: ModalState.Open})
+  }
+
+  private handleCloseModal = (): void => {
+    this.setState({modalState: ModalState.Closed})
+  }
+
+  private handleFilterBlur = (e: ChangeEvent<HTMLInputElement>): void => {
+    this.setState({filterTerm: e.target.value})
+  }
+
+  private handleFilterChange = (e: ChangeEvent<HTMLInputElement>): void => {
+    this.setState({filterTerm: e.target.value})
   }
 
   private get columns(): IndexListColumn[] {
@@ -133,13 +184,5 @@ export default class Buckets extends PureComponent<Props, State> {
         <EmptyState.Text text="No buckets match your query" />
       </EmptyState>
     )
-  }
-
-  private handleFilterBlur = (e: ChangeEvent<HTMLInputElement>): void => {
-    this.setState({filterTerm: e.target.value})
-  }
-
-  private handleFilterChange = (e: ChangeEvent<HTMLInputElement>): void => {
-    this.setState({filterTerm: e.target.value})
   }
 }

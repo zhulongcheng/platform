@@ -92,7 +92,7 @@ class OrganizationView extends PureComponent<Props> {
                 >
                   {(buckets, loading) => (
                     <Spinner loading={loading}>
-                      <Buckets buckets={buckets} />
+                      <Buckets buckets={buckets} org={org} />
                     </Spinner>
                   )}
                 </GetOrgResources>

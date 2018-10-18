@@ -23,6 +23,7 @@ export enum AutoComplete {
 }
 
 interface Props {
+  min?: string
   name?: string
   value?: string
   placeholder?: string
@@ -48,6 +49,7 @@ interface Props {
 
 class Input extends Component<Props> {
   public static defaultProps: Partial<Props> = {
+    min: '',
     name: '',
     value: '',
     placeholder: '',
@@ -63,6 +65,7 @@ class Input extends Component<Props> {
 
   public render() {
     const {
+      min,
       name,
       status,
       type,
@@ -83,6 +86,7 @@ class Input extends Component<Props> {
     return (
       <div className={this.className} style={this.containerStyle}>
         <input
+          min={min}
           title={this.title}
           autoComplete={autocomplete}
           name={name}
