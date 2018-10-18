@@ -752,7 +752,32 @@ func (t TaskService) UpdateTask(ctx context.Context, id platform.ID, upd platfor
 }
 
 func (t TaskService) DeleteTask(ctx context.Context, id platform.ID) error {
-	return errors.New("not yet implemented")
+	u, err := newURL(t.Addr, taskIDPath(id))
+	if err != nil {
+		return err
+	}
+
+	req, err := http.NewRequest("DELETE", u.String(), nil)
+	if err != nil {
+		return err
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+	SetToken(t.Token, req)
+
+	hc := newClient(u.Scheme, t.InsecureSkipVerify)
+
+	resp, err := hc.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if err := CheckError(resp); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (t TaskService) FindLogs(ctx context.Context, filter platform.LogFilter) ([]*platform.Log, int, error) {
