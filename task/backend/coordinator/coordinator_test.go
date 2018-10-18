@@ -10,7 +10,6 @@ import (
 	"github.com/influxdata/platform/task/backend"
 	"github.com/influxdata/platform/task/backend/coordinator"
 	"github.com/influxdata/platform/task/mock"
-	platformtesting "github.com/influxdata/platform/testing"
 )
 
 func timeoutSelector(ch <-chan *mock.Task) (*mock.Task, error) {
@@ -31,10 +30,8 @@ func TestCoordinator(t *testing.T) {
 	releaseChan := sched.TaskReleaseChan()
 	updateChan := sched.TaskUpdateChan()
 
-	orgID := platformtesting.MustIDBase16("69746f7175650d0a")
-	usrID := platformtesting.MustIDBase16("6c61757320657420")
 	script := `option task = {name: "a task",cron: "* * * * *"} from(bucket:"test") |> range(start:-1h)`
-	id, err := coord.CreateTask(context.Background(), backend.CreateTaskRequest{Org: orgID, User: usrID, Script: script})
+	id, err := coord.CreateTask(context.Background(), backend.CreateTaskRequest{Script: script})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -66,7 +63,7 @@ func TestCoordinator(t *testing.T) {
 		t.Fatal("task sent to scheduler doesnt match task created")
 	}
 
-	id, err = coord.CreateTask(context.Background(), backend.CreateTaskRequest{Org: orgID, User: usrID, Script: script})
+	id, err = coord.CreateTask(context.Background(), backend.CreateTaskRequest{Script: script})
 	if err != nil {
 		t.Fatal(err)
 	}

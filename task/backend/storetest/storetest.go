@@ -48,8 +48,6 @@ func NewStoreTest(name string, cf CreateStoreFunc, df DestroyStoreFunc, funcName
 		"CreateNextRun":        testStoreCreateNextRun,
 		"FinishRun":            testStoreFinishRun,
 		"ManuallyRunTimeRange": testStoreManuallyRunTimeRange,
-		"DeleteOrg":            testStoreDeleteOrg,
-		"DeleteUser":           testStoreDeleteUser,
 	}
 
 	return func(t *testing.T) {
@@ -849,54 +847,6 @@ from(bucket:"test") |> range(start:-1h)`
 
 	if !rc.HasQueue {
 		t.Fatal("CreateNextRun should have reported that there is a queue")
-	}
-}
-
-func testStoreDeleteUser(t *testing.T, create CreateStoreFunc, destroy DestroyStoreFunc) {
-	s := create(t)
-	defer destroy(t, s)
-	ids := createABunchOFTasks(t, s,
-		func(u, _ uint64) bool {
-			return u == 1
-		},
-	)
-	user := platform.ID(1)
-	err := s.DeleteUser(context.Background(), user)
-	if err != nil {
-		t.Fatal(err)
-	}
-	for i := range ids {
-		task, err := s.FindTaskByID(context.Background(), ids[i])
-		if err != nil {
-			t.Fatal(err)
-		}
-		if task != nil {
-			t.Fatal("expected task to be deleted but it was not")
-		}
-	}
-}
-
-func testStoreDeleteOrg(t *testing.T, create CreateStoreFunc, destroy DestroyStoreFunc) {
-	s := create(t)
-	defer destroy(t, s)
-	ids := createABunchOFTasks(t, s,
-		func(_, o uint64) bool {
-			return o == 1
-		},
-	)
-	org := platform.ID(1)
-	err := s.DeleteOrg(context.Background(), org)
-	if err != nil {
-		t.Fatal(err)
-	}
-	for i := range ids {
-		task, err := s.FindTaskByID(context.Background(), ids[i])
-		if err != nil {
-			t.Fatal(err)
-		}
-		if task != nil {
-			t.Fatal("expected task to be deleted but it was not")
-		}
 	}
 }
 

@@ -90,7 +90,7 @@ func (h *TaskHandler) handleGetTasks(w http.ResponseWriter, r *http.Request) {
 
 		mappings, _, err := h.UserResourceMappingService.FindUserResourceMappings(ctx, filter)
 		if err != nil {
-			EncodeError(ctx, errors.InternalErrorf("Error loading dashboard owners: %v", err), w)
+			EncodeError(ctx, kerrors.InternalErrorf("Error loading dashboard owners: %v", err), w)
 			return
 		}
 	}
@@ -124,8 +124,7 @@ func decodeGetTasksRequest(ctx context.Context, r *http.Request) (*getTasksReque
 		req.filter.After = id
 	}
 
-	if userID := qp.Get("user"); id != "" {
-		req.userID = &platform.ID{}
+	if userID := qp.Get("user"); userID != "" {
 		if err := req.userID.DecodeFromString(userID); err != nil {
 			return nil, err
 		}

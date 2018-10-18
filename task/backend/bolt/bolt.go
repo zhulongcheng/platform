@@ -125,28 +125,6 @@ func (s *Store) CreateTask(ctx context.Context, req backend.CreateTaskRequest) (
 			return err
 		}
 
-		// Encode org ID
-		encodedOrg, err := req.Org.Encode()
-		if err != nil {
-			return err
-		}
-
-		// org
-		orgB, err := b.Bucket(orgsPath).CreateBucketIfNotExists(encodedOrg)
-		if err != nil {
-			return err
-		}
-
-		err = orgB.Put(encodedID, nil)
-		if err != nil {
-			return err
-		}
-
-		err = b.Bucket(orgByTaskID).Put(encodedID, encodedOrg)
-		if err != nil {
-			return err
-		}
-
 		// Encoded user ID
 		encodedUser, err := req.User.Encode()
 		if err != nil {
