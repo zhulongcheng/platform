@@ -133,10 +133,25 @@ func decodeGetTasksRequest(ctx context.Context, r *http.Request) (*getTasksReque
 func (h *TaskHandler) handlePostTask(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
+	tok, err := GetToken(r)
+	if err != nil {
+		EncodeError(ctx, err, w)
+		return
+	}
+
 	req, err := decodePostTaskRequest(ctx, r)
 	if err != nil {
 		EncodeError(ctx, err, w)
 		return
+	}
+
+	if !req.Task.Owner.ID.Valid() {
+		auth, err := h.AuthorizationService.FindAuthorizationByToken(ctx, tok)
+		if err != nil {
+			EncodeError(ctx, kerrors.Wrap(err, "invalid token", kerrors.InvalidData), w)
+			return
+		}
+		req.Task.Owner.ID = auth.UserID
 	}
 
 	if err := h.TaskService.CreateTask(ctx, req.Task); err != nil {
