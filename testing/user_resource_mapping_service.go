@@ -132,8 +132,8 @@ func CreateUserResourceMapping(
 						UserType:   platform.Member,
 					},
 					{
-						ResourceID: idFromString(t, bucketTwoID),
-						UserID:     idFromString(t, userOneID),
+						ResourceID: MustIDBase16(bucketTwoID),
+						UserID:     MustIDBase16(userOneID),
 						UserType:   platform.Member,
 					},
 				},
@@ -153,8 +153,8 @@ func CreateUserResourceMapping(
 						UserType:   platform.Member,
 					},
 					{
-						ResourceID: idFromString(t, bucketTwoID),
-						UserID:     idFromString(t, userOneID),
+						ResourceID: MustIDBase16(bucketTwoID),
+						UserID:     MustIDBase16(userOneID),
 						UserType:   platform.Member,
 					},
 				},
@@ -512,32 +512,32 @@ func FindDeepUserResourceMappings(
 			fields: UserResourceFields{
 				UserResourceMappings: []*platform.UserResourceMapping{
 					{
-						ResourceID:   idFromString(t, orgOneID),
-						UserID:       idFromString(t, userOneID),
+						ResourceID:   MustIDBase16(orgOneID),
+						UserID:       MustIDBase16(userOneID),
 						UserType:     platform.Member,
 						ResourceType: platform.OrgResourceType,
 					},
 					{
-						ResourceID:   idFromString(t, bucketOneID),
-						UserID:       idFromString(t, userOneID),
+						ResourceID:   MustIDBase16(bucketOneID),
+						UserID:       MustIDBase16(userOneID),
 						UserType:     platform.Member,
 						ResourceType: platform.BucketResourceType,
 					},
 					{
-						ResourceID:   idFromString(t, bucketTwoID),
-						UserID:       idFromString(t, orgOneID),
+						ResourceID:   MustIDBase16(bucketTwoID),
+						UserID:       MustIDBase16(orgOneID),
 						UserType:     platform.Member,
 						ResourceType: platform.BucketResourceType,
 					},
 					{
-						ResourceID:   idFromString(t, bucketThreeID),
-						UserID:       idFromString(t, orgTwoID),
+						ResourceID:   MustIDBase16(bucketThreeID),
+						UserID:       MustIDBase16(orgTwoID),
 						UserType:     platform.Member,
 						ResourceType: platform.BucketResourceType,
 					},
 					{
-						ResourceID:   idFromString(t, dashOneID),
-						UserID:       idFromString(t, orgOneID),
+						ResourceID:   MustIDBase16(dashOneID),
+						UserID:       MustIDBase16(orgOneID),
 						UserType:     platform.Member,
 						ResourceType: platform.DashboardResourceType,
 					},
@@ -545,21 +545,21 @@ func FindDeepUserResourceMappings(
 			},
 			args: args{
 				filter: platform.DeepUserResourceMappingFilter{
-					UserID:       idFromString(t, userOneID),
+					UserID:       MustIDBase16(userOneID),
 					ResourceType: platform.BucketResourceType,
 				},
 			},
 			wants: wants{
 				mappings: []*platform.UserResourceMapping{
 					{
-						ResourceID:   idFromString(t, bucketOneID),
-						UserID:       idFromString(t, userOneID),
+						ResourceID:   MustIDBase16(bucketOneID),
+						UserID:       MustIDBase16(userOneID),
 						UserType:     platform.Member,
 						ResourceType: platform.BucketResourceType,
 					},
 					{
-						ResourceID:   idFromString(t, bucketTwoID),
-						UserID:       idFromString(t, orgOneID),
+						ResourceID:   MustIDBase16(bucketTwoID),
+						UserID:       MustIDBase16(orgOneID),
 						UserType:     platform.Member,
 						ResourceType: platform.BucketResourceType,
 					},
