@@ -48,6 +48,21 @@ export const deleteOrg = async (url: string): Promise<void> => {
   }
 }
 
+export const updateOrg = async (org: Organization): Promise<Organization> => {
+  try {
+    const {data} = await AJAX({
+      url: org.links.self,
+      method: 'PATCH',
+      data: org,
+    })
+
+    return data
+  } catch (error) {
+    console.error('Could not get members for org', error)
+    throw error
+  }
+}
+
 export const getMembers = async (url: string): Promise<Member[]> => {
   try {
     const {data} = await AJAX({

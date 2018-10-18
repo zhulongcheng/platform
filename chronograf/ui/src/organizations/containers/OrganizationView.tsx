@@ -12,6 +12,9 @@ import {
   getTasks,
 } from 'src/organizations/apis'
 
+// Actions
+import {updateOrg} from 'src/organizations/actions'
+
 // Components
 import {Page} from 'src/pageLayout'
 import {Spinner} from 'src/clockface'
@@ -40,12 +43,16 @@ interface StateProps {
   org: Organization
 }
 
-type Props = StateProps & WithRouterProps
+interface DispatchProps {
+  onUpdateOrg: typeof updateOrg
+}
+
+type Props = StateProps & WithRouterProps & DispatchProps
 
 @ErrorHandling
 class OrganizationView extends PureComponent<Props> {
   public render() {
-    const {org, params} = this.props
+    const {org, params, onUpdateOrg} = this.props
 
     return (
       <Page>
@@ -127,7 +134,7 @@ class OrganizationView extends PureComponent<Props> {
                 url="options_tab"
                 title="Options"
               >
-                <OrgOptions org={org} />
+                <OrgOptions org={org} onUpdateOrg={onUpdateOrg} />
               </ProfilePage.Section>
             </ProfilePage>
           </div>
@@ -136,6 +143,7 @@ class OrganizationView extends PureComponent<Props> {
     )
   }
 }
+
 const mstp = (state: AppState, props: WithRouterProps) => {
   const {orgs} = state
   const org = orgs.find(o => o.id === props.params.orgID)
@@ -143,7 +151,12 @@ const mstp = (state: AppState, props: WithRouterProps) => {
     org,
   }
 }
-export default connect<StateProps, {}, {}>(
+
+const mdtp: DispatchProps = {
+  onUpdateOrg: updateOrg,
+}
+
+export default connect<StateProps, DispatchProps, {}>(
   mstp,
-  null
+  mdtp
 )(OrganizationView)

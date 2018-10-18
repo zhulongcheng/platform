@@ -1,6 +1,5 @@
 // Libraries
 import React, {PureComponent, ChangeEvent} from 'react'
-import _ from 'lodash'
 
 // Components
 import {
@@ -92,7 +91,7 @@ export default class CreateOrgOverlay extends PureComponent<Props, State> {
     const key = e.target.name
     const org = {...this.state.org, [key]: value}
 
-    if (_.isEmpty(value)) {
+    if (!value) {
       return this.setState({
         org,
         nameInputStatus: ComponentStatus.Error,

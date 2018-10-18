@@ -6,6 +6,7 @@ import {
   getOrganizations as getOrganizationsAPI,
   createOrg as createOrgAPI,
   deleteOrg as deleteOrgAPI,
+  updateOrg as updateOrgAPI,
 } from 'src/organizations/apis'
 
 // Types
@@ -17,6 +18,7 @@ export enum ActionTypes {
   SetOrgs = 'SET_ORGS',
   AddOrg = 'ADD_ORG',
   RemoveOrg = 'REMOVE_ORG',
+  EditOrg = 'EDIT_ORG',
 }
 
 export interface SetOrganizations {
@@ -26,7 +28,7 @@ export interface SetOrganizations {
   }
 }
 
-export type Actions = SetOrganizations | AddOrg | RemoveOrg
+export type Actions = SetOrganizations | AddOrg | RemoveOrg | EditOrg
 
 export const setOrgs = (organizations: Organization[]): SetOrganizations => {
   return {
@@ -57,6 +59,18 @@ export interface RemoveOrg {
 export const removeOrg = (link: string): RemoveOrg => ({
   type: ActionTypes.RemoveOrg,
   payload: {link},
+})
+
+export interface EditOrg {
+  type: ActionTypes.EditOrg
+  payload: {
+    org: Organization
+  }
+}
+
+export const editOrg = (org: Organization): EditOrg => ({
+  type: ActionTypes.EditOrg,
+  payload: {org},
 })
 
 // Async Actions
@@ -93,6 +107,17 @@ export const deleteOrg = (link: string) => async (
   try {
     await deleteOrgAPI(link)
     dispatch(removeOrg(link))
+  } catch (e) {
+    console.error(e)
+  }
+}
+
+export const updateOrg = (org: Organization) => async (
+  dispatch: Dispatch<EditOrg>
+) => {
+  try {
+    const updatedOrg = await updateOrgAPI(org)
+    dispatch(editOrg(updatedOrg))
   } catch (e) {
     console.error(e)
   }

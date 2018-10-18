@@ -11,6 +11,17 @@ export default (state = defaultState, action: Actions): Organization[] => {
       return [...state, {...action.payload.org}]
     case ActionTypes.RemoveOrg:
       return state.filter(org => org.links.self !== action.payload.link)
+    case ActionTypes.EditOrg:
+      const newState = state.map(o => {
+        const {org} = action.payload
+        if (o.links.self === org.links.self) {
+          return {...o, ...org}
+        }
+
+        return o
+      })
+
+      return newState
     default:
       return state
   }
