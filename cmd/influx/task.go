@@ -119,7 +119,7 @@ func taskCreateF(cmd *cobra.Command, args []string) {
 	w.Write(map[string]interface{}{
 		"ID":           t.ID.String(),
 		"Name":         t.Name,
-		"Organization": t.Organization.String,
+		"Organization": t.Organization.String(),
 		"Status":       t.Status,
 		"Every":        t.Every,
 		"Cron":         t.Cron,
@@ -213,7 +213,7 @@ func taskFindF(cmd *cobra.Command, args []string) {
 		w.Write(map[string]interface{}{
 			"ID":           t.ID.String(),
 			"Name":         t.Name,
-			"Organization": t.Organization.String,
+			"Organization": t.Organization.String(),
 			"Status":       t.Status,
 			"Every":        t.Every,
 			"Cron":         t.Cron,
@@ -291,7 +291,7 @@ func taskUpdateF(cmd *cobra.Command, args []string) {
 	w.Write(map[string]interface{}{
 		"ID":           t.ID.String(),
 		"Name":         t.Name,
-		"Organization": t.Organization.String,
+		"Organization": t.Organization.String(),
 		"Status":       t.Status,
 		"Every":        t.Every,
 		"Cron":         t.Cron,
@@ -356,7 +356,7 @@ func taskDeleteF(cmd *cobra.Command, args []string) {
 	w.Write(map[string]interface{}{
 		"ID":           t.ID.String(),
 		"Name":         t.Name,
-		"Organization": t.Organization.String,
+		"Organization": t.Organization.String(),
 		"Status":       t.Status,
 		"Every":        t.Every,
 		"Cron":         t.Cron,
@@ -462,7 +462,7 @@ func init() {
 	taskRunFindCmd.Flags().StringVarP(&taskRunFindFlags.runID, "run-id", "", "", "run id")
 	taskRunFindCmd.Flags().StringVarP(&taskRunFindFlags.orgID, "org-id", "", "", "organization id")
 	taskRunFindCmd.Flags().StringVarP(&taskRunFindFlags.afterTime, "after", "", "", "after time for filtering")
-	taskRunFindCmd.Flags().StringVarP(&taskRunFindFlags.beforeTime, "task-id", "", "", "before time for fitlering")
+	taskRunFindCmd.Flags().StringVarP(&taskRunFindFlags.beforeTime, "before", "", "", "before time for filtering")
 	taskRunFindCmd.Flags().IntVarP(&taskRunFindFlags.limit, "limit", "", 0, "limit the results")
 
 	taskRunFindCmd.MarkFlagRequired("task-id")
@@ -551,7 +551,7 @@ var runRetryFlags RunRetryFlags
 func init() {
 	cmd := &cobra.Command{
 		Use:   "retry",
-		Short: "retury a run",
+		Short: "retry a run",
 		Run:   runRetryF,
 	}
 
