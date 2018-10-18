@@ -84,9 +84,6 @@ type RunCreation struct {
 }
 
 type CreateTaskRequest struct {
-	// Owners.
-	Org, User platform.ID
-
 	// Script content of the task.
 	Script string
 
