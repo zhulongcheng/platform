@@ -119,7 +119,7 @@ func testTaskCRUD(t *testing.T, sys *System) {
 	}
 	found["FindTaskByID"] = f
 
-	ids := make([]*platform.ID, 1)
+	ids := make([]*platform.ID, 0)
 	ids = append(ids, &task.ID)
 	ids = append(ids, &task2.ID)
 
