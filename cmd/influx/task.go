@@ -375,8 +375,8 @@ var taskLogFindFlags TaskLogFindFlags
 
 func init() {
 	taskLogFindCmd := &cobra.Command{
-		Use:   "",
-		Short: "Delete task",
+		Use:   "find",
+		Short: "find logs for task",
 		Run:   taskLogFindF,
 	}
 
@@ -385,7 +385,7 @@ func init() {
 	taskLogFindCmd.Flags().StringVarP(&taskLogFindFlags.orgID, "org-id", "", "", "organization id")
 	taskLogFindCmd.MarkFlagRequired("task-id")
 
-	taskCmd.AddCommand(taskLogFindCmd)
+	logCmd.AddCommand(taskLogFindCmd)
 }
 
 func taskLogFindF(cmd *cobra.Command, args []string) {
@@ -436,5 +436,169 @@ func taskLogFindF(cmd *cobra.Command, args []string) {
 			"Log": log,
 		})
 	}
+	w.Flush()
+}
+
+// taskLogFindFlags define the Delete command
+type TaskRunFindFlags struct {
+	runID      string
+	taskID     string
+	orgID      string
+	afterTime  string
+	beforeTime string
+	limit      int
+}
+
+var taskRunFindFlags TaskRunFindFlags
+
+func init() {
+	taskRunFindCmd := &cobra.Command{
+		Use:   "find",
+		Short: "find runs for a task",
+		Run:   taskRunFindF,
+	}
+
+	taskRunFindCmd.Flags().StringVarP(&taskRunFindFlags.taskID, "task-id", "", "", "task id (required)")
+	taskRunFindCmd.Flags().StringVarP(&taskRunFindFlags.runID, "run-id", "", "", "run id")
+	taskRunFindCmd.Flags().StringVarP(&taskRunFindFlags.orgID, "org-id", "", "", "organization id")
+	taskRunFindCmd.Flags().StringVarP(&taskRunFindFlags.afterTime, "after", "", "", "after time for filtering")
+	taskRunFindCmd.Flags().StringVarP(&taskRunFindFlags.beforeTime, "task-id", "", "", "before time for fitlering")
+	taskRunFindCmd.Flags().IntVarP(&taskRunFindFlags.limit, "limit", "", 0, "limit the results")
+
+	taskRunFindCmd.MarkFlagRequired("task-id")
+	taskRunFindCmd.MarkFlagRequired("org-id")
+
+	runCmd.AddCommand(taskRunFindCmd)
+}
+
+func taskRunFindF(cmd *cobra.Command, args []string) {
+	s := &http.TaskService{
+		Addr:  flags.host,
+		Token: flags.token,
+	}
+
+	filter := platform.RunFilter{
+		Limit:      taskRunFindFlags.limit,
+		AfterTime:  taskRunFindFlags.afterTime,
+		BeforeTime: taskRunFindFlags.beforeTime,
+	}
+	taskID, err := platform.IDFromString(taskRunFindFlags.taskID)
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+	filter.Task = taskID
+
+	orgID, err := platform.IDFromString(taskRunFindFlags.orgID)
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+	filter.Org = orgID
+
+	var runs []*platform.Run
+	if taskRunFindFlags.runID != "" {
+		id, err := platform.IDFromString(taskRunFindFlags.runID)
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+		run, err := s.FindRunByID(context.Background(), *filter.Org, *id)
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+		runs = append(runs, run)
+	} else {
+		runs, _, err = s.FindRuns(context.Background(), filter)
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+	}
+
+	w := internal.NewTabWriter(os.Stdout)
+	w.WriteHeaders(
+		"ID",
+		"TaskID",
+		"Status",
+		"ScheduledFor",
+		"StartedAt",
+		"FinishedAt",
+		"RequestedAt",
+	)
+	for _, r := range runs {
+		w.Write(map[string]interface{}{
+			"ID":           r.ID,
+			"TaskID":       r.TaskID,
+			"Status":       r.Status,
+			"ScheduledFor": r.ScheduledFor,
+			"StartedAt":    r.StartedAt,
+			"FinishedAt":   r.FinishedAt,
+			"RequestedAt":  r.RequestedAt,
+		})
+	}
+	w.Flush()
+}
+
+// RunRetryFlags define the Delete command
+type RunRetryFlags struct {
+	id string
+}
+
+var runRetryFlags RunRetryFlags
+
+func init() {
+	cmd := &cobra.Command{
+		Use:   "retry",
+		Short: "retury a run",
+		Run:   runRetryF,
+	}
+
+	cmd.Flags().StringVarP(&runRetryFlags.id, "id", "i", "", "task id (required)")
+	cmd.MarkFlagRequired("id")
+
+	taskCmd.AddCommand(cmd)
+}
+
+func runRetryF(cmd *cobra.Command, args []string) {
+	s := &http.TaskService{
+		Addr:  flags.host,
+		Token: flags.token,
+	}
+
+	var id platform.ID
+	err := id.DecodeFromString(runRetryFlags.id)
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+
+	ctx := context.TODO()
+	r, err := s.RetryRun(ctx, id)
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+
+	w := internal.NewTabWriter(os.Stdout)
+	w.WriteHeaders(
+		"ID",
+		"TaskID",
+		"Status",
+		"ScheduledFor",
+		"StartedAt",
+		"FinishedAt",
+		"RequestedAt",
+	)
+	w.Write(map[string]interface{}{
+		"ID":           r.ID,
+		"TaskID":       r.TaskID,
+		"Status":       r.Status,
+		"ScheduledFor": r.ScheduledFor,
+		"StartedAt":    r.StartedAt,
+		"FinishedAt":   r.FinishedAt,
+		"RequestedAt":  r.RequestedAt,
+	})
 	w.Flush()
 }
