@@ -30,10 +30,11 @@ export const transformFluxLogsResponse = (
   const rows = getDeep<TimeSeriesValue[][]>(tables, '0.data', [])
   const columnNamesRow = getDeep<string[]>(tables, '0.data.0', [])
 
-  for (let i = 0; i < columnNamesRow.length; i++) {
-    if (columnNames.includes(columnNamesRow[i])) {
-      indicesToKeep.push(i)
-      columns.push(columnNamesRow[i])
+  for (let i = 0; i < columnNames.length; i++) {
+    const columnIndex = columnNamesRow.indexOf(columnNames[i])) 
+    if (columnIndex !== -1 ){
+      indicesToKeep.push(columnIndex)
+      columns.push(columnNames[i])
     }
   }
 
