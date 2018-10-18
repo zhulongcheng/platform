@@ -13,6 +13,7 @@ import (
 	"github.com/influxdata/platform"
 	pcontext "github.com/influxdata/platform/context"
 	kerrors "github.com/influxdata/platform/kit/errors"
+	"github.com/influxdata/platform/task/backend"
 	"github.com/julienschmidt/httprouter"
 	"go.uber.org/zap"
 )
@@ -619,6 +620,11 @@ func (t TaskService) FindTaskByID(ctx context.Context, id platform.ID) (*platfor
 	}
 
 	if err := CheckError(resp); err != nil {
+		if err.Error() == backend.ErrTaskNotFound.Error() {
+			// ErrTaskNotFound is expected as part of the FindTaskByID contract,
+			// so return that actual error instead of a different error that looks like it.
+			return nil, backend.ErrTaskNotFound
+		}
 		return nil, err
 	}
 
