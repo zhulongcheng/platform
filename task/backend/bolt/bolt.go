@@ -226,19 +226,7 @@ func (s *Store) ListTasks(ctx context.Context, params backend.TaskSearchParams) 
 	if err := s.db.View(func(tx *bolt.Tx) error {
 		var c *bolt.Cursor
 		b := tx.Bucket(s.bucket)
-		// if params.User.Valid() {
-		// 	encodedUser, err := params.User.Encode()
-		// 	if err != nil {
-		// 		return err
-		// 	}
-		// 	userB := b.Bucket(usersPath).Bucket(encodedUser)
-		// 	if userB == nil {
-		// 		return ErrNotFound
-		// 	}
-		// 	c = userB.Cursor()
-		// } else {
-		// 	c = b.Bucket(tasksPath).Cursor()
-		// }
+		c = b.Bucket(tasksPath).Cursor()
 		if params.After.Valid() {
 			encodedAfter, err := params.After.Encode()
 			if err != nil {
