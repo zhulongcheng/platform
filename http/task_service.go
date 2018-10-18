@@ -1,10 +1,13 @@
 package http
 
 import (
-	"net/url"
+	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
+	"net/url"
+	"path"
 	"strconv"
 
 	"github.com/influxdata/platform"
@@ -576,14 +579,14 @@ func decodeRetryRunRequest(ctx context.Context, r *http.Request) (*retryRunReque
 	}, nil
 }
 
-type TaskService {
+type TaskService struct {
 	Addr               string
 	Token              string
 	InsecureSkipVerify bool
 }
 
 func (t TaskService) FindTaskByID(ctx context.Context, id platform.ID) (*platform.Task, error) {
-	u, err := newURL(s.Addr, taskIDPath(id))
+	u, err := newURL(t.Addr, taskIDPath(id))
 	if err != nil {
 		return nil, err
 	}
@@ -592,9 +595,9 @@ func (t TaskService) FindTaskByID(ctx context.Context, id platform.ID) (*platfor
 	if err != nil {
 		return nil, err
 	}
-	SetToken(s.Token, req)
+	SetToken(t.Token, req)
 
-	hc := newClient(u.Scheme, s.InsecureSkipVerify)
+	hc := newClient(u.Scheme, t.InsecureSkipVerify)
 	resp, err := hc.Do(req)
 	if err != nil {
 		return nil, err
@@ -605,7 +608,7 @@ func (t TaskService) FindTaskByID(ctx context.Context, id platform.ID) (*platfor
 	}
 
 	var task *platform.Task
-	if err := json.NewDecoder(resp.Body).Decode(tasks); err != nil {
+	if err := json.NewDecoder(resp.Body).Decode(task); err != nil {
 		return nil, err
 	}
 	defer resp.Body.Close()
@@ -630,15 +633,15 @@ func (t TaskService) FindTasks(ctx context.Context, filter platform.TaskFilter) 
 		val.Add("user", filter.User.String())
 	}
 
-	u.Query = val.Encode()
+	u.RawQuery = val.Encode()
 
 	req, err := http.NewRequest("GET", u.String(), nil)
 	if err != nil {
 		return nil, 0, err
 	}
-	SetToken(s.Token, req)
+	SetToken(t.Token, req)
 
-	hc := newClient(u.Scheme, s.InsecureSkipVerify)
+	hc := newClient(u.Scheme, t.InsecureSkipVerify)
 	resp, err := hc.Do(req)
 	if err != nil {
 		return nil, 0, err
@@ -657,13 +660,13 @@ func (t TaskService) FindTasks(ctx context.Context, filter platform.TaskFilter) 
 	return tasks, len(tasks), nil
 }
 
-func (t TaskService) CreateTask(ctx context.Context, t *Task) error {
+func (t TaskService) CreateTask(ctx context.Context, tsk *platform.Task) error {
 	u, err := newURL(t.Addr, tasksPath)
 	if err != nil {
 		return err
 	}
 
-	taskBytes, err := json.Marshal(t)
+	taskBytes, err := json.Marshal(tsk)
 	if err != nil {
 		return err
 	}
@@ -674,9 +677,9 @@ func (t TaskService) CreateTask(ctx context.Context, t *Task) error {
 	}
 
 	req.Header.Set("Content-Type", "application/json")
-	SetToken(s.Token, req)
+	SetToken(t.Token, req)
 
-	hc := newClient(u.Scheme, s.InsecureSkipVerify)
+	hc := newClient(u.Scheme, t.InsecureSkipVerify)
 
 	resp, err := hc.Do(req)
 	if err != nil {
@@ -693,36 +696,36 @@ func (t TaskService) CreateTask(ctx context.Context, t *Task) error {
 func (t TaskService) UpdateTask(ctx context.Context, id platform.ID, upd platform.TaskUpdate) (*platform.Task, error) {
 	u, err := newURL(t.Addr, taskIDPath(id))
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	taskBytes, err := json.Marshal(upd)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	req, err := http.NewRequest("PATCH", u.String(), bytes.NewReader(taskBytes))
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	req.Header.Set("Content-Type", "application/json")
-	SetToken(s.Token, req)
+	SetToken(t.Token, req)
 
-	hc := newClient(u.Scheme, s.InsecureSkipVerify)
+	hc := newClient(u.Scheme, t.InsecureSkipVerify)
 
 	resp, err := hc.Do(req)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	if err := CheckError(resp); err != nil {
-		return err
+		return nil, err
 	}
 
 	var task *platform.Task
 	if err := json.NewDecoder(resp.Body).Decode(&task); err != nil {
-		return nil, 0, err
+		return nil, err
 	}
 	defer resp.Body.Close()
 
