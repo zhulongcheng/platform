@@ -449,6 +449,12 @@ func decodeGetRunsRequest(ctx context.Context, r *http.Request, orgs platform.Or
 		}
 
 		req.filter.Org = &o.ID
+	} else if orgID := qp.Get("orgID"); orgID != "" {
+		oid, err := platform.IDFromString(orgID)
+		if err != nil {
+			return nil, err
+		}
+		req.filter.Org = oid
 	}
 
 	if id := qp.Get("after"); id != "" {
@@ -791,7 +797,49 @@ func (t TaskService) FindLogs(ctx context.Context, filter platform.LogFilter) ([
 }
 
 func (t TaskService) FindRuns(ctx context.Context, filter platform.RunFilter) ([]*platform.Run, int, error) {
-	return nil, -1, errors.New("not yet implemented")
+	if filter.Task == nil {
+		return nil, 0, errors.New("task ID required")
+	}
+
+	u, err := newURL(t.Addr, taskIDRunsPath(*filter.Task))
+	if err != nil {
+		return nil, 0, err
+	}
+
+	val := url.Values{}
+	if filter.Org != nil {
+		val.Set("orgID", filter.Org.String())
+	}
+	if filter.After != nil {
+		val.Set("after", filter.After.String())
+	}
+	u.RawQuery = val.Encode()
+	req, err := http.NewRequest("GET", u.String(), nil)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+	SetToken(t.Token, req)
+
+	hc := newClient(u.Scheme, t.InsecureSkipVerify)
+
+	resp, err := hc.Do(req)
+	if err != nil {
+		return nil, 0, err
+	}
+	defer resp.Body.Close()
+
+	if err := CheckError(resp); err != nil {
+		return nil, 0, err
+	}
+
+	var runs []*platform.Run
+	if err := json.NewDecoder(resp.Body).Decode(&runs); err != nil {
+		return nil, 0, err
+	}
+
+	return runs, len(runs), nil
 }
 
 func (t TaskService) FindRunByID(ctx context.Context, orgID, runID platform.ID) (*platform.Run, error) {
@@ -804,4 +852,8 @@ func (t TaskService) RetryRun(ctx context.Context, id platform.ID) (*platform.Ru
 
 func taskIDPath(id platform.ID) string {
 	return path.Join(tasksPath, id.String())
+}
+
+func taskIDRunsPath(id platform.ID) string {
+	return path.Join(tasksPath, id.String(), "runs")
 }

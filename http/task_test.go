@@ -29,7 +29,15 @@ func httpTaskServiceFactory(t *testing.T) (*servicetest.System, context.CancelFu
 	h.TaskService = backingTS
 	h.AuthorizationService = i
 
-	auth := platform.Authorization{UserID: 1}
+	org := &platform.Organization{Name: t.Name() + "_org"}
+	if err := i.CreateOrganization(ctx, org); err != nil {
+		t.Fatal(err)
+	}
+	user := &platform.User{Name: t.Name() + "_user"}
+	if err := i.CreateUser(ctx, user); err != nil {
+		t.Fatal(err)
+	}
+	auth := platform.Authorization{UserID: user.ID}
 	if err := i.CreateAuthorization(ctx, &auth); err != nil {
 		t.Fatal(err)
 	}
@@ -47,12 +55,17 @@ func httpTaskServiceFactory(t *testing.T) (*servicetest.System, context.CancelFu
 		}
 	}
 
+	cFunc := func() (o, u platform.ID, tok string, err error) {
+		return org.ID, user.ID, auth.Token, nil
+	}
+
 	return &servicetest.System{
 		S:               store,
 		LR:              rrw,
 		LW:              rrw,
 		Ctx:             ctx,
 		TaskServiceFunc: tsFunc,
+		CredsFunc:       cFunc,
 	}, cancel
 }
 
