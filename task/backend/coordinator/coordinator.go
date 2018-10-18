@@ -38,13 +38,8 @@ func New(scheduler backend.Scheduler, st backend.Store, opts ...Option) backend.
 	return c
 }
 
-<<<<<<< HEAD
 func (c *Coordinator) CreateTask(ctx context.Context, req backend.CreateTaskRequest) (platform.ID, error) {
 	id, err := c.Store.CreateTask(ctx, req)
-=======
-func (c *Coordinator) CreateTask(ctx context.Context, script string, scheduleAfter int64) (platform.ID, error) {
-	id, err := c.Store.CreateTask(ctx, script, scheduleAfter)
->>>>>>> remove user/org references from coordinator
 	if err != nil {
 		return id, err
 	}
