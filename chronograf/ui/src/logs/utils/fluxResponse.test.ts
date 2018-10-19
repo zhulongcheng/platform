@@ -2,6 +2,8 @@ import {transformFluxLogsResponse} from 'src/logs/utils'
 import {fluxResponse} from 'src/logs/utils/fixtures/fluxResponse'
 
 describe('Logs.transformFluxLogsResponse', () => {
+  const {tables: fluxResponseTables} = fluxResponse
+
   it('can transform a Flux server response to a TableData shape', () => {
     const columnNamesToExtract = [
       'appname',
@@ -13,7 +15,10 @@ describe('Logs.transformFluxLogsResponse', () => {
       'timestamp',
     ]
 
-    const actual = transformFluxLogsResponse(fluxResponse, columnNamesToExtract)
+    const actual = transformFluxLogsResponse(
+      fluxResponseTables,
+      columnNamesToExtract
+    )
     const expected = {
       columns: [
         'appname',
@@ -86,7 +91,10 @@ describe('Logs.transformFluxLogsResponse', () => {
       'timestamp',
     ]
 
-    const actual = transformFluxLogsResponse(fluxResponse, columnNamesToExtract)
+    const actual = transformFluxLogsResponse(
+      fluxResponseTables,
+      columnNamesToExtract
+    )
     const expected = {
       columns: [
         'facility',

@@ -7,7 +7,7 @@ import {InfluxLanguages} from 'src/types/v2/dashboards'
 import {FluxTable} from 'src/types'
 import {SearchStatus} from 'src/types/logs'
 
-interface QueryResponse {
+export interface QueryResponse {
   tables: FluxTable[]
   status: SearchStatus
 }
