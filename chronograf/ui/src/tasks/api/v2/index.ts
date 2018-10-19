@@ -4,7 +4,7 @@ export const submitNewTask = async (url, owner, org, flux) => {
   const request = {
     flux,
     organizationId: org.id,
-    status: 'active',
+    status: 'enabled',
     owner,
   }
 
