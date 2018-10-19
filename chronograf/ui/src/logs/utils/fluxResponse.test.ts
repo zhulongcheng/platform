@@ -150,4 +150,25 @@ describe('Logs.transformFluxLogsResponse', () => {
 
     expect(actual).toEqual(expected)
   })
+
+  it('can extract in the specified column ordering', () => {
+    const columnNamesToExtract = ['host', 'facility']
+
+    const actual = transformFluxLogsResponse(
+      fluxResponseTables,
+      columnNamesToExtract
+    )
+    const expected = {
+      columns: ['host', 'facility'],
+      values: [
+        ['user.local', 'NTP subsystem'],
+        ['user.local', 'cron'],
+        ['user.local', 'cron'],
+        ['user.local', 'lpr'],
+        ['user.local', 'lpr'],
+      ],
+    }
+
+    expect(actual).toEqual(expected)
+  })
 })
