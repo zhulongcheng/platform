@@ -1,11 +1,11 @@
 import moment from 'moment'
-import _ from 'lodash'
 
-import {GetTimeSeriesResult} from 'src/flux/apis/index'
 import {DEFAULT_TIME_FORMAT} from 'src/logs/constants'
-import {TimeSeriesValue} from 'src/types/series'
 
 import {getDeep} from 'src/utils/wrappers'
+
+import { FluxTable } from 'src/types';
+import {TimeSeriesValue} from 'src/types/series'
 
 export interface TableData {
   columns: string[]
@@ -16,11 +16,12 @@ export const formatTime = (time: number): string => {
   return moment(time).format(DEFAULT_TIME_FORMAT)
 }
 
+
+
 export const transformFluxLogsResponse = (
-  response: GetTimeSeriesResult,
+  tables: FluxTable[],
   columnNames: string[]
 ): TableData => {
-  const {tables} = response
 
   const values: TimeSeriesValue[][] = []
   const columns: string[] = []
