@@ -500,13 +500,12 @@ class LogsPage extends Component<Props, State> {
     this.setState({isOverlayVisible: !this.state.isOverlayVisible})
   }
 
+  /**
+   * Controls scroll position for new searches
+   */
   private get tableScrollToRow() {
     if (this.isLiveUpdating && !this.state.hasScrolled) {
       return 0
-    }
-
-    if (this.state.hasScrolled) {
-      return
     }
 
     // Todo: handle scroll top when not live
