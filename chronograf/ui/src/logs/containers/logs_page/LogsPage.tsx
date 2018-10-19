@@ -92,6 +92,7 @@ type Props = StateProps & DispatchProps & WithRouterProps
 interface State {
   liveUpdating: boolean
   isOverlayVisible: boolean
+  hasScrolled: boolean
 }
 
 const RELATIVE_TIME = 0
@@ -104,6 +105,7 @@ class LogsPage extends Component<Props, State> {
     this.state = {
       liveUpdating: false,
       isOverlayVisible: false,
+      hasScrolled: false,
     }
   }
 
@@ -139,6 +141,7 @@ class LogsPage extends Component<Props, State> {
       currentTailUpperBound,
       nextTailLowerBound,
     } = this.props
+
     return (
       <>
         <div className="page">
@@ -166,11 +169,11 @@ class LogsPage extends Component<Props, State> {
               isScrolledToTop={false}
               isTruncated={this.isTruncated}
               onTagSelection={this.handleTagSelection}
-              scrollToRow={0}
+              scrollToRow={this.tableScrollToRow}
               tableColumns={this.tableColumns}
               severityFormat={this.severityFormat}
               severityLevelColors={this.severityLevelColors}
-              hasScrolled={false}
+              hasScrolled={this.state.hasScrolled}
               tableInfiniteData={this.props.tableInfiniteData}
               onChooseCustomTime={this.handleChooseCustomTime}
               notify={notify}
@@ -302,6 +305,7 @@ class LogsPage extends Component<Props, State> {
 
     if (liveUpdating === true) {
       this.setState({liveUpdating: false})
+      this.clearTailInterval()
     } else {
       this.handleChooseRelativeTime(NOW)
     }
@@ -451,12 +455,22 @@ class LogsPage extends Component<Props, State> {
   /**
    * Handle scrolling to the top and resuming logs tail
    */
-  private handleScrollToTop = () => {}
+  private handleScrollToTop = () => {
+    if (!this.isLiveUpdating && this.shouldLiveUpdate) {
+      this.startLogsTailFetchingInterval()
+    }
+  }
 
   /**
    * Handle pausing logs tail on vertical scroll
    */
-  private handleVerticalScroll = () => {}
+  private handleVerticalScroll = () => {
+    if (this.isLiveUpdating) {
+      this.clearTailInterval()
+    }
+
+    this.setState({liveUpdating: false, hasScrolled: true})
+  }
 
   /**
    * Handle choosing a custom time
@@ -473,15 +487,37 @@ class LogsPage extends Component<Props, State> {
    */
   private handleChooseRelativeTime = async (time: number) => {
     if (time === NOW) {
-      this.setState({liveUpdating: true})
+      this.startLogsTailFetchingInterval()
+      this.setState({liveUpdating: true, hasScrolled: false})
     } else {
-      this.setState({liveUpdating: false})
+      this.updateTableData(SearchStatus.UpdatingTimeBounds)
+      this.setState({liveUpdating: false, hasScrolled: false})
     }
     // TODO: handle updating time in LogState
   }
 
   private handleToggleOverlay = (): void => {
     this.setState({isOverlayVisible: !this.state.isOverlayVisible})
+  }
+
+  private get tableScrollToRow() {
+    if (this.isLiveUpdating && !this.state.hasScrolled) {
+      return 0
+    }
+
+    if (this.state.hasScrolled) {
+      return
+    }
+
+    // Todo: handle scroll top when not live
+  }
+
+  /**
+   * Checks if logs time is set to now
+   */
+  private get shouldLiveUpdate(): boolean {
+    // Todo: check table time is set to now
+    return true
   }
 }
 
