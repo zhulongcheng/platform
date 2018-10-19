@@ -261,11 +261,11 @@ func platformF(cmd *cobra.Command, args []string) {
 			logger.Fatal("failed opening task bolt", zap.Error(err))
 		}
 
-		executor := taskexecutor.NewQueryServiceExecutor(logger, queryService, boltStore)
+		executor := taskexecutor.NewQueryServiceExecutor(logger.With(zap.String("svc", "task-executor"), queryService, boltStore)
 
 		// TODO(lh): Replace NopLogWriter with real log writer
-		scheduler := taskbackend.NewScheduler(boltStore, executor, taskbackend.NopLogWriter{}, time.Now().UTC().Unix())
-		scheduler.Start(context.Background())
+		scheduler := taskbackend.NewScheduler(boltStore, executor, taskbackend.NopLogWriter{}, time.Now().UTC().Unix(), taskbackend.WithTicker(ctx, time.Second), taskbackend.WithLogger(logger))
+		scheduler.Start(ctx)
 
 		// TODO(lh): Replace NopLogReader with real log reader
 		taskSvc = task.PlatformAdapter(coordinator.New(scheduler, boltStore), taskbackend.NopLogReader{})
