@@ -95,7 +95,7 @@ class IndexList extends Component<Props> {
     const totalSize = _.reduce(columns, (sum, n) => sum + n.size, 0)
 
     const oneHundred = 100
-    const columnWidthPercent = size / totalSize * oneHundred
+    const columnWidthPercent = (size / totalSize) * oneHundred
 
     return {width: `${columnWidthPercent}%`}
   }

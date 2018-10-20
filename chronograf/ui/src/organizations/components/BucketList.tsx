@@ -9,10 +9,9 @@ import {
 import IndexList from 'src/shared/components/index_views/IndexList'
 import {Alignment} from 'src/clockface'
 
-// Types
-import {Bucket} from 'src/types/v2'
-
-interface PrettyBucket extends Bucket {
+export interface PrettyBucket {
+  name: string
+  rp: string
   retentionPeriod: string
 }
 

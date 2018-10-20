@@ -6,7 +6,7 @@ import _ from 'lodash'
 import ProfilePage from 'src/shared/components/profile_page/ProfilePage'
 import BucketOverlay from 'src/organizations/components/BucketOverlay'
 import FilterList from 'src/organizations/components/Filter'
-import BucketList from 'src/organizations/components/BucketList'
+import BucketList, {PrettyBucket} from 'src/organizations/components/BucketList'
 
 import {
   Input,
@@ -38,10 +38,6 @@ interface State {
   modalState: ModalState
 }
 
-interface PrettyBucket extends Bucket {
-  retentionPeriod: string
-}
-
 enum ModalState {
   Open = 'open',
   Closed = 'closed',
@@ -63,7 +59,7 @@ export default class Buckets extends PureComponent<Props, State> {
   }
 
   public render() {
-    const {org, buckets} = this.props
+    const {org} = this.props
     const {searchTerm, modalState} = this.state
 
     return (
