@@ -189,9 +189,6 @@ func NewEngineOptions() EngineOptions {
 	}
 }
 
-// NewInmemIndex returns a new "inmem" index type.
-var NewInmemIndex func(name string, sfile *SeriesFile) (interface{}, error)
-
 type CompactionPlannerCreator func(cfg Config) interface{}
 
 // FileStoreObserver is passed notifications before the file store adds or deletes files. In this way, it can

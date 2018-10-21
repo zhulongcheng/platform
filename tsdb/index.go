@@ -1185,38 +1185,12 @@ type IndexSet struct {
 	SeriesFile *SeriesFile // The Series File associated with the db for this set.
 }
 
-// HasInmemIndex returns true if any in-memory index is in use.
-func (is IndexSet) HasInmemIndex() bool {
-	// TODO(edd): Remove
-	return false
-}
-
 // Database returns the database name of the first index.
 func (is IndexSet) Database() string {
 	if len(is.Indexes) == 0 {
 		return ""
 	}
 	return is.Indexes[0].Database()
-}
-
-// DedupeInmemIndexes returns an index set which removes duplicate indexes.
-// Useful because inmem indexes are shared by shards per database.
-func (is IndexSet) DedupeInmemIndexes() IndexSet {
-	other := IndexSet{
-		Indexes:    make([]Index, 0, len(is.Indexes)),
-		SeriesFile: is.SeriesFile,
-	}
-
-	uniqueIndexes := make(map[uintptr]Index)
-	for _, idx := range is.Indexes {
-		uniqueIndexes[idx.UniqueReferenceID()] = idx
-	}
-
-	for _, idx := range uniqueIndexes {
-		other.Indexes = append(other.Indexes, idx)
-	}
-
-	return other
 }
 
 // MeasurementNamesByExpr returns a slice of measurement names matching the
