@@ -140,6 +140,7 @@ func NewEngine(id uint64, i Index, path string, sfile *SeriesFile, options Engin
 	return engine, nil
 }
 
+// TODO @zhulongcheng ,  merge into storage.Config
 // EngineOptions represents the options used to initialize the engine.
 type EngineOptions struct {
 	EngineVersion string
