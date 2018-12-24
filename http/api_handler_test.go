@@ -1,11 +1,13 @@
 package http
 
 import (
-	"go.uber.org/zap"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/influxdata/platform/mock"
+	"go.uber.org/zap"
 )
 
 func TestAPIHandler_NotFound(t *testing.T) {
@@ -69,5 +71,38 @@ func TestAPIHandler_NotFound(t *testing.T) {
 			}
 
 		})
+	}
+}
+
+// NewMockAPIBackend returns a APIBackend with mock services.
+func NewMockAPIBackend() *APIBackend {
+	return &APIBackend{
+		DeveloperMode: true,
+		Logger:        zap.NewNop(),
+
+		AuthorizationService:       mock.NewAuthorizationService(),
+		BucketService:              mock.NewBucketService(),
+		SessionService:             mock.NewSessionService(),
+		UserService:                mock.NewUserService(),
+		OrganizationService:        &mock.OrganizationService{},
+		UserResourceMappingService: mock.NewUserResourceMappingService(),
+		LabelService:               mock.NewLabelService(),
+		DashboardService:           &mock.DashboardService{},
+		ViewService:                &mock.ViewService{},
+		MacroService:               &mock.MacroService{},
+		BasicAuthService:           mock.NewBasicAuthService("", ""),
+		TaskService:                &mock.TaskService{},
+
+		// TODO impl mock service
+		//SourceService:                   mock.NewSourceService(),
+		//OnboardingService:               mock.NewOnboardingService(),
+		//ProxyQueryService:               mock.NewProxyQueryService(),
+		//PointsWriter:                    mock.NewPointsWriter(),
+		//DashboardOperationLogService:    mock.NewDashboardOperationLogService(),
+		//BucketOperationLogService:       mock.NewBucketOperationLogService{},
+		//UserOperationLogService:         mock.NewUserOperationLogService(),
+		//OrganizationOperationLogService: mock.NewOrganizationOperationLogService(),
+		//TelegrafService:                 mock.NewTelegrafService(),
+		//ScraperTargetStoreService:       mock.NewScraperTargetStoreService(),
 	}
 }

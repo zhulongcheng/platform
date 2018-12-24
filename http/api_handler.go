@@ -73,9 +73,7 @@ func NewAPIHandler(b *APIBackend) *APIHandler {
 	h.SessionHandler.SessionService = b.SessionService
 	h.SessionHandler.Logger = b.Logger.With(zap.String("handler", "basicAuth"))
 
-	h.BucketHandler = NewBucketHandler(b.UserResourceMappingService, b.LabelService, b.UserService)
-	h.BucketHandler.BucketService = b.BucketService
-	h.BucketHandler.BucketOperationLogService = b.BucketOperationLogService
+	h.BucketHandler = NewBucketHandler(b)
 
 	h.OrgHandler = NewOrgHandler(b.UserResourceMappingService, b.LabelService, b.UserService)
 	h.OrgHandler.OrganizationService = b.OrganizationService

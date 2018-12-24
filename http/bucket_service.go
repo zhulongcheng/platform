@@ -22,11 +22,8 @@ type BucketHandler struct {
 
 	Logger *zap.Logger
 
-	BucketService              platform.BucketService
-	BucketOperationLogService  platform.BucketOperationLogService
-	UserResourceMappingService platform.UserResourceMappingService
-	LabelService               platform.LabelService
-	UserService                platform.UserService
+	BucketService             platform.BucketService
+	BucketOperationLogService platform.BucketOperationLogService
 }
 
 const (
@@ -42,13 +39,13 @@ const (
 )
 
 // NewBucketHandler returns a new instance of BucketHandler.
-func NewBucketHandler(mappingService platform.UserResourceMappingService, labelService platform.LabelService, userService platform.UserService) *BucketHandler {
+func NewBucketHandler(b *APIBackend) *BucketHandler {
 	h := &BucketHandler{
-		Router:                     NewRouter(),
-		Logger:                     zap.NewNop(),
-		UserResourceMappingService: mappingService,
-		LabelService:               labelService,
-		UserService:                userService,
+		Router: NewRouter(),
+		Logger: b.Logger.With(zap.String("handler", "bucket")),
+
+		BucketService:             b.BucketService,
+		BucketOperationLogService: b.BucketOperationLogService,
 	}
 
 	h.HandlerFunc("POST", bucketsPath, h.handlePostBucket)
@@ -58,18 +55,18 @@ func NewBucketHandler(mappingService platform.UserResourceMappingService, labelS
 	h.HandlerFunc("PATCH", bucketsIDPath, h.handlePatchBucket)
 	h.HandlerFunc("DELETE", bucketsIDPath, h.handleDeleteBucket)
 
-	h.HandlerFunc("POST", bucketsIDMembersPath, newPostMemberHandler(h.UserResourceMappingService, h.UserService, platform.BucketResourceType, platform.Member))
-	h.HandlerFunc("GET", bucketsIDMembersPath, newGetMembersHandler(h.UserResourceMappingService, h.UserService, platform.BucketResourceType, platform.Member))
-	h.HandlerFunc("DELETE", bucketsIDMembersIDPath, newDeleteMemberHandler(h.UserResourceMappingService, platform.Member))
+	h.HandlerFunc("POST", bucketsIDMembersPath, newPostMemberHandler(b.UserResourceMappingService, b.UserService, platform.BucketResourceType, platform.Member))
+	h.HandlerFunc("GET", bucketsIDMembersPath, newGetMembersHandler(b.UserResourceMappingService, b.UserService, platform.BucketResourceType, platform.Member))
+	h.HandlerFunc("DELETE", bucketsIDMembersIDPath, newDeleteMemberHandler(b.UserResourceMappingService, platform.Member))
 
-	h.HandlerFunc("POST", bucketsIDOwnersPath, newPostMemberHandler(h.UserResourceMappingService, h.UserService, platform.BucketResourceType, platform.Owner))
-	h.HandlerFunc("GET", bucketsIDOwnersPath, newGetMembersHandler(h.UserResourceMappingService, h.UserService, platform.BucketResourceType, platform.Owner))
-	h.HandlerFunc("DELETE", bucketsIDOwnersIDPath, newDeleteMemberHandler(h.UserResourceMappingService, platform.Owner))
+	h.HandlerFunc("POST", bucketsIDOwnersPath, newPostMemberHandler(b.UserResourceMappingService, b.UserService, platform.BucketResourceType, platform.Owner))
+	h.HandlerFunc("GET", bucketsIDOwnersPath, newGetMembersHandler(b.UserResourceMappingService, b.UserService, platform.BucketResourceType, platform.Owner))
+	h.HandlerFunc("DELETE", bucketsIDOwnersIDPath, newDeleteMemberHandler(b.UserResourceMappingService, platform.Owner))
 
-	h.HandlerFunc("GET", bucketsIDLabelsPath, newGetLabelsHandler(h.LabelService))
-	h.HandlerFunc("POST", bucketsIDLabelsPath, newPostLabelHandler(h.LabelService))
-	h.HandlerFunc("DELETE", bucketsIDLabelsNamePath, newDeleteLabelHandler(h.LabelService))
-	h.HandlerFunc("PATCH", bucketsIDLabelsNamePath, newPatchLabelHandler(h.LabelService))
+	h.HandlerFunc("GET", bucketsIDLabelsPath, newGetLabelsHandler(b.LabelService))
+	h.HandlerFunc("POST", bucketsIDLabelsPath, newPostLabelHandler(b.LabelService))
+	h.HandlerFunc("DELETE", bucketsIDLabelsNamePath, newDeleteLabelHandler(b.LabelService))
+	h.HandlerFunc("PATCH", bucketsIDLabelsNamePath, newPatchLabelHandler(b.LabelService))
 
 	return h
 }

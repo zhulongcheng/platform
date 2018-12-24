@@ -131,11 +131,9 @@ func TestService_handleGetBuckets(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mappingService := mock.NewUserResourceMappingService()
-			labelService := mock.NewLabelService()
-			userService := mock.NewUserService()
-			h := NewBucketHandler(mappingService, labelService, userService)
-			h.BucketService = tt.fields.BucketService
+			apiBackend := NewMockAPIBackend()
+			apiBackend.BucketService = tt.fields.BucketService
+			h := NewBucketHandler(apiBackend)
 
 			r := httptest.NewRequest("GET", "http://any.url", nil)
 
@@ -249,11 +247,9 @@ func TestService_handleGetBucket(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mappingService := mock.NewUserResourceMappingService()
-			labelService := mock.NewLabelService()
-			userService := mock.NewUserService()
-			h := NewBucketHandler(mappingService, labelService, userService)
-			h.BucketService = tt.fields.BucketService
+			apiBackend := NewMockAPIBackend()
+			apiBackend.BucketService = tt.fields.BucketService
+			h := NewBucketHandler(apiBackend)
 
 			r := httptest.NewRequest("GET", "http://any.url", nil)
 
@@ -346,11 +342,9 @@ func TestService_handlePostBucket(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mappingService := mock.NewUserResourceMappingService()
-			labelService := mock.NewLabelService()
-			userService := mock.NewUserService()
-			h := NewBucketHandler(mappingService, labelService, userService)
-			h.BucketService = tt.fields.BucketService
+			apiBackend := NewMockAPIBackend()
+			apiBackend.BucketService = tt.fields.BucketService
+			h := NewBucketHandler(apiBackend)
 
 			b, err := json.Marshal(newBucket(tt.args.bucket))
 			if err != nil {
@@ -442,11 +436,9 @@ func TestService_handleDeleteBucket(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mappingService := mock.NewUserResourceMappingService()
-			labelService := mock.NewLabelService()
-			userService := mock.NewUserService()
-			h := NewBucketHandler(mappingService, labelService, userService)
-			h.BucketService = tt.fields.BucketService
+			apiBackend := NewMockAPIBackend()
+			apiBackend.BucketService = tt.fields.BucketService
+			h := NewBucketHandler(apiBackend)
 
 			r := httptest.NewRequest("GET", "http://any.url", nil)
 
@@ -718,11 +710,9 @@ func TestService_handlePatchBucket(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mappingService := mock.NewUserResourceMappingService()
-			labelService := mock.NewLabelService()
-			userService := mock.NewUserService()
-			h := NewBucketHandler(mappingService, labelService, userService)
-			h.BucketService = tt.fields.BucketService
+			apiBackend := NewMockAPIBackend()
+			apiBackend.BucketService = tt.fields.BucketService
+			h := NewBucketHandler(apiBackend)
 
 			upd := platform.BucketUpdate{}
 			if tt.args.name != "" {
@@ -829,7 +819,9 @@ func TestService_handlePostBucketMember(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			h := NewBucketHandler(mock.NewUserResourceMappingService(), mock.NewLabelService(), tt.fields.UserService)
+			apiBackend := NewMockAPIBackend()
+			apiBackend.UserService = tt.fields.UserService
+			h := NewBucketHandler(apiBackend)
 
 			b, err := json.Marshal(tt.args.user)
 			if err != nil {
@@ -917,7 +909,9 @@ func TestService_handlePostBucketOwner(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			h := NewBucketHandler(mock.NewUserResourceMappingService(), mock.NewLabelService(), tt.fields.UserService)
+			apiBackend := NewMockAPIBackend()
+			apiBackend.UserService = tt.fields.UserService
+			h := NewBucketHandler(apiBackend)
 
 			b, err := json.Marshal(tt.args.user)
 			if err != nil {
@@ -963,11 +957,9 @@ func initBucketService(f platformtesting.BucketFields, t *testing.T) (platform.B
 		}
 	}
 
-	mappingService := mock.NewUserResourceMappingService()
-	labelService := mock.NewLabelService()
-	userService := mock.NewUserService()
-	handler := NewBucketHandler(mappingService, labelService, userService)
-	handler.BucketService = svc
+	apiBackend := NewMockAPIBackend()
+	apiBackend.BucketService = svc
+	handler := NewBucketHandler(apiBackend)
 	server := httptest.NewServer(handler)
 	client := BucketService{
 		Addr:     server.URL,
