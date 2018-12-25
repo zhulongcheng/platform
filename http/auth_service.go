@@ -26,11 +26,13 @@ type AuthorizationHandler struct {
 }
 
 // NewAuthorizationHandler returns a new instance of AuthorizationHandler.
-func NewAuthorizationHandler(userService platform.UserService) *AuthorizationHandler {
+func NewAuthorizationHandler(b *APIBackend) *AuthorizationHandler {
 	h := &AuthorizationHandler{
-		Router:      NewRouter(),
-		Logger:      zap.NewNop(),
-		UserService: userService,
+		Router: NewRouter(),
+		Logger: b.Logger.With(zap.String("handler", "authorization")),
+
+		AuthorizationService: b.AuthorizationService,
+		UserService:          b.UserService,
 	}
 
 	h.HandlerFunc("POST", "/api/v2/authorizations", h.handlePostAuthorization)

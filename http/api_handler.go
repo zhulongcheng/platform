@@ -87,9 +87,7 @@ func NewAPIHandler(b *APIBackend) *APIHandler {
 
 	h.MacroHandler = NewMacroHandler(b)
 
-	h.AuthorizationHandler = NewAuthorizationHandler(b.UserService)
-	h.AuthorizationHandler.AuthorizationService = b.AuthorizationService
-	h.AuthorizationHandler.Logger = b.Logger.With(zap.String("handler", "auth"))
+	h.AuthorizationHandler = NewAuthorizationHandler(b)
 
 	h.SourceHandler = NewSourceHandler()
 	h.SourceHandler.SourceService = b.SourceService

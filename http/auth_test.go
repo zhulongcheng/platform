@@ -122,8 +122,9 @@ func TestService_handleGetAuthorizations(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.token, func(t *testing.T) {
-			h := NewAuthorizationHandler(mock.NewUserService())
-			h.AuthorizationService = tt.fields.AuthorizationService
+			apiBackend := NewMockAPIBackend()
+			apiBackend.AuthorizationService = tt.fields.AuthorizationService
+			h := NewAuthorizationHandler(apiBackend)
 
 			r := httptest.NewRequest("GET", "http://any.url", nil)
 
@@ -237,8 +238,9 @@ func TestService_handleGetAuthorization(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.token, func(t *testing.T) {
-			h := NewAuthorizationHandler(mock.NewUserService())
-			h.AuthorizationService = tt.fields.AuthorizationService
+			apiBackend := NewMockAPIBackend()
+			apiBackend.AuthorizationService = tt.fields.AuthorizationService
+			h := NewAuthorizationHandler(apiBackend)
 
 			r := httptest.NewRequest("GET", "http://any.url", nil)
 
@@ -369,8 +371,10 @@ func TestService_handlePostAuthorization(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.token, func(t *testing.T) {
-			h := NewAuthorizationHandler(tt.fields.UserService)
-			h.AuthorizationService = tt.fields.AuthorizationService
+			apiBackend := NewMockAPIBackend()
+			apiBackend.AuthorizationService = tt.fields.AuthorizationService
+			apiBackend.UserService = tt.fields.UserService
+			h := NewAuthorizationHandler(apiBackend)
 
 			b, err := json.Marshal(tt.args.authorization)
 			if err != nil {
@@ -461,8 +465,9 @@ func TestService_handleDeleteAuthorization(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.token, func(t *testing.T) {
-			h := NewAuthorizationHandler(mock.NewUserService())
-			h.AuthorizationService = tt.fields.AuthorizationService
+			apiBackend := NewMockAPIBackend()
+			apiBackend.AuthorizationService = tt.fields.AuthorizationService
+			h := NewAuthorizationHandler(apiBackend)
 
 			r := httptest.NewRequest("GET", "http://any.url", nil)
 
@@ -523,8 +528,9 @@ func initAuthorizationService(f platformtesting.AuthorizationFields, t *testing.
 		}
 	}
 
-	handler := NewAuthorizationHandler(mock.NewUserService())
-	handler.AuthorizationService = svc
+	apiBackend := NewMockAPIBackend()
+	apiBackend.AuthorizationService = svc
+	handler := NewAuthorizationHandler(apiBackend)
 	server := httptest.NewServer(handler)
 	client := AuthorizationService{
 		Addr: server.URL,
