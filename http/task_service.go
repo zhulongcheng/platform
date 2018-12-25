@@ -26,12 +26,9 @@ type TaskHandler struct {
 	*httprouter.Router
 	logger *zap.Logger
 
-	TaskService                platform.TaskService
-	AuthorizationService       platform.AuthorizationService
-	OrganizationService        platform.OrganizationService
-	UserResourceMappingService platform.UserResourceMappingService
-	LabelService               platform.LabelService
-	UserService                platform.UserService
+	TaskService          platform.TaskService
+	AuthorizationService platform.AuthorizationService
+	OrganizationService  platform.OrganizationService
 }
 
 const (
@@ -51,14 +48,14 @@ const (
 )
 
 // NewTaskHandler returns a new instance of TaskHandler.
-func NewTaskHandler(mappingService platform.UserResourceMappingService, labelService platform.LabelService, logger *zap.Logger, userService platform.UserService) *TaskHandler {
+func NewTaskHandler(b *APIBackend) *TaskHandler {
 	h := &TaskHandler{
-		logger: logger,
 		Router: NewRouter(),
+		logger: b.Logger.With(zap.String("handler", "dashboard")),
 
-		UserResourceMappingService: mappingService,
-		LabelService:               labelService,
-		UserService:                userService,
+		TaskService:          b.TaskService,
+		AuthorizationService: b.AuthorizationService,
+		OrganizationService:  b.OrganizationService,
 	}
 
 	h.HandlerFunc("GET", tasksPath, h.handleGetTasks)
@@ -71,13 +68,13 @@ func NewTaskHandler(mappingService platform.UserResourceMappingService, labelSer
 	h.HandlerFunc("GET", tasksIDLogsPath, h.handleGetLogs)
 	h.HandlerFunc("GET", tasksIDRunsIDLogsPath, h.handleGetLogs)
 
-	h.HandlerFunc("POST", tasksIDMembersPath, newPostMemberHandler(h.UserResourceMappingService, h.UserService, platform.TaskResourceType, platform.Member))
-	h.HandlerFunc("GET", tasksIDMembersPath, newGetMembersHandler(h.UserResourceMappingService, h.UserService, platform.TaskResourceType, platform.Member))
-	h.HandlerFunc("DELETE", tasksIDMembersIDPath, newDeleteMemberHandler(h.UserResourceMappingService, platform.Member))
+	h.HandlerFunc("POST", tasksIDMembersPath, newPostMemberHandler(b.UserResourceMappingService, b.UserService, platform.TaskResourceType, platform.Member))
+	h.HandlerFunc("GET", tasksIDMembersPath, newGetMembersHandler(b.UserResourceMappingService, b.UserService, platform.TaskResourceType, platform.Member))
+	h.HandlerFunc("DELETE", tasksIDMembersIDPath, newDeleteMemberHandler(b.UserResourceMappingService, platform.Member))
 
-	h.HandlerFunc("POST", tasksIDOwnersPath, newPostMemberHandler(h.UserResourceMappingService, h.UserService, platform.TaskResourceType, platform.Owner))
-	h.HandlerFunc("GET", tasksIDOwnersPath, newGetMembersHandler(h.UserResourceMappingService, h.UserService, platform.TaskResourceType, platform.Owner))
-	h.HandlerFunc("DELETE", tasksIDOwnersIDPath, newDeleteMemberHandler(h.UserResourceMappingService, platform.Owner))
+	h.HandlerFunc("POST", tasksIDOwnersPath, newPostMemberHandler(b.UserResourceMappingService, b.UserService, platform.TaskResourceType, platform.Owner))
+	h.HandlerFunc("GET", tasksIDOwnersPath, newGetMembersHandler(b.UserResourceMappingService, b.UserService, platform.TaskResourceType, platform.Owner))
+	h.HandlerFunc("DELETE", tasksIDOwnersIDPath, newDeleteMemberHandler(b.UserResourceMappingService, platform.Owner))
 
 	h.HandlerFunc("GET", tasksIDRunsPath, h.handleGetRuns)
 	h.HandlerFunc("POST", tasksIDRunsPath, h.handleForceRun)
@@ -85,10 +82,10 @@ func NewTaskHandler(mappingService platform.UserResourceMappingService, labelSer
 	h.HandlerFunc("POST", tasksIDRunsIDRetryPath, h.handleRetryRun)
 	h.HandlerFunc("DELETE", tasksIDRunsIDPath, h.handleCancelRun)
 
-	h.HandlerFunc("GET", tasksIDLabelsPath, newGetLabelsHandler(h.LabelService))
-	h.HandlerFunc("POST", tasksIDLabelsPath, newPostLabelHandler(h.LabelService))
-	h.HandlerFunc("DELETE", tasksIDLabelsNamePath, newDeleteLabelHandler(h.LabelService))
-	h.HandlerFunc("PATCH", tasksIDLabelsNamePath, newPatchLabelHandler(h.LabelService))
+	h.HandlerFunc("GET", tasksIDLabelsPath, newGetLabelsHandler(b.LabelService))
+	h.HandlerFunc("POST", tasksIDLabelsPath, newPostLabelHandler(b.LabelService))
+	h.HandlerFunc("DELETE", tasksIDLabelsNamePath, newDeleteLabelHandler(b.LabelService))
+	h.HandlerFunc("PATCH", tasksIDLabelsNamePath, newPatchLabelHandler(b.LabelService))
 
 	return h
 }

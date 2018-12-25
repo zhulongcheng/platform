@@ -8,13 +8,11 @@ import (
 	"github.com/influxdata/platform"
 	"github.com/influxdata/platform/http"
 	"github.com/influxdata/platform/inmem"
-	"github.com/influxdata/platform/mock"
 	_ "github.com/influxdata/platform/query/builtin"
 	"github.com/influxdata/platform/task"
 	"github.com/influxdata/platform/task/backend"
 	tmock "github.com/influxdata/platform/task/mock"
 	"github.com/influxdata/platform/task/servicetest"
-	"go.uber.org/zap/zaptest"
 )
 
 func httpTaskServiceFactory(t *testing.T) (*servicetest.System, context.CancelFunc) {
@@ -30,9 +28,11 @@ func httpTaskServiceFactory(t *testing.T) (*servicetest.System, context.CancelFu
 
 	h := http.NewAuthenticationHandler()
 	h.AuthorizationService = i
-	th := http.NewTaskHandler(mock.NewUserResourceMappingService(), mock.NewLabelService(), zaptest.NewLogger(t), mock.NewUserService())
-	th.TaskService = backingTS
-	th.AuthorizationService = i
+
+	apiBackend := http.NewMockAPIBackend()
+	apiBackend.TaskService = backingTS
+	apiBackend.AuthorizationService = i
+	th := http.NewTaskHandler(apiBackend)
 	h.Handler = th
 
 	org := &platform.Organization{Name: t.Name() + "_org"}

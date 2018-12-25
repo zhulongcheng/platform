@@ -7,12 +7,10 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"testing"
 
 	"github.com/influxdata/platform"
 	pcontext "github.com/influxdata/platform/context"
-	"github.com/influxdata/platform/logger"
 	"github.com/influxdata/platform/mock"
 	_ "github.com/influxdata/platform/query/builtin"
 	"github.com/julienschmidt/httprouter"
@@ -112,8 +110,9 @@ func TestTaskHandler_handleGetTasks(t *testing.T) {
 			r := httptest.NewRequest("GET", "http://any.url", nil)
 			w := httptest.NewRecorder()
 
-			h := NewTaskHandler(mock.NewUserResourceMappingService(), mock.NewLabelService(), logger.New(os.Stdout), mock.NewUserService())
-			h.TaskService = tt.fields.taskService
+			apiBackend := NewMockAPIBackend()
+			apiBackend.TaskService = tt.fields.taskService
+			h := NewTaskHandler(apiBackend)
 			h.handleGetTasks(w, r)
 
 			res := w.Result()
@@ -212,8 +211,9 @@ func TestTaskHandler_handlePostTasks(t *testing.T) {
 
 			w := httptest.NewRecorder()
 
-			h := NewTaskHandler(mock.NewUserResourceMappingService(), mock.NewLabelService(), logger.New(os.Stdout), mock.NewUserService())
-			h.TaskService = tt.fields.taskService
+			apiBackend := NewMockAPIBackend()
+			apiBackend.TaskService = tt.fields.taskService
+			h := NewTaskHandler(apiBackend)
 			h.handlePostTask(w, r)
 
 			res := w.Result()
@@ -316,8 +316,9 @@ func TestTaskHandler_handleGetRun(t *testing.T) {
 					},
 				}))
 			w := httptest.NewRecorder()
-			h := NewTaskHandler(mock.NewUserResourceMappingService(), mock.NewLabelService(), logger.New(os.Stdout), mock.NewUserService())
-			h.TaskService = tt.fields.taskService
+			apiBackend := NewMockAPIBackend()
+			apiBackend.TaskService = tt.fields.taskService
+			h := NewTaskHandler(apiBackend)
 			h.handleGetRun(w, r)
 
 			res := w.Result()
@@ -424,8 +425,9 @@ func TestTaskHandler_handleGetRuns(t *testing.T) {
 					},
 				}))
 			w := httptest.NewRecorder()
-			h := NewTaskHandler(mock.NewUserResourceMappingService(), mock.NewLabelService(), logger.New(os.Stdout), mock.NewUserService())
-			h.TaskService = tt.fields.taskService
+			apiBackend := NewMockAPIBackend()
+			apiBackend.TaskService = tt.fields.taskService
+			h := NewTaskHandler(apiBackend)
 			h.handleGetRuns(w, r)
 
 			res := w.Result()
