@@ -28,10 +28,12 @@ type MacroHandler struct {
 }
 
 // NewMacroHandler creates a new MacroHandler
-func NewMacroHandler() *MacroHandler {
+func NewMacroHandler(b *APIBackend) *MacroHandler {
 	h := &MacroHandler{
 		Router: NewRouter(),
-		Logger: zap.NewNop(),
+		Logger: b.Logger.With(zap.String("handler", "macro")),
+
+		MacroService: b.MacroService,
 	}
 
 	h.HandlerFunc("GET", "/api/v2/macros", h.handleGetMacros)

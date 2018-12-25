@@ -85,8 +85,7 @@ func NewAPIHandler(b *APIBackend) *APIHandler {
 	h.ViewHandler = NewViewHandler(b.UserResourceMappingService, b.LabelService, b.UserService)
 	h.ViewHandler.ViewService = b.ViewService
 
-	h.MacroHandler = NewMacroHandler()
-	h.MacroHandler.MacroService = b.MacroService
+	h.MacroHandler = NewMacroHandler(b)
 
 	h.AuthorizationHandler = NewAuthorizationHandler(b.UserService)
 	h.AuthorizationHandler.AuthorizationService = b.AuthorizationService

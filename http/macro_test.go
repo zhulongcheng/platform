@@ -69,8 +69,9 @@ func TestMacroService_handleGetMacros(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			h := NewMacroHandler()
-			h.MacroService = tt.fields.MacroService
+			apiBackend := NewMockAPIBackend()
+			apiBackend.MacroService = tt.fields.MacroService
+			h := NewMacroHandler(apiBackend)
 			r := httptest.NewRequest("GET", "http://howdy.tld", nil)
 			w := httptest.NewRecorder()
 
@@ -181,8 +182,9 @@ func TestMacroService_handleGetMacro(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			h := NewMacroHandler()
-			h.MacroService = tt.fields.MacroService
+			apiBackend := NewMockAPIBackend()
+			apiBackend.MacroService = tt.fields.MacroService
+			h := NewMacroHandler(apiBackend)
 			r := httptest.NewRequest("GET", "http://howdy.tld", nil)
 			r = r.WithContext(context.WithValue(
 				context.TODO(),
@@ -311,8 +313,9 @@ func TestMacroService_handlePostMacro(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			h := NewMacroHandler()
-			h.MacroService = tt.fields.MacroService
+			apiBackend := NewMockAPIBackend()
+			apiBackend.MacroService = tt.fields.MacroService
+			h := NewMacroHandler(apiBackend)
 			r := httptest.NewRequest("GET", "http://howdy.tld", bytes.NewReader([]byte(tt.args.macro)))
 			w := httptest.NewRecorder()
 
@@ -403,8 +406,9 @@ func TestMacroService_handlePatchMacro(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			h := NewMacroHandler()
-			h.MacroService = tt.fields.MacroService
+			apiBackend := NewMockAPIBackend()
+			apiBackend.MacroService = tt.fields.MacroService
+			h := NewMacroHandler(apiBackend)
 			r := httptest.NewRequest("GET", "http://howdy.tld", bytes.NewReader([]byte(tt.args.update)))
 			r = r.WithContext(context.WithValue(
 				context.TODO(),
@@ -490,8 +494,9 @@ func TestMacroService_handleDeleteMacro(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			h := NewMacroHandler()
-			h.MacroService = tt.fields.MacroService
+			apiBackend := NewMockAPIBackend()
+			apiBackend.MacroService = tt.fields.MacroService
+			h := NewMacroHandler(apiBackend)
 			r := httptest.NewRequest("GET", "http://howdy.tld", nil)
 			r = r.WithContext(context.WithValue(
 				context.TODO(),
@@ -527,8 +532,9 @@ func initMacroService(f platformtesting.MacroFields, t *testing.T) (platform.Mac
 		}
 	}
 
-	handler := NewMacroHandler()
-	handler.MacroService = svc
+	apiBackend := NewMockAPIBackend()
+	apiBackend.MacroService = svc
+	handler := NewMacroHandler(apiBackend)
 	server := httptest.NewServer(handler)
 	client := MacroService{
 		Addr: server.URL,
