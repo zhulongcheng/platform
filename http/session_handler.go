@@ -19,9 +19,13 @@ type SessionHandler struct {
 }
 
 // NewSessionHandler returns a new instance of SessionHandler.
-func NewSessionHandler() *SessionHandler {
+func NewSessionHandler(b *APIBackend) *SessionHandler {
 	h := &SessionHandler{
 		Router: NewRouter(),
+		Logger: b.Logger.With(zap.String("handler", "session")),
+
+		BasicAuthService: b.BasicAuthService,
+		SessionService:   b.SessionService,
 	}
 
 	h.HandlerFunc("POST", "/api/v2/signin", h.handleSignin)

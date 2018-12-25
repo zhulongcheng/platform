@@ -65,9 +65,10 @@ func TestBasicAuthHandler_handleSignin(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			h := platformhttp.NewSessionHandler()
-			h.BasicAuthService = tt.fields.BasicAuthService
-			h.SessionService = tt.fields.SessionService
+			apiBackend := platformhttp.NewMockAPIBackend()
+			apiBackend.BasicAuthService = tt.fields.BasicAuthService
+			apiBackend.SessionService = tt.fields.SessionService
+			h := platformhttp.NewSessionHandler(apiBackend)
 
 			w := httptest.NewRecorder()
 			r := httptest.NewRequest("POST", "http://localhost:9999/api/v2/signin", nil)
