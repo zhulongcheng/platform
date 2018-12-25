@@ -40,11 +40,14 @@ type FluxHandler struct {
 }
 
 // NewFluxHandler returns a new handler at /api/v2/query for flux queries.
-func NewFluxHandler() *FluxHandler {
+func NewFluxHandler(b *APIBackend) *FluxHandler {
 	h := &FluxHandler{
 		Router: NewRouter(),
 		Now:    time.Now,
-		Logger: zap.NewNop(),
+		Logger: b.Logger.With(zap.String("handler", "query")),
+
+		ProxyQueryService:   b.ProxyQueryService,
+		OrganizationService: b.OrganizationService,
 	}
 
 	h.HandlerFunc("POST", fluxPath, h.handlePostQuery)
