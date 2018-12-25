@@ -38,11 +38,14 @@ const (
 )
 
 // NewWriteHandler creates a new handler at /api/v2/write to receive line protocol.
-func NewWriteHandler(writer storage.PointsWriter) *WriteHandler {
+func NewWriteHandler(b *APIBackend) *WriteHandler {
 	h := &WriteHandler{
-		Router:       NewRouter(),
-		Logger:       zap.NewNop(),
-		PointsWriter: writer,
+		Router: NewRouter(),
+		Logger: b.Logger.With(zap.String("handler", "write")),
+
+		PointsWriter:        b.PointsWriter,
+		BucketService:       b.BucketService,
+		OrganizationService: b.OrganizationService,
 	}
 
 	h.HandlerFunc("POST", writePath, h.handleWrite)
