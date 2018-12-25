@@ -71,13 +71,9 @@ func NewAPIHandler(b *APIBackend) *APIHandler {
 	h := &APIHandler{}
 	h.SessionHandler = NewSessionHandler(b)
 	h.BucketHandler = NewBucketHandler(b)
-
 	h.OrgHandler = NewOrgHandler(b)
 	h.UserHandler = NewUserHandler(b)
-
-	h.DashboardHandler = NewDashboardHandler(b.UserResourceMappingService, b.LabelService, b.UserService)
-	h.DashboardHandler.DashboardService = b.DashboardService
-	h.DashboardHandler.DashboardOperationLogService = b.DashboardOperationLogService
+	h.DashboardHandler = NewDashboardHandler(b)
 
 	h.ViewHandler = NewViewHandler(b.UserResourceMappingService, b.LabelService, b.UserService)
 	h.ViewHandler.ViewService = b.ViewService

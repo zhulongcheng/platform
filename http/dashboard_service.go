@@ -25,8 +25,6 @@ type DashboardHandler struct {
 	DashboardService             platform.DashboardService
 	DashboardOperationLogService platform.DashboardOperationLogService
 	UserResourceMappingService   platform.UserResourceMappingService
-	LabelService                 platform.LabelService
-	UserService                  platform.UserService
 }
 
 const (
@@ -44,13 +42,14 @@ const (
 )
 
 // NewDashboardHandler returns a new instance of DashboardHandler.
-func NewDashboardHandler(mappingService platform.UserResourceMappingService, labelService platform.LabelService, userService platform.UserService) *DashboardHandler {
+func NewDashboardHandler(b *APIBackend) *DashboardHandler {
 	h := &DashboardHandler{
-		Router:                     NewRouter(),
-		Logger:                     zap.NewNop(),
-		UserResourceMappingService: mappingService,
-		LabelService:               labelService,
-		UserService:                userService,
+		Router: NewRouter(),
+		Logger: b.Logger.With(zap.String("handler", "dashboard")),
+
+		DashboardService:             b.DashboardService,
+		DashboardOperationLogService: b.DashboardOperationLogService,
+		UserResourceMappingService:   b.UserResourceMappingService,
 	}
 
 	h.HandlerFunc("POST", dashboardsPath, h.handlePostDashboard)
@@ -65,18 +64,18 @@ func NewDashboardHandler(mappingService platform.UserResourceMappingService, lab
 	h.HandlerFunc("DELETE", dashboardsIDCellsIDPath, h.handleDeleteDashboardCell)
 	h.HandlerFunc("PATCH", dashboardsIDCellsIDPath, h.handlePatchDashboardCell)
 
-	h.HandlerFunc("POST", dashboardsIDMembersPath, newPostMemberHandler(h.UserResourceMappingService, h.UserService, platform.DashboardResourceType, platform.Member))
-	h.HandlerFunc("GET", dashboardsIDMembersPath, newGetMembersHandler(h.UserResourceMappingService, h.UserService, platform.DashboardResourceType, platform.Member))
-	h.HandlerFunc("DELETE", dashboardsIDMembersIDPath, newDeleteMemberHandler(h.UserResourceMappingService, platform.Member))
+	h.HandlerFunc("POST", dashboardsIDMembersPath, newPostMemberHandler(b.UserResourceMappingService, b.UserService, platform.DashboardResourceType, platform.Member))
+	h.HandlerFunc("GET", dashboardsIDMembersPath, newGetMembersHandler(b.UserResourceMappingService, b.UserService, platform.DashboardResourceType, platform.Member))
+	h.HandlerFunc("DELETE", dashboardsIDMembersIDPath, newDeleteMemberHandler(b.UserResourceMappingService, platform.Member))
 
-	h.HandlerFunc("POST", dashboardsIDOwnersPath, newPostMemberHandler(h.UserResourceMappingService, h.UserService, platform.DashboardResourceType, platform.Owner))
-	h.HandlerFunc("GET", dashboardsIDOwnersPath, newGetMembersHandler(h.UserResourceMappingService, h.UserService, platform.DashboardResourceType, platform.Owner))
-	h.HandlerFunc("DELETE", dashboardsIDOwnersIDPath, newDeleteMemberHandler(h.UserResourceMappingService, platform.Owner))
+	h.HandlerFunc("POST", dashboardsIDOwnersPath, newPostMemberHandler(b.UserResourceMappingService, b.UserService, platform.DashboardResourceType, platform.Owner))
+	h.HandlerFunc("GET", dashboardsIDOwnersPath, newGetMembersHandler(b.UserResourceMappingService, b.UserService, platform.DashboardResourceType, platform.Owner))
+	h.HandlerFunc("DELETE", dashboardsIDOwnersIDPath, newDeleteMemberHandler(b.UserResourceMappingService, platform.Owner))
 
-	h.HandlerFunc("GET", dashboardsIDLabelsPath, newGetLabelsHandler(h.LabelService))
-	h.HandlerFunc("POST", dashboardsIDLabelsPath, newPostLabelHandler(h.LabelService))
-	h.HandlerFunc("DELETE", dashboardsIDLabelsNamePath, newDeleteLabelHandler(h.LabelService))
-	h.HandlerFunc("PATCH", dashboardsIDLabelsNamePath, newPatchLabelHandler(h.LabelService))
+	h.HandlerFunc("GET", dashboardsIDLabelsPath, newGetLabelsHandler(b.LabelService))
+	h.HandlerFunc("POST", dashboardsIDLabelsPath, newPostLabelHandler(b.LabelService))
+	h.HandlerFunc("DELETE", dashboardsIDLabelsNamePath, newDeleteLabelHandler(b.LabelService))
+	h.HandlerFunc("PATCH", dashboardsIDLabelsNamePath, newPatchLabelHandler(b.LabelService))
 
 	return h
 }
