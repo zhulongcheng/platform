@@ -87,19 +87,9 @@ func NewAPIHandler(b *APIBackend) *APIHandler {
 
 	h.SetupHandler = NewSetupHandler(b)
 	h.TaskHandler = NewTaskHandler(b)
-
-	h.TelegrafHandler = NewTelegrafHandler(
-		b.Logger.With(zap.String("handler", "telegraf")),
-		b.UserResourceMappingService,
-		b.LabelService,
-		b.TelegrafService,
-		b.UserService,
-	)
-
+	h.TelegrafHandler = NewTelegrafHandler(b)
 	h.WriteHandler = NewWriteHandler(b)
-
 	h.QueryHandler = NewFluxHandler(b)
-
 	h.ChronografHandler = NewChronografHandler(b)
 
 	return h

@@ -20,10 +20,7 @@ type TelegrafHandler struct {
 	*httprouter.Router
 	Logger *zap.Logger
 
-	TelegrafService            platform.TelegrafConfigStore
-	UserResourceMappingService platform.UserResourceMappingService
-	LabelService               platform.LabelService
-	UserService                platform.UserService
+	TelegrafService platform.TelegrafConfigStore
 }
 
 const (
@@ -38,21 +35,12 @@ const (
 )
 
 // NewTelegrafHandler returns a new instance of TelegrafHandler.
-func NewTelegrafHandler(
-	logger *zap.Logger,
-	mappingService platform.UserResourceMappingService,
-	labelService platform.LabelService,
-	telegrafSvc platform.TelegrafConfigStore,
-	userService platform.UserService,
-) *TelegrafHandler {
+func NewTelegrafHandler(b *APIBackend) *TelegrafHandler {
 	h := &TelegrafHandler{
 		Router: NewRouter(),
+		Logger: b.Logger.With(zap.String("handler", "telegraf")),
 
-		UserResourceMappingService: mappingService,
-		LabelService:               labelService,
-		TelegrafService:            telegrafSvc,
-		Logger:                     logger,
-		UserService:                userService,
+		TelegrafService: b.TelegrafService,
 	}
 	h.HandlerFunc("POST", telegrafsPath, h.handlePostTelegraf)
 	h.HandlerFunc("GET", telegrafsPath, h.handleGetTelegrafs)
@@ -60,18 +48,18 @@ func NewTelegrafHandler(
 	h.HandlerFunc("DELETE", telegrafsIDPath, h.handleDeleteTelegraf)
 	h.HandlerFunc("PUT", telegrafsIDPath, h.handlePutTelegraf)
 
-	h.HandlerFunc("POST", telegrafsIDMembersPath, newPostMemberHandler(h.UserResourceMappingService, h.UserService, platform.TelegrafResourceType, platform.Member))
-	h.HandlerFunc("GET", telegrafsIDMembersPath, newGetMembersHandler(h.UserResourceMappingService, h.UserService, platform.TelegrafResourceType, platform.Member))
-	h.HandlerFunc("DELETE", telegrafsIDMembersIDPath, newDeleteMemberHandler(h.UserResourceMappingService, platform.Member))
+	h.HandlerFunc("POST", telegrafsIDMembersPath, newPostMemberHandler(b.UserResourceMappingService, b.UserService, platform.TelegrafResourceType, platform.Member))
+	h.HandlerFunc("GET", telegrafsIDMembersPath, newGetMembersHandler(b.UserResourceMappingService, b.UserService, platform.TelegrafResourceType, platform.Member))
+	h.HandlerFunc("DELETE", telegrafsIDMembersIDPath, newDeleteMemberHandler(b.UserResourceMappingService, platform.Member))
 
-	h.HandlerFunc("POST", telegrafsIDOwnersPath, newPostMemberHandler(h.UserResourceMappingService, h.UserService, platform.TelegrafResourceType, platform.Owner))
-	h.HandlerFunc("GET", telegrafsIDOwnersPath, newGetMembersHandler(h.UserResourceMappingService, h.UserService, platform.TelegrafResourceType, platform.Owner))
-	h.HandlerFunc("DELETE", telegrafsIDOwnersIDPath, newDeleteMemberHandler(h.UserResourceMappingService, platform.Owner))
+	h.HandlerFunc("POST", telegrafsIDOwnersPath, newPostMemberHandler(b.UserResourceMappingService, b.UserService, platform.TelegrafResourceType, platform.Owner))
+	h.HandlerFunc("GET", telegrafsIDOwnersPath, newGetMembersHandler(b.UserResourceMappingService, b.UserService, platform.TelegrafResourceType, platform.Owner))
+	h.HandlerFunc("DELETE", telegrafsIDOwnersIDPath, newDeleteMemberHandler(b.UserResourceMappingService, platform.Owner))
 
-	h.HandlerFunc("GET", telegrafsIDLabelsPath, newGetLabelsHandler(h.LabelService))
-	h.HandlerFunc("POST", telegrafsIDLabelsPath, newPostLabelHandler(h.LabelService))
-	h.HandlerFunc("DELETE", telegrafsIDLabelsNamePath, newDeleteLabelHandler(h.LabelService))
-	h.HandlerFunc("PATCH", telegrafsIDLabelsNamePath, newPatchLabelHandler(h.LabelService))
+	h.HandlerFunc("GET", telegrafsIDLabelsPath, newGetLabelsHandler(b.LabelService))
+	h.HandlerFunc("POST", telegrafsIDLabelsPath, newPostLabelHandler(b.LabelService))
+	h.HandlerFunc("DELETE", telegrafsIDLabelsNamePath, newDeleteLabelHandler(b.LabelService))
+	h.HandlerFunc("PATCH", telegrafsIDLabelsNamePath, newPatchLabelHandler(b.LabelService))
 
 	return h
 }
