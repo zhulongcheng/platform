@@ -28,9 +28,10 @@ func initOrganizationService(f platformtesting.OrganizationFields, t *testing.T)
 		}
 	}
 
-	handler := NewOrgHandler(mock.NewUserResourceMappingService(), mock.NewLabelService(), mock.NewUserService())
-	handler.OrganizationService = svc
-	handler.BucketService = svc
+	apiBackend := NewMockAPIBackend()
+	apiBackend.OrganizationService = svc
+	apiBackend.BucketService = svc
+	handler := NewOrgHandler(apiBackend)
 	server := httptest.NewServer(handler)
 	client := OrganizationService{
 		Addr:     server.URL,
@@ -123,8 +124,9 @@ func TestSecretService_handleGetSecrets(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			h := NewOrgHandler(mock.NewUserResourceMappingService(), mock.NewLabelService(), mock.NewUserService())
-			h.SecretService = tt.fields.SecretService
+			apiBackend := NewMockAPIBackend()
+			apiBackend.SecretService = tt.fields.SecretService
+			h := NewOrgHandler(apiBackend)
 
 			u := fmt.Sprintf("http://any.url/api/v2/orgs/%s/secrets", tt.args.orgID)
 			r := httptest.NewRequest("GET", u, nil)
@@ -193,8 +195,9 @@ func TestSecretService_handlePatchSecrets(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			h := NewOrgHandler(mock.NewUserResourceMappingService(), mock.NewLabelService(), mock.NewUserService())
-			h.SecretService = tt.fields.SecretService
+			apiBackend := NewMockAPIBackend()
+			apiBackend.SecretService = tt.fields.SecretService
+			h := NewOrgHandler(apiBackend)
 
 			b, err := json.Marshal(tt.args.secrets)
 			if err != nil {
@@ -269,8 +272,9 @@ func TestSecretService_handleDeleteSecrets(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			h := NewOrgHandler(mock.NewUserResourceMappingService(), mock.NewLabelService(), mock.NewUserService())
-			h.SecretService = tt.fields.SecretService
+			apiBackend := NewMockAPIBackend()
+			apiBackend.SecretService = tt.fields.SecretService
+			h := NewOrgHandler(apiBackend)
 
 			b, err := json.Marshal(tt.args.secrets)
 			if err != nil {

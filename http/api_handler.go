@@ -62,6 +62,7 @@ type APIBackend struct {
 	TaskService                     platform.TaskService
 	TelegrafService                 platform.TelegrafConfigStore
 	ScraperTargetStoreService       platform.ScraperTargetStoreService
+	SecretService                   platform.SecretService
 	ChronografService               *server.Service
 }
 
@@ -71,11 +72,7 @@ func NewAPIHandler(b *APIBackend) *APIHandler {
 	h.SessionHandler = NewSessionHandler(b)
 	h.BucketHandler = NewBucketHandler(b)
 
-	h.OrgHandler = NewOrgHandler(b.UserResourceMappingService, b.LabelService, b.UserService)
-	h.OrgHandler.OrganizationService = b.OrganizationService
-	h.OrgHandler.BucketService = b.BucketService
-	h.OrgHandler.OrganizationOperationLogService = b.OrganizationOperationLogService
-
+	h.OrgHandler = NewOrgHandler(b)
 	h.UserHandler = NewUserHandler(b)
 
 	h.DashboardHandler = NewDashboardHandler(b.UserResourceMappingService, b.LabelService, b.UserService)

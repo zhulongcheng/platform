@@ -24,10 +24,7 @@ type OrgHandler struct {
 	OrganizationService             platform.OrganizationService
 	OrganizationOperationLogService platform.OrganizationOperationLogService
 	BucketService                   platform.BucketService
-	UserResourceMappingService      platform.UserResourceMappingService
 	SecretService                   platform.SecretService
-	LabelService                    platform.LabelService
-	UserService                     platform.UserService
 }
 
 const (
@@ -46,14 +43,15 @@ const (
 )
 
 // NewOrgHandler returns a new instance of OrgHandler.
-func NewOrgHandler(mappingService platform.UserResourceMappingService,
-	labelService platform.LabelService, userService platform.UserService) *OrgHandler {
+func NewOrgHandler(b *APIBackend) *OrgHandler {
 	h := &OrgHandler{
-		Router:                     NewRouter(),
-		Logger:                     zap.NewNop(),
-		UserResourceMappingService: mappingService,
-		LabelService:               labelService,
-		UserService:                userService,
+		Router: NewRouter(),
+		Logger: b.Logger.With(zap.String("handler", "organization")),
+
+		OrganizationService:             b.OrganizationService,
+		OrganizationOperationLogService: b.OrganizationOperationLogService,
+		BucketService:                   b.BucketService,
+		SecretService:                   b.SecretService,
 	}
 
 	h.HandlerFunc("POST", organizationsPath, h.handlePostOrg)
@@ -63,23 +61,23 @@ func NewOrgHandler(mappingService platform.UserResourceMappingService,
 	h.HandlerFunc("PATCH", organizationsIDPath, h.handlePatchOrg)
 	h.HandlerFunc("DELETE", organizationsIDPath, h.handleDeleteOrg)
 
-	h.HandlerFunc("POST", organizationsIDMembersPath, newPostMemberHandler(h.UserResourceMappingService, h.UserService, platform.OrgResourceType, platform.Member))
-	h.HandlerFunc("GET", organizationsIDMembersPath, newGetMembersHandler(h.UserResourceMappingService, h.UserService, platform.OrgResourceType, platform.Member))
-	h.HandlerFunc("DELETE", organizationsIDMembersIDPath, newDeleteMemberHandler(h.UserResourceMappingService, platform.Member))
+	h.HandlerFunc("POST", organizationsIDMembersPath, newPostMemberHandler(b.UserResourceMappingService, b.UserService, platform.OrgResourceType, platform.Member))
+	h.HandlerFunc("GET", organizationsIDMembersPath, newGetMembersHandler(b.UserResourceMappingService, b.UserService, platform.OrgResourceType, platform.Member))
+	h.HandlerFunc("DELETE", organizationsIDMembersIDPath, newDeleteMemberHandler(b.UserResourceMappingService, platform.Member))
 
-	h.HandlerFunc("POST", organizationsIDOwnersPath, newPostMemberHandler(h.UserResourceMappingService, h.UserService, platform.OrgResourceType, platform.Owner))
-	h.HandlerFunc("GET", organizationsIDOwnersPath, newGetMembersHandler(h.UserResourceMappingService, h.UserService, platform.OrgResourceType, platform.Owner))
-	h.HandlerFunc("DELETE", organizationsIDOwnersIDPath, newDeleteMemberHandler(h.UserResourceMappingService, platform.Owner))
+	h.HandlerFunc("POST", organizationsIDOwnersPath, newPostMemberHandler(b.UserResourceMappingService, b.UserService, platform.OrgResourceType, platform.Owner))
+	h.HandlerFunc("GET", organizationsIDOwnersPath, newGetMembersHandler(b.UserResourceMappingService, b.UserService, platform.OrgResourceType, platform.Owner))
+	h.HandlerFunc("DELETE", organizationsIDOwnersIDPath, newDeleteMemberHandler(b.UserResourceMappingService, platform.Owner))
 
 	h.HandlerFunc("GET", organizationsIDSecretsPath, h.handleGetSecrets)
 	h.HandlerFunc("PATCH", organizationsIDSecretsPath, h.handlePatchSecrets)
 	// TODO(desa): need a way to specify which secrets to delete. this should work for now
 	h.HandlerFunc("POST", organizationsIDSecretsDeletePath, h.handleDeleteSecrets)
 
-	h.HandlerFunc("GET", organizationsIDLabelsPath, newGetLabelsHandler(h.LabelService))
-	h.HandlerFunc("POST", organizationsIDLabelsPath, newPostLabelHandler(h.LabelService))
-	h.HandlerFunc("DELETE", organizationsIDLabelsNamePath, newDeleteLabelHandler(h.LabelService))
-	h.HandlerFunc("PATCH", organizationsIDLabelsNamePath, newPatchLabelHandler(h.LabelService))
+	h.HandlerFunc("GET", organizationsIDLabelsPath, newGetLabelsHandler(b.LabelService))
+	h.HandlerFunc("POST", organizationsIDLabelsPath, newPostLabelHandler(b.LabelService))
+	h.HandlerFunc("DELETE", organizationsIDLabelsNamePath, newDeleteLabelHandler(b.LabelService))
+	h.HandlerFunc("PATCH", organizationsIDLabelsNamePath, newPatchLabelHandler(b.LabelService))
 
 	return h
 }

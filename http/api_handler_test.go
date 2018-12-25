@@ -92,6 +92,7 @@ func NewMockAPIBackend() *APIBackend {
 		MacroService:               &mock.MacroService{},
 		BasicAuthService:           mock.NewBasicAuthService("", ""),
 		TaskService:                &mock.TaskService{},
+		SecretService:              mock.NewSecretService(),
 
 		// TODO impl mock service
 		//SourceService:                   mock.NewSourceService(),
