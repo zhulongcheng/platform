@@ -15,10 +15,10 @@ type ChronografHandler struct {
 }
 
 // NewChronografHandler is the constructor an chronograf handler.
-func NewChronografHandler(s *server.Service) *ChronografHandler {
+func NewChronografHandler(b *APIBackend) *ChronografHandler {
 	h := &ChronografHandler{
 		Router:  NewRouter(),
-		Service: s,
+		Service: b.ChronografService,
 	}
 	/* API */
 	// Organizations

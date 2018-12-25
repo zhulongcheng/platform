@@ -113,7 +113,7 @@ func NewAPIHandler(b *APIBackend) *APIHandler {
 
 	h.QueryHandler = NewFluxHandler(b)
 
-	h.ChronografHandler = NewChronografHandler(b.ChronografService)
+	h.ChronografHandler = NewChronografHandler(b)
 
 	return h
 }
