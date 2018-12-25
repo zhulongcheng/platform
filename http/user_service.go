@@ -33,9 +33,13 @@ const (
 )
 
 // NewUserHandler returns a new instance of UserHandler.
-func NewUserHandler() *UserHandler {
+func NewUserHandler(b *APIBackend) *UserHandler {
 	h := &UserHandler{
 		Router: NewRouter(),
+
+		UserService:             b.UserService,
+		UserOperationLogService: b.UserOperationLogService,
+		BasicAuthService:        b.BasicAuthService,
 	}
 
 	h.HandlerFunc("POST", usersPath, h.handlePostUser)
