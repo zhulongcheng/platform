@@ -75,16 +75,9 @@ func NewAPIHandler(b *APIBackend) *APIHandler {
 	h.UserHandler = NewUserHandler(b)
 	h.DashboardHandler = NewDashboardHandler(b)
 	h.ViewHandler = NewViewHandler(b)
-
 	h.MacroHandler = NewMacroHandler(b)
-
 	h.AuthorizationHandler = NewAuthorizationHandler(b)
-
-	h.SourceHandler = NewSourceHandler()
-	h.SourceHandler.SourceService = b.SourceService
-	h.SourceHandler.NewBucketService = b.NewBucketService
-	h.SourceHandler.NewQueryService = b.NewQueryService
-
+	h.SourceHandler = NewSourceHandler(b)
 	h.SetupHandler = NewSetupHandler(b)
 	h.TaskHandler = NewTaskHandler(b)
 	h.TelegrafHandler = NewTelegrafHandler(b)
