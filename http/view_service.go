@@ -17,10 +17,7 @@ type ViewHandler struct {
 
 	Logger *zap.Logger
 
-	ViewService                platform.ViewService
-	UserResourceMappingService platform.UserResourceMappingService
-	LabelService               platform.LabelService
-	UserService                platform.UserService
+	ViewService platform.ViewService
 }
 
 const (
@@ -35,13 +32,12 @@ const (
 )
 
 // NewViewHandler returns a new instance of ViewHandler.
-func NewViewHandler(mappingService platform.UserResourceMappingService, labelService platform.LabelService, userService platform.UserService) *ViewHandler {
+func NewViewHandler(b *APIBackend) *ViewHandler {
 	h := &ViewHandler{
-		Router:                     NewRouter(),
-		Logger:                     zap.NewNop(),
-		UserResourceMappingService: mappingService,
-		LabelService:               labelService,
-		UserService:                userService,
+		Router: NewRouter(),
+		Logger: b.Logger.With(zap.String("handler", "view")),
+
+		ViewService: b.ViewService,
 	}
 
 	h.HandlerFunc("POST", viewsPath, h.handlePostViews)
@@ -51,18 +47,18 @@ func NewViewHandler(mappingService platform.UserResourceMappingService, labelSer
 	h.HandlerFunc("DELETE", viewsIDPath, h.handleDeleteView)
 	h.HandlerFunc("PATCH", viewsIDPath, h.handlePatchView)
 
-	h.HandlerFunc("POST", viewsIDMembersPath, newPostMemberHandler(h.UserResourceMappingService, h.UserService, platform.ViewResourceType, platform.Member))
-	h.HandlerFunc("GET", viewsIDMembersPath, newGetMembersHandler(h.UserResourceMappingService, h.UserService, platform.ViewResourceType, platform.Member))
-	h.HandlerFunc("DELETE", viewsIDMembersIDPath, newDeleteMemberHandler(h.UserResourceMappingService, platform.Member))
+	h.HandlerFunc("POST", viewsIDMembersPath, newPostMemberHandler(b.UserResourceMappingService, b.UserService, platform.ViewResourceType, platform.Member))
+	h.HandlerFunc("GET", viewsIDMembersPath, newGetMembersHandler(b.UserResourceMappingService, b.UserService, platform.ViewResourceType, platform.Member))
+	h.HandlerFunc("DELETE", viewsIDMembersIDPath, newDeleteMemberHandler(b.UserResourceMappingService, platform.Member))
 
-	h.HandlerFunc("POST", viewsIDOwnersPath, newPostMemberHandler(h.UserResourceMappingService, h.UserService, platform.ViewResourceType, platform.Owner))
-	h.HandlerFunc("GET", viewsIDOwnersPath, newGetMembersHandler(h.UserResourceMappingService, h.UserService, platform.ViewResourceType, platform.Owner))
-	h.HandlerFunc("DELETE", viewsIDOwnersIDPath, newDeleteMemberHandler(h.UserResourceMappingService, platform.Owner))
+	h.HandlerFunc("POST", viewsIDOwnersPath, newPostMemberHandler(b.UserResourceMappingService, b.UserService, platform.ViewResourceType, platform.Owner))
+	h.HandlerFunc("GET", viewsIDOwnersPath, newGetMembersHandler(b.UserResourceMappingService, b.UserService, platform.ViewResourceType, platform.Owner))
+	h.HandlerFunc("DELETE", viewsIDOwnersIDPath, newDeleteMemberHandler(b.UserResourceMappingService, platform.Owner))
 
-	h.HandlerFunc("GET", viewsIDLabelsPath, newGetLabelsHandler(h.LabelService))
-	h.HandlerFunc("POST", viewsIDLabelsPath, newPostLabelHandler(h.LabelService))
-	h.HandlerFunc("DELETE", viewsIDLabelsNamePath, newDeleteLabelHandler(h.LabelService))
-	h.HandlerFunc("PATCH", viewsIDLabelsNamePath, newPatchLabelHandler(h.LabelService))
+	h.HandlerFunc("GET", viewsIDLabelsPath, newGetLabelsHandler(b.LabelService))
+	h.HandlerFunc("POST", viewsIDLabelsPath, newPostLabelHandler(b.LabelService))
+	h.HandlerFunc("DELETE", viewsIDLabelsNamePath, newDeleteLabelHandler(b.LabelService))
+	h.HandlerFunc("PATCH", viewsIDLabelsNamePath, newPatchLabelHandler(b.LabelService))
 
 	return h
 }

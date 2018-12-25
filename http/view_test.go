@@ -129,8 +129,9 @@ func TestService_handleGetViews(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			h := NewViewHandler(mock.NewUserResourceMappingService(), mock.NewLabelService(), mock.NewUserService())
-			h.ViewService = tt.fields.ViewService
+			apiBackend := NewMockAPIBackend()
+			apiBackend.ViewService = tt.fields.ViewService
+			h := NewViewHandler(apiBackend)
 
 			r := httptest.NewRequest("GET", "http://any.url", nil)
 
@@ -240,8 +241,9 @@ func TestService_handleGetView(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			h := NewViewHandler(mock.NewUserResourceMappingService(), mock.NewLabelService(), mock.NewUserService())
-			h.ViewService = tt.fields.ViewService
+			apiBackend := NewMockAPIBackend()
+			apiBackend.ViewService = tt.fields.ViewService
+			h := NewViewHandler(apiBackend)
 
 			r := httptest.NewRequest("GET", "http://any.url", nil)
 
@@ -345,8 +347,9 @@ func TestService_handlePostViews(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			h := NewViewHandler(mock.NewUserResourceMappingService(), mock.NewLabelService(), mock.NewUserService())
-			h.ViewService = tt.fields.ViewService
+			apiBackend := NewMockAPIBackend()
+			apiBackend.ViewService = tt.fields.ViewService
+			h := NewViewHandler(apiBackend)
 
 			b, err := json.Marshal(tt.args.view)
 			if err != nil {
@@ -437,8 +440,9 @@ func TestService_handleDeleteView(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			h := NewViewHandler(mock.NewUserResourceMappingService(), mock.NewLabelService(), mock.NewUserService())
-			h.ViewService = tt.fields.ViewService
+			apiBackend := NewMockAPIBackend()
+			apiBackend.ViewService = tt.fields.ViewService
+			h := NewViewHandler(apiBackend)
 
 			r := httptest.NewRequest("GET", "http://any.url", nil)
 
@@ -596,8 +600,9 @@ func TestService_handlePatchView(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			h := NewViewHandler(mock.NewUserResourceMappingService(), mock.NewLabelService(), mock.NewUserService())
-			h.ViewService = tt.fields.ViewService
+			apiBackend := NewMockAPIBackend()
+			apiBackend.ViewService = tt.fields.ViewService
+			h := NewViewHandler(apiBackend)
 
 			upd := platform.ViewUpdate{}
 			if tt.args.name != "" {

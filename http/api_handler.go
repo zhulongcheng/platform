@@ -74,9 +74,7 @@ func NewAPIHandler(b *APIBackend) *APIHandler {
 	h.OrgHandler = NewOrgHandler(b)
 	h.UserHandler = NewUserHandler(b)
 	h.DashboardHandler = NewDashboardHandler(b)
-
-	h.ViewHandler = NewViewHandler(b.UserResourceMappingService, b.LabelService, b.UserService)
-	h.ViewHandler.ViewService = b.ViewService
+	h.ViewHandler = NewViewHandler(b)
 
 	h.MacroHandler = NewMacroHandler(b)
 
