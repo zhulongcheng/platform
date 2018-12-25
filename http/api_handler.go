@@ -94,8 +94,7 @@ func NewAPIHandler(b *APIBackend) *APIHandler {
 	h.SourceHandler.NewBucketService = b.NewBucketService
 	h.SourceHandler.NewQueryService = b.NewQueryService
 
-	h.SetupHandler = NewSetupHandler()
-	h.SetupHandler.OnboardingService = b.OnboardingService
+	h.SetupHandler = NewSetupHandler(b)
 
 	h.TaskHandler = NewTaskHandler(b.UserResourceMappingService, b.LabelService, b.Logger, b.UserService)
 	h.TaskHandler.TaskService = b.TaskService

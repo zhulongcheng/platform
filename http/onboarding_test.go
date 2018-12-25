@@ -21,8 +21,9 @@ func initOnboardingService(f platformtesting.OnboardingFields, t *testing.T) (pl
 		t.Fatalf("failed to set new onboarding finished: %v", err)
 	}
 
-	handler := NewSetupHandler()
-	handler.OnboardingService = svc
+	apiBackend := NewMockAPIBackend()
+	apiBackend.OnboardingService = svc
+	handler := NewSetupHandler(apiBackend)
 	server := httptest.NewServer(handler)
 	client := struct {
 		*SetupService

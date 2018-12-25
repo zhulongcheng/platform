@@ -25,10 +25,12 @@ const (
 )
 
 // NewSetupHandler returns a new instance of SetupHandler.
-func NewSetupHandler() *SetupHandler {
+func NewSetupHandler(b *APIBackend) *SetupHandler {
 	h := &SetupHandler{
 		Router: NewRouter(),
-		Logger: zap.NewNop(),
+		Logger: b.Logger.With(zap.String("handler", "setup")),
+
+		OnboardingService: b.OnboardingService,
 	}
 	h.HandlerFunc("POST", setupPath, h.handlePostSetup)
 	h.HandlerFunc("GET", setupPath, h.isOnboarding)
