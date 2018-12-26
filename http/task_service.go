@@ -82,10 +82,10 @@ func NewTaskHandler(b *APIBackend) *TaskHandler {
 	h.HandlerFunc("POST", tasksIDRunsIDRetryPath, h.handleRetryRun)
 	h.HandlerFunc("DELETE", tasksIDRunsIDPath, h.handleCancelRun)
 
-	h.HandlerFunc("GET", tasksIDLabelsPath, newGetLabelsHandler(b.LabelService))
-	h.HandlerFunc("POST", tasksIDLabelsPath, newPostLabelHandler(b.LabelService))
-	h.HandlerFunc("DELETE", tasksIDLabelsNamePath, newDeleteLabelHandler(b.LabelService))
-	h.HandlerFunc("PATCH", tasksIDLabelsNamePath, newPatchLabelHandler(b.LabelService))
+	h.HandlerFunc("GET", tasksIDLabelsPath, newGetLabelsHandler(b))
+	h.HandlerFunc("POST", tasksIDLabelsPath, newPostLabelHandler(b))
+	h.HandlerFunc("DELETE", tasksIDLabelsNamePath, newDeleteLabelHandler(b))
+	h.HandlerFunc("PATCH", tasksIDLabelsNamePath, newPatchLabelHandler(b))
 
 	return h
 }

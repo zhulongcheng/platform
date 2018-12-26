@@ -72,10 +72,10 @@ func NewDashboardHandler(b *APIBackend) *DashboardHandler {
 	h.HandlerFunc("GET", dashboardsIDOwnersPath, newGetMembersHandler(b, platform.DashboardResourceType, platform.Owner))
 	h.HandlerFunc("DELETE", dashboardsIDOwnersIDPath, newDeleteMemberHandler(b, platform.Owner))
 
-	h.HandlerFunc("GET", dashboardsIDLabelsPath, newGetLabelsHandler(b.LabelService))
-	h.HandlerFunc("POST", dashboardsIDLabelsPath, newPostLabelHandler(b.LabelService))
-	h.HandlerFunc("DELETE", dashboardsIDLabelsNamePath, newDeleteLabelHandler(b.LabelService))
-	h.HandlerFunc("PATCH", dashboardsIDLabelsNamePath, newPatchLabelHandler(b.LabelService))
+	h.HandlerFunc("GET", dashboardsIDLabelsPath, newGetLabelsHandler(b))
+	h.HandlerFunc("POST", dashboardsIDLabelsPath, newPostLabelHandler(b))
+	h.HandlerFunc("DELETE", dashboardsIDLabelsNamePath, newDeleteLabelHandler(b))
+	h.HandlerFunc("PATCH", dashboardsIDLabelsNamePath, newPatchLabelHandler(b))
 
 	return h
 }

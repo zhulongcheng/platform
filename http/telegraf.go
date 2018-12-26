@@ -56,10 +56,10 @@ func NewTelegrafHandler(b *APIBackend) *TelegrafHandler {
 	h.HandlerFunc("GET", telegrafsIDOwnersPath, newGetMembersHandler(b, platform.TelegrafResourceType, platform.Owner))
 	h.HandlerFunc("DELETE", telegrafsIDOwnersIDPath, newDeleteMemberHandler(b, platform.Owner))
 
-	h.HandlerFunc("GET", telegrafsIDLabelsPath, newGetLabelsHandler(b.LabelService))
-	h.HandlerFunc("POST", telegrafsIDLabelsPath, newPostLabelHandler(b.LabelService))
-	h.HandlerFunc("DELETE", telegrafsIDLabelsNamePath, newDeleteLabelHandler(b.LabelService))
-	h.HandlerFunc("PATCH", telegrafsIDLabelsNamePath, newPatchLabelHandler(b.LabelService))
+	h.HandlerFunc("GET", telegrafsIDLabelsPath, newGetLabelsHandler(b))
+	h.HandlerFunc("POST", telegrafsIDLabelsPath, newPostLabelHandler(b))
+	h.HandlerFunc("DELETE", telegrafsIDLabelsNamePath, newDeleteLabelHandler(b))
+	h.HandlerFunc("PATCH", telegrafsIDLabelsNamePath, newPatchLabelHandler(b))
 
 	return h
 }

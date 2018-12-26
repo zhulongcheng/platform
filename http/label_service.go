@@ -51,7 +51,9 @@ func newLabelsResponse(opts plat.FindOptions, f plat.LabelFilter, ls []*plat.Lab
 }
 
 // newGetLabelsHandler returns a handler func for a GET to /labels endpoints
-func newGetLabelsHandler(s plat.LabelService) http.HandlerFunc {
+func newGetLabelsHandler(b *APIBackend) http.HandlerFunc {
+	labelService := b.LabelService
+
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
@@ -62,7 +64,7 @@ func newGetLabelsHandler(s plat.LabelService) http.HandlerFunc {
 		}
 
 		opts := plat.FindOptions{}
-		labels, err := s.FindLabels(ctx, req.filter)
+		labels, err := labelService.FindLabels(ctx, req.filter)
 		if err != nil {
 			EncodeError(ctx, err, w)
 			return
@@ -106,7 +108,9 @@ func decodeGetLabelsRequest(ctx context.Context, r *http.Request) (*getLabelsReq
 }
 
 // newPostLabelHandler returns a handler func for a POST to /labels endpoints
-func newPostLabelHandler(s plat.LabelService) http.HandlerFunc {
+func newPostLabelHandler(b *APIBackend) http.HandlerFunc {
+	labelService := b.LabelService
+
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
@@ -126,7 +130,7 @@ func newPostLabelHandler(s plat.LabelService) http.HandlerFunc {
 			return
 		}
 
-		if err := s.CreateLabel(ctx, label); err != nil {
+		if err := labelService.CreateLabel(ctx, label); err != nil {
 			EncodeError(ctx, err, w)
 			return
 		}
@@ -211,7 +215,9 @@ func decodePatchLabelRequest(ctx context.Context, r *http.Request) (*patchLabelR
 }
 
 // newPatchLabelHandler returns a handler func for a PATCH to /labels endpoints
-func newPatchLabelHandler(s plat.LabelService) http.HandlerFunc {
+func newPatchLabelHandler(b *APIBackend) http.HandlerFunc {
+	labelService := b.LabelService
+
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
@@ -221,7 +227,7 @@ func newPatchLabelHandler(s plat.LabelService) http.HandlerFunc {
 			return
 		}
 
-		label, err := s.UpdateLabel(ctx, req.label, req.upd)
+		label, err := labelService.UpdateLabel(ctx, req.label, req.upd)
 		if err != nil {
 			EncodeError(ctx, err, w)
 			return
@@ -238,7 +244,9 @@ func newPatchLabelHandler(s plat.LabelService) http.HandlerFunc {
 }
 
 // newDeleteLabelHandler returns a handler func for a DELETE to /labels endpoints
-func newDeleteLabelHandler(s plat.LabelService) http.HandlerFunc {
+func newDeleteLabelHandler(b *APIBackend) http.HandlerFunc {
+	labelService := b.LabelService
+
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
@@ -253,7 +261,7 @@ func newDeleteLabelHandler(s plat.LabelService) http.HandlerFunc {
 			Name:       req.Name,
 		}
 
-		if err := s.DeleteLabel(ctx, label); err != nil {
+		if err := labelService.DeleteLabel(ctx, label); err != nil {
 			EncodeError(ctx, err, w)
 			return
 		}

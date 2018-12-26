@@ -55,10 +55,10 @@ func NewViewHandler(b *APIBackend) *ViewHandler {
 	h.HandlerFunc("GET", viewsIDOwnersPath, newGetMembersHandler(b, platform.ViewResourceType, platform.Owner))
 	h.HandlerFunc("DELETE", viewsIDOwnersIDPath, newDeleteMemberHandler(b, platform.Owner))
 
-	h.HandlerFunc("GET", viewsIDLabelsPath, newGetLabelsHandler(b.LabelService))
-	h.HandlerFunc("POST", viewsIDLabelsPath, newPostLabelHandler(b.LabelService))
-	h.HandlerFunc("DELETE", viewsIDLabelsNamePath, newDeleteLabelHandler(b.LabelService))
-	h.HandlerFunc("PATCH", viewsIDLabelsNamePath, newPatchLabelHandler(b.LabelService))
+	h.HandlerFunc("GET", viewsIDLabelsPath, newGetLabelsHandler(b))
+	h.HandlerFunc("POST", viewsIDLabelsPath, newPostLabelHandler(b))
+	h.HandlerFunc("DELETE", viewsIDLabelsNamePath, newDeleteLabelHandler(b))
+	h.HandlerFunc("PATCH", viewsIDLabelsNamePath, newPatchLabelHandler(b))
 
 	return h
 }

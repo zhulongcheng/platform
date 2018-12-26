@@ -74,10 +74,10 @@ func NewOrgHandler(b *APIBackend) *OrgHandler {
 	// TODO(desa): need a way to specify which secrets to delete. this should work for now
 	h.HandlerFunc("POST", organizationsIDSecretsDeletePath, h.handleDeleteSecrets)
 
-	h.HandlerFunc("GET", organizationsIDLabelsPath, newGetLabelsHandler(b.LabelService))
-	h.HandlerFunc("POST", organizationsIDLabelsPath, newPostLabelHandler(b.LabelService))
-	h.HandlerFunc("DELETE", organizationsIDLabelsNamePath, newDeleteLabelHandler(b.LabelService))
-	h.HandlerFunc("PATCH", organizationsIDLabelsNamePath, newPatchLabelHandler(b.LabelService))
+	h.HandlerFunc("GET", organizationsIDLabelsPath, newGetLabelsHandler(b))
+	h.HandlerFunc("POST", organizationsIDLabelsPath, newPostLabelHandler(b))
+	h.HandlerFunc("DELETE", organizationsIDLabelsNamePath, newDeleteLabelHandler(b))
+	h.HandlerFunc("PATCH", organizationsIDLabelsNamePath, newPatchLabelHandler(b))
 
 	return h
 }

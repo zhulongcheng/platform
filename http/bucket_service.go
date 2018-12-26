@@ -63,10 +63,10 @@ func NewBucketHandler(b *APIBackend) *BucketHandler {
 	h.HandlerFunc("GET", bucketsIDOwnersPath, newGetMembersHandler(b, platform.BucketResourceType, platform.Owner))
 	h.HandlerFunc("DELETE", bucketsIDOwnersIDPath, newDeleteMemberHandler(b, platform.Owner))
 
-	h.HandlerFunc("GET", bucketsIDLabelsPath, newGetLabelsHandler(b.LabelService))
-	h.HandlerFunc("POST", bucketsIDLabelsPath, newPostLabelHandler(b.LabelService))
-	h.HandlerFunc("DELETE", bucketsIDLabelsNamePath, newDeleteLabelHandler(b.LabelService))
-	h.HandlerFunc("PATCH", bucketsIDLabelsNamePath, newPatchLabelHandler(b.LabelService))
+	h.HandlerFunc("GET", bucketsIDLabelsPath, newGetLabelsHandler(b))
+	h.HandlerFunc("POST", bucketsIDLabelsPath, newPostLabelHandler(b))
+	h.HandlerFunc("DELETE", bucketsIDLabelsNamePath, newDeleteLabelHandler(b))
+	h.HandlerFunc("PATCH", bucketsIDLabelsNamePath, newPatchLabelHandler(b))
 
 	return h
 }
