@@ -61,13 +61,13 @@ func NewOrgHandler(b *APIBackend) *OrgHandler {
 	h.HandlerFunc("PATCH", organizationsIDPath, h.handlePatchOrg)
 	h.HandlerFunc("DELETE", organizationsIDPath, h.handleDeleteOrg)
 
-	h.HandlerFunc("POST", organizationsIDMembersPath, newPostMemberHandler(b.UserResourceMappingService, b.UserService, platform.OrgResourceType, platform.Member))
-	h.HandlerFunc("GET", organizationsIDMembersPath, newGetMembersHandler(b.UserResourceMappingService, b.UserService, platform.OrgResourceType, platform.Member))
-	h.HandlerFunc("DELETE", organizationsIDMembersIDPath, newDeleteMemberHandler(b.UserResourceMappingService, platform.Member))
+	h.HandlerFunc("POST", organizationsIDMembersPath, newPostMemberHandler(b, platform.OrgResourceType, platform.Member))
+	h.HandlerFunc("GET", organizationsIDMembersPath, newGetMembersHandler(b, platform.OrgResourceType, platform.Member))
+	h.HandlerFunc("DELETE", organizationsIDMembersIDPath, newDeleteMemberHandler(b, platform.Member))
 
-	h.HandlerFunc("POST", organizationsIDOwnersPath, newPostMemberHandler(b.UserResourceMappingService, b.UserService, platform.OrgResourceType, platform.Owner))
-	h.HandlerFunc("GET", organizationsIDOwnersPath, newGetMembersHandler(b.UserResourceMappingService, b.UserService, platform.OrgResourceType, platform.Owner))
-	h.HandlerFunc("DELETE", organizationsIDOwnersIDPath, newDeleteMemberHandler(b.UserResourceMappingService, platform.Owner))
+	h.HandlerFunc("POST", organizationsIDOwnersPath, newPostMemberHandler(b, platform.OrgResourceType, platform.Owner))
+	h.HandlerFunc("GET", organizationsIDOwnersPath, newGetMembersHandler(b, platform.OrgResourceType, platform.Owner))
+	h.HandlerFunc("DELETE", organizationsIDOwnersIDPath, newDeleteMemberHandler(b, platform.Owner))
 
 	h.HandlerFunc("GET", organizationsIDSecretsPath, h.handleGetSecrets)
 	h.HandlerFunc("PATCH", organizationsIDSecretsPath, h.handlePatchSecrets)

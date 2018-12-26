@@ -55,13 +55,13 @@ func NewBucketHandler(b *APIBackend) *BucketHandler {
 	h.HandlerFunc("PATCH", bucketsIDPath, h.handlePatchBucket)
 	h.HandlerFunc("DELETE", bucketsIDPath, h.handleDeleteBucket)
 
-	h.HandlerFunc("POST", bucketsIDMembersPath, newPostMemberHandler(b.UserResourceMappingService, b.UserService, platform.BucketResourceType, platform.Member))
-	h.HandlerFunc("GET", bucketsIDMembersPath, newGetMembersHandler(b.UserResourceMappingService, b.UserService, platform.BucketResourceType, platform.Member))
-	h.HandlerFunc("DELETE", bucketsIDMembersIDPath, newDeleteMemberHandler(b.UserResourceMappingService, platform.Member))
+	h.HandlerFunc("POST", bucketsIDMembersPath, newPostMemberHandler(b, platform.BucketResourceType, platform.Member))
+	h.HandlerFunc("GET", bucketsIDMembersPath, newGetMembersHandler(b, platform.BucketResourceType, platform.Member))
+	h.HandlerFunc("DELETE", bucketsIDMembersIDPath, newDeleteMemberHandler(b, platform.Member))
 
-	h.HandlerFunc("POST", bucketsIDOwnersPath, newPostMemberHandler(b.UserResourceMappingService, b.UserService, platform.BucketResourceType, platform.Owner))
-	h.HandlerFunc("GET", bucketsIDOwnersPath, newGetMembersHandler(b.UserResourceMappingService, b.UserService, platform.BucketResourceType, platform.Owner))
-	h.HandlerFunc("DELETE", bucketsIDOwnersIDPath, newDeleteMemberHandler(b.UserResourceMappingService, platform.Owner))
+	h.HandlerFunc("POST", bucketsIDOwnersPath, newPostMemberHandler(b, platform.BucketResourceType, platform.Owner))
+	h.HandlerFunc("GET", bucketsIDOwnersPath, newGetMembersHandler(b, platform.BucketResourceType, platform.Owner))
+	h.HandlerFunc("DELETE", bucketsIDOwnersIDPath, newDeleteMemberHandler(b, platform.Owner))
 
 	h.HandlerFunc("GET", bucketsIDLabelsPath, newGetLabelsHandler(b.LabelService))
 	h.HandlerFunc("POST", bucketsIDLabelsPath, newPostLabelHandler(b.LabelService))

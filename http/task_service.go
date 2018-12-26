@@ -68,13 +68,13 @@ func NewTaskHandler(b *APIBackend) *TaskHandler {
 	h.HandlerFunc("GET", tasksIDLogsPath, h.handleGetLogs)
 	h.HandlerFunc("GET", tasksIDRunsIDLogsPath, h.handleGetLogs)
 
-	h.HandlerFunc("POST", tasksIDMembersPath, newPostMemberHandler(b.UserResourceMappingService, b.UserService, platform.TaskResourceType, platform.Member))
-	h.HandlerFunc("GET", tasksIDMembersPath, newGetMembersHandler(b.UserResourceMappingService, b.UserService, platform.TaskResourceType, platform.Member))
-	h.HandlerFunc("DELETE", tasksIDMembersIDPath, newDeleteMemberHandler(b.UserResourceMappingService, platform.Member))
+	h.HandlerFunc("POST", tasksIDMembersPath, newPostMemberHandler(b, platform.TaskResourceType, platform.Member))
+	h.HandlerFunc("GET", tasksIDMembersPath, newGetMembersHandler(b, platform.TaskResourceType, platform.Member))
+	h.HandlerFunc("DELETE", tasksIDMembersIDPath, newDeleteMemberHandler(b, platform.Member))
 
-	h.HandlerFunc("POST", tasksIDOwnersPath, newPostMemberHandler(b.UserResourceMappingService, b.UserService, platform.TaskResourceType, platform.Owner))
-	h.HandlerFunc("GET", tasksIDOwnersPath, newGetMembersHandler(b.UserResourceMappingService, b.UserService, platform.TaskResourceType, platform.Owner))
-	h.HandlerFunc("DELETE", tasksIDOwnersIDPath, newDeleteMemberHandler(b.UserResourceMappingService, platform.Owner))
+	h.HandlerFunc("POST", tasksIDOwnersPath, newPostMemberHandler(b, platform.TaskResourceType, platform.Owner))
+	h.HandlerFunc("GET", tasksIDOwnersPath, newGetMembersHandler(b, platform.TaskResourceType, platform.Owner))
+	h.HandlerFunc("DELETE", tasksIDOwnersIDPath, newDeleteMemberHandler(b, platform.Owner))
 
 	h.HandlerFunc("GET", tasksIDRunsPath, h.handleGetRuns)
 	h.HandlerFunc("POST", tasksIDRunsPath, h.handleForceRun)

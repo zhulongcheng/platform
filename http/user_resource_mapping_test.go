@@ -188,7 +188,11 @@ func TestUserResourceMappingService_GetMembersHandler(t *testing.T) {
 					}))
 
 				w := httptest.NewRecorder()
-				h := newGetMembersHandler(tt.fields.userResourceMappingService, tt.fields.userService, resourceType, tt.args.userType)
+
+				apiBackend := NewMockAPIBackend()
+				apiBackend.UserResourceMappingService = tt.fields.userResourceMappingService
+				apiBackend.UserService = tt.fields.userService
+				h := newGetMembersHandler(apiBackend, resourceType, tt.args.userType)
 				h.ServeHTTP(w, r)
 
 				res := w.Result()
@@ -337,7 +341,11 @@ func TestUserResourceMappingService_PostMembersHandler(t *testing.T) {
 					}))
 
 				w := httptest.NewRecorder()
-				h := newPostMemberHandler(tt.fields.userResourceMappingService, tt.fields.userService, resourceType, tt.args.userType)
+
+				apiBackend := NewMockAPIBackend()
+				apiBackend.UserResourceMappingService = tt.fields.userResourceMappingService
+				apiBackend.UserService = tt.fields.userService
+				h := newPostMemberHandler(apiBackend, resourceType, tt.args.userType)
 				h.ServeHTTP(w, r)
 
 				res := w.Result()

@@ -53,7 +53,10 @@ func newResourceUsersResponse(opts platform.FindOptions, f platform.UserResource
 }
 
 // newPostMemberHandler returns a handler func for a POST to /members or /owners endpoints
-func newPostMemberHandler(s platform.UserResourceMappingService, userService platform.UserService, resourceType platform.ResourceType, userType platform.UserType) http.HandlerFunc {
+func newPostMemberHandler(b *APIBackend, resourceType platform.ResourceType, userType platform.UserType) http.HandlerFunc {
+	userResourceMappingService := b.UserResourceMappingService
+	userService := b.UserService
+
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
@@ -76,7 +79,7 @@ func newPostMemberHandler(s platform.UserResourceMappingService, userService pla
 			UserType:     userType,
 		}
 
-		if err := s.CreateUserResourceMapping(ctx, mapping); err != nil {
+		if err := userResourceMappingService.CreateUserResourceMapping(ctx, mapping); err != nil {
 			EncodeError(ctx, err, w)
 			return
 		}
@@ -121,7 +124,10 @@ func decodePostMemberRequest(ctx context.Context, r *http.Request) (*postMemberR
 }
 
 // newGetMembersHandler returns a handler func for a GET to /members or /owners endpoints
-func newGetMembersHandler(s platform.UserResourceMappingService, userService platform.UserService, resourceType platform.ResourceType, userType platform.UserType) http.HandlerFunc {
+func newGetMembersHandler(b *APIBackend, resourceType platform.ResourceType, userType platform.UserType) http.HandlerFunc {
+	userResourceMappingService := b.UserResourceMappingService
+	userService := b.UserService
+
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
@@ -138,7 +144,7 @@ func newGetMembersHandler(s platform.UserResourceMappingService, userService pla
 		}
 
 		opts := platform.FindOptions{}
-		mappings, _, err := s.FindUserResourceMappings(ctx, filter)
+		mappings, _, err := userResourceMappingService.FindUserResourceMappings(ctx, filter)
 		if err != nil {
 			EncodeError(ctx, err, w)
 			return
@@ -187,7 +193,9 @@ func decodeGetMembersRequest(ctx context.Context, r *http.Request) (*getMembersR
 }
 
 // newDeleteMemberHandler returns a handler func for a DELETE to /members or /owners endpoints
-func newDeleteMemberHandler(s platform.UserResourceMappingService, userType platform.UserType) http.HandlerFunc {
+func newDeleteMemberHandler(b *APIBackend, userType platform.UserType) http.HandlerFunc {
+	userResourceMappingService := b.UserResourceMappingService
+
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
@@ -197,7 +205,7 @@ func newDeleteMemberHandler(s platform.UserResourceMappingService, userType plat
 			return
 		}
 
-		if err := s.DeleteUserResourceMapping(ctx, req.ResourceID, req.MemberID); err != nil {
+		if err := userResourceMappingService.DeleteUserResourceMapping(ctx, req.ResourceID, req.MemberID); err != nil {
 			EncodeError(ctx, err, w)
 			return
 		}

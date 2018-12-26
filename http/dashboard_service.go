@@ -64,13 +64,13 @@ func NewDashboardHandler(b *APIBackend) *DashboardHandler {
 	h.HandlerFunc("DELETE", dashboardsIDCellsIDPath, h.handleDeleteDashboardCell)
 	h.HandlerFunc("PATCH", dashboardsIDCellsIDPath, h.handlePatchDashboardCell)
 
-	h.HandlerFunc("POST", dashboardsIDMembersPath, newPostMemberHandler(b.UserResourceMappingService, b.UserService, platform.DashboardResourceType, platform.Member))
-	h.HandlerFunc("GET", dashboardsIDMembersPath, newGetMembersHandler(b.UserResourceMappingService, b.UserService, platform.DashboardResourceType, platform.Member))
-	h.HandlerFunc("DELETE", dashboardsIDMembersIDPath, newDeleteMemberHandler(b.UserResourceMappingService, platform.Member))
+	h.HandlerFunc("POST", dashboardsIDMembersPath, newPostMemberHandler(b, platform.DashboardResourceType, platform.Member))
+	h.HandlerFunc("GET", dashboardsIDMembersPath, newGetMembersHandler(b, platform.DashboardResourceType, platform.Member))
+	h.HandlerFunc("DELETE", dashboardsIDMembersIDPath, newDeleteMemberHandler(b, platform.Member))
 
-	h.HandlerFunc("POST", dashboardsIDOwnersPath, newPostMemberHandler(b.UserResourceMappingService, b.UserService, platform.DashboardResourceType, platform.Owner))
-	h.HandlerFunc("GET", dashboardsIDOwnersPath, newGetMembersHandler(b.UserResourceMappingService, b.UserService, platform.DashboardResourceType, platform.Owner))
-	h.HandlerFunc("DELETE", dashboardsIDOwnersIDPath, newDeleteMemberHandler(b.UserResourceMappingService, platform.Owner))
+	h.HandlerFunc("POST", dashboardsIDOwnersPath, newPostMemberHandler(b, platform.DashboardResourceType, platform.Owner))
+	h.HandlerFunc("GET", dashboardsIDOwnersPath, newGetMembersHandler(b, platform.DashboardResourceType, platform.Owner))
+	h.HandlerFunc("DELETE", dashboardsIDOwnersIDPath, newDeleteMemberHandler(b, platform.Owner))
 
 	h.HandlerFunc("GET", dashboardsIDLabelsPath, newGetLabelsHandler(b.LabelService))
 	h.HandlerFunc("POST", dashboardsIDLabelsPath, newPostLabelHandler(b.LabelService))

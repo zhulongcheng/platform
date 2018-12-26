@@ -48,13 +48,13 @@ func NewTelegrafHandler(b *APIBackend) *TelegrafHandler {
 	h.HandlerFunc("DELETE", telegrafsIDPath, h.handleDeleteTelegraf)
 	h.HandlerFunc("PUT", telegrafsIDPath, h.handlePutTelegraf)
 
-	h.HandlerFunc("POST", telegrafsIDMembersPath, newPostMemberHandler(b.UserResourceMappingService, b.UserService, platform.TelegrafResourceType, platform.Member))
-	h.HandlerFunc("GET", telegrafsIDMembersPath, newGetMembersHandler(b.UserResourceMappingService, b.UserService, platform.TelegrafResourceType, platform.Member))
-	h.HandlerFunc("DELETE", telegrafsIDMembersIDPath, newDeleteMemberHandler(b.UserResourceMappingService, platform.Member))
+	h.HandlerFunc("POST", telegrafsIDMembersPath, newPostMemberHandler(b, platform.TelegrafResourceType, platform.Member))
+	h.HandlerFunc("GET", telegrafsIDMembersPath, newGetMembersHandler(b, platform.TelegrafResourceType, platform.Member))
+	h.HandlerFunc("DELETE", telegrafsIDMembersIDPath, newDeleteMemberHandler(b, platform.Member))
 
-	h.HandlerFunc("POST", telegrafsIDOwnersPath, newPostMemberHandler(b.UserResourceMappingService, b.UserService, platform.TelegrafResourceType, platform.Owner))
-	h.HandlerFunc("GET", telegrafsIDOwnersPath, newGetMembersHandler(b.UserResourceMappingService, b.UserService, platform.TelegrafResourceType, platform.Owner))
-	h.HandlerFunc("DELETE", telegrafsIDOwnersIDPath, newDeleteMemberHandler(b.UserResourceMappingService, platform.Owner))
+	h.HandlerFunc("POST", telegrafsIDOwnersPath, newPostMemberHandler(b, platform.TelegrafResourceType, platform.Owner))
+	h.HandlerFunc("GET", telegrafsIDOwnersPath, newGetMembersHandler(b, platform.TelegrafResourceType, platform.Owner))
+	h.HandlerFunc("DELETE", telegrafsIDOwnersIDPath, newDeleteMemberHandler(b, platform.Owner))
 
 	h.HandlerFunc("GET", telegrafsIDLabelsPath, newGetLabelsHandler(b.LabelService))
 	h.HandlerFunc("POST", telegrafsIDLabelsPath, newPostLabelHandler(b.LabelService))

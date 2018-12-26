@@ -47,13 +47,13 @@ func NewViewHandler(b *APIBackend) *ViewHandler {
 	h.HandlerFunc("DELETE", viewsIDPath, h.handleDeleteView)
 	h.HandlerFunc("PATCH", viewsIDPath, h.handlePatchView)
 
-	h.HandlerFunc("POST", viewsIDMembersPath, newPostMemberHandler(b.UserResourceMappingService, b.UserService, platform.ViewResourceType, platform.Member))
-	h.HandlerFunc("GET", viewsIDMembersPath, newGetMembersHandler(b.UserResourceMappingService, b.UserService, platform.ViewResourceType, platform.Member))
-	h.HandlerFunc("DELETE", viewsIDMembersIDPath, newDeleteMemberHandler(b.UserResourceMappingService, platform.Member))
+	h.HandlerFunc("POST", viewsIDMembersPath, newPostMemberHandler(b, platform.ViewResourceType, platform.Member))
+	h.HandlerFunc("GET", viewsIDMembersPath, newGetMembersHandler(b, platform.ViewResourceType, platform.Member))
+	h.HandlerFunc("DELETE", viewsIDMembersIDPath, newDeleteMemberHandler(b, platform.Member))
 
-	h.HandlerFunc("POST", viewsIDOwnersPath, newPostMemberHandler(b.UserResourceMappingService, b.UserService, platform.ViewResourceType, platform.Owner))
-	h.HandlerFunc("GET", viewsIDOwnersPath, newGetMembersHandler(b.UserResourceMappingService, b.UserService, platform.ViewResourceType, platform.Owner))
-	h.HandlerFunc("DELETE", viewsIDOwnersIDPath, newDeleteMemberHandler(b.UserResourceMappingService, platform.Owner))
+	h.HandlerFunc("POST", viewsIDOwnersPath, newPostMemberHandler(b, platform.ViewResourceType, platform.Owner))
+	h.HandlerFunc("GET", viewsIDOwnersPath, newGetMembersHandler(b, platform.ViewResourceType, platform.Owner))
+	h.HandlerFunc("DELETE", viewsIDOwnersIDPath, newDeleteMemberHandler(b, platform.Owner))
 
 	h.HandlerFunc("GET", viewsIDLabelsPath, newGetLabelsHandler(b.LabelService))
 	h.HandlerFunc("POST", viewsIDLabelsPath, newPostLabelHandler(b.LabelService))
