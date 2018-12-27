@@ -13,7 +13,6 @@ import (
 	"github.com/influxdata/platform/mock"
 	"github.com/influxdata/platform/telegraf/plugins/inputs"
 	"github.com/influxdata/platform/telegraf/plugins/outputs"
-	"go.uber.org/zap/zaptest"
 )
 
 func TestTelegrafHandler_handleGetTelegrafs(t *testing.T) {
@@ -100,12 +99,10 @@ func TestTelegrafHandler_handleGetTelegrafs(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			logger := zaptest.NewLogger(t)
-			mapping := mock.NewUserResourceMappingService()
-			labels := mock.NewLabelService()
-			users := mock.NewUserService()
 			w := httptest.NewRecorder()
-			h := NewTelegrafHandler(logger, mapping, labels, tt.svc, users)
+			apiBackend := NewMockAPIBackend()
+			apiBackend.TelegrafService = tt.svc
+			h := NewTelegrafHandler(apiBackend)
 			h.ServeHTTP(w, tt.r)
 
 			res := w.Result()
@@ -617,14 +614,11 @@ func TestTelegrafHandler_handleGetTelegraf(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			logger := zaptest.NewLogger(t)
-			mapping := mock.NewUserResourceMappingService()
-			labels := mock.NewLabelService()
-			users := mock.NewUserService()
-
 			tt.r.Header.Set("Accept", tt.acceptHeader)
 			w := httptest.NewRecorder()
-			h := NewTelegrafHandler(logger, mapping, labels, tt.svc, users)
+			apiBackend := NewMockAPIBackend()
+			apiBackend.TelegrafService = tt.svc
+			h := NewTelegrafHandler(apiBackend)
 
 			h.ServeHTTP(w, tt.r)
 
