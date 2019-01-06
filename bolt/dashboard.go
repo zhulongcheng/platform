@@ -19,6 +19,7 @@ var (
 const (
 	dashboardCreatedEvent = "Dashboard Created"
 	dashboardUpdatedEvent = "Dashboard Updated"
+	dashboardRemovedEvent = "Dashboard Removed"
 
 	dashboardCellsReplacedEvent = "Dashboard Cells Replaced"
 	dashboardCellAddedEvent     = "Dashboard Cell Added"
@@ -550,6 +551,30 @@ func (c *Client) deleteDashboard(ctx context.Context, tx *bolt.Tx, id platform.I
 	if pe != nil {
 		return pe
 	}
+
+	if err := c.appendDashboardEventToLog(ctx, tx, d.ID, dashboardRemovedEvent); err != nil {
+		return &platform.Error{
+			Err: err,
+		}
+	}
+
+	err := c.deleteLabels(ctx, tx, platform.LabelFilter{ResourceID: id})
+	if err != nil {
+		return &platform.Error{
+			Err: err,
+		}
+	}
+
+	err = c.deleteUserResourceMappings(ctx, tx, platform.UserResourceMappingFilter{
+		ResourceID: id,
+		Resource:   platform.DashboardsResource,
+	})
+	if err != nil {
+		return &platform.Error{
+			Err: err,
+		}
+	}
+
 	for _, cell := range d.Cells {
 		if err := c.deleteView(ctx, tx, cell.ViewID); err != nil {
 			return &platform.Error{
@@ -569,23 +594,6 @@ func (c *Client) deleteDashboard(ctx context.Context, tx *bolt.Tx, id platform.I
 		}
 	}
 
-	err = c.deleteLabels(ctx, tx, platform.LabelFilter{ResourceID: id})
-	if err != nil {
-		return &platform.Error{
-			Err: err,
-		}
-	}
-
-	// TODO(desa): add DeleteKeyValueLog method and use it here.
-	err = c.deleteUserResourceMappings(ctx, tx, platform.UserResourceMappingFilter{
-		ResourceID: id,
-		Resource:   platform.DashboardsResource,
-	})
-	if err != nil {
-		return &platform.Error{
-			Err: err,
-		}
-	}
 	return nil
 }
 

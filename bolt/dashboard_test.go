@@ -3,6 +3,7 @@ package bolt_test
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/influxdata/platform"
 	"github.com/influxdata/platform/bolt"
@@ -15,6 +16,10 @@ func initDashboardService(f platformtesting.DashboardFields, t *testing.T) (plat
 		t.Fatalf("failed to create new bolt client: %v", err)
 	}
 	c.IDGenerator = f.IDGenerator
+
+	if f.NowFn == nil {
+		f.NowFn = time.Now
+	}
 	c.WithTime(f.NowFn)
 	ctx := context.TODO()
 	for _, b := range f.Dashboards {
