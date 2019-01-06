@@ -80,6 +80,11 @@ func (c *Client) findUserResourceMapping(ctx context.Context, tx *bolt.Tx, filte
 
 func (c *Client) CreateUserResourceMapping(ctx context.Context, m *platform.UserResourceMapping) error {
 	return c.db.Update(func(tx *bolt.Tx) error {
+		_, err := c.resourceExists(ctx, tx, m.Resource, m.ResourceID)
+		if err != nil {
+			return err
+		}
+
 		if err := c.createUserResourceMapping(ctx, tx, m); err != nil {
 			return err
 		}
@@ -262,4 +267,32 @@ func (c *Client) deleteOrgDependentMappings(ctx context.Context, tx *bolt.Tx, m 
 	}
 
 	return nil
+}
+
+func (c *Client) resourceExists(ctx context.Context, tx *bolt.Tx, resourceType platform.Resource, resourceID platform.ID) (bool, *platform.Error) {
+	var pe *platform.Error
+	switch resourceType {
+	case platform.AuthorizationsResource:
+		_, pe = c.findAuthorizationByID(ctx, tx, resourceID)
+	case platform.BucketsResource:
+		_, pe = c.findBucketByID(ctx, tx, resourceID)
+	case platform.DashboardsResource:
+		_, pe = c.findDashboardByID(ctx, tx, resourceID)
+	case platform.OrgsResource:
+		_, pe = c.findOrganizationByID(ctx, tx, resourceID)
+	case platform.SourcesResource:
+		_, pe = c.findSourceByID(ctx, tx, resourceID)
+	case platform.TasksResource:
+		// TODO how to find task
+	case platform.TelegrafsResource:
+		_, pe = c.findTelegrafConfigByID(ctx, tx, resourceID)
+	case platform.UsersResource:
+		_, pe = c.findUserByID(ctx, tx, resourceID)
+	default:
+		pe = &platform.Error{
+			Err: fmt.Errorf("invalid resource type"),
+		}
+	}
+
+	return pe != nil, pe
 }

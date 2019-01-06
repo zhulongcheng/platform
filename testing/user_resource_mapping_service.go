@@ -95,7 +95,7 @@ func CreateUserResourceMapping(
 			},
 			args: args{
 				mapping: &platform.UserResourceMapping{
-					ResourceID: MustIDBase16(bucketTwoID),
+					ResourceID: MustIDBase16(bucketOneID),
 					UserID:     MustIDBase16(userTwoID),
 					UserType:   platform.Member,
 					Resource:   platform.BucketsResource,
@@ -110,7 +110,7 @@ func CreateUserResourceMapping(
 						Resource:   platform.BucketsResource,
 					},
 					{
-						ResourceID: MustIDBase16(bucketTwoID),
+						ResourceID: MustIDBase16(bucketOneID),
 						UserID:     MustIDBase16(userTwoID),
 						UserType:   platform.Member,
 						Resource:   platform.BucketsResource,
@@ -126,6 +126,7 @@ func CreateUserResourceMapping(
 						ResourceID: MustIDBase16(bucketOneID),
 						UserID:     MustIDBase16(userOneID),
 						UserType:   platform.Member,
+						Resource:   platform.BucketsResource,
 					},
 				},
 			},
@@ -134,6 +135,7 @@ func CreateUserResourceMapping(
 					ResourceID: MustIDBase16(bucketOneID),
 					UserID:     MustIDBase16(userOneID),
 					UserType:   platform.Member,
+					Resource:   platform.BucketsResource,
 				},
 			},
 			wants: wants{
@@ -142,6 +144,7 @@ func CreateUserResourceMapping(
 						ResourceID: MustIDBase16(bucketOneID),
 						UserID:     MustIDBase16(userOneID),
 						UserType:   platform.Member,
+						Resource:   platform.BucketsResource,
 					},
 				},
 				err: fmt.Errorf("mapping for user %s already exists", userOneID),
@@ -204,6 +207,7 @@ func DeleteUserResourceMapping(
 						ResourceID: MustIDBase16(bucketOneID),
 						UserID:     MustIDBase16(userOneID),
 						UserType:   platform.Member,
+						Resource:   platform.BucketsResource,
 					},
 				},
 			},
